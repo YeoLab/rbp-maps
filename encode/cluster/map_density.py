@@ -140,60 +140,6 @@ def rbp_plot_with_ko(input_file_i, input_file_e, output_file, erl=50, irl=500):
     f.savefig(output_file)
     plt.close()
 
-def rbp_plot_with_bg(input_file_i, input_file_e, control_i, control_e, output_file, erl=50, irl=500):
-    i = 0
-    infile = pd.read_table(input_file_i,header=None)[0]
-    exfile = pd.read_table(input_file_e,header=None)[0]
-    control_in = pd.read_table(control_i,header=None)[0]
-    control_ex = pd.read_table(control_e,header=None)[0]
-    
-    cov = pd.concat([infile,-exfile,control_in,-control_ex],axis=1)
-    
-    cov.columns = ['in','ex','ci','cx']
-    div = len(cov)/4
-    pos_buffer = max(cov['in'])*0.3
-    neg_buffer = min(cov['ex'])*0.3
-    
-    max_height = max(cov['in']) + pos_buffer
-    min_height = min(cov['ex']) + neg_buffer
-    
-    downstream_region_upstream_exon = patches.Rectangle((0,min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    exup = patches.Rectangle(((div-erl),min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    exdn = patches.Rectangle((0,min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    upstream_region_downstream_exon = patches.Rectangle(((div-erl),min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    
-    upexticks = [0,erl,erl+irl]
-    exupticks = [0,irl,erl+irl]
-    exdnticks = [0,erl,erl+irl]
-    dnexticks = [0,irl,erl+irl]
-    
-    upextickslabs = ["{} bp".format(erl),"0 bp","{} bp".format(irl)]
-    exuptickslabs = ["{} bp".format(irl),"{} bp".format(erl),"0 bp"]
-    exdntickslabs = ["0 bp","{} bp".format(erl),"{} bp".format(irl)]
-    dnextickslabs = ["{} bp".format(irl),"{} bp".format(erl),"0 bp"]
-    
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(1,4,sharey=True)
-    regions = [ax1, ax2, ax3, ax4]
-    highlights = [downstream_region_upstream_exon,exup,exdn,upstream_region_downstream_exon]
-    ticks = [upexticks,exupticks,exdnticks,dnexticks]
-    ticklabels = [upextickslabs,exuptickslabs,exdntickslabs,dnextickslabs]
-    
-    
-    for region in regions:
-        region.plot(cov[(cov.index > div*i) & (cov.index < div*(i+1))])
-        region.set_xticks(ticks[i])
-        region.set_xlim(0,div)
-        region.set_ylim(min_height,max_height)
-        region.set_xticklabels(ticklabels[i],rotation = "vertical", size= "xx-small")
-        if region == ax1:
-            region.set_ylabel("Density")
-        region.add_patch(highlights[i])
-        i = i + 1
-    f.suptitle("{0}".format(os.path.splitext(input_file_i)[0]))
-    f.savefig(output_file)
-    plt.close()
-
-
 def rbp_plot(input_file, output_file, erl=50, irl=500):
     i = 0
     cov = pd.read_table(input_file,header=None)[0]
@@ -216,7 +162,7 @@ def rbp_plot(input_file, output_file, erl=50, irl=500):
     exdntickslabs = ["0 bp","{} bp".format(erl),"{} bp".format(irl)]
     dnextickslabs = ["{} bp".format(irl),"{} bp".format(erl),"0 bp"]
     
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(1,4,sharey=True)
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(1,4,sharey=True,figsize=(2.5,10))
     
     regions = [ax1, ax2, ax3, ax4]
     highlights = [downstream_region_upstream_exon,exup,exdn,upstream_region_downstream_exon]
@@ -237,61 +183,6 @@ def rbp_plot(input_file, output_file, erl=50, irl=500):
     f.suptitle("{0}".format(os.path.splitext(input_file)[0]))
     f.savefig(output_file)
     plt.close()
-    
-def rbp_plot_with_direction(input_file_pos, input_file_neg, output_file, erl=50, irl=500):
-    i = 0
-    pcov = pd.read_table(input_file_pos,header=None)[0]
-    ncov = pd.read_table(input_file_neg,header=None)[0]
-        
-    cov = pd.concat([pcov,-ncov],axis=1)
-    
-    cov.columns = ['pos','neg']
-    div = len(cov)/4
-    pos_buffer = max(cov['pos'])*0.3
-    neg_buffer = min(cov['neg'])*0.3
-    
-    max_height = max(cov['pos']) + pos_buffer
-    min_height = min(cov['neg']) + neg_buffer
-    
-    downstream_region_upstream_exon = patches.Rectangle((0,min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    exup = patches.Rectangle(((div-erl),min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    exdn = patches.Rectangle((0,min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    upstream_region_downstream_exon = patches.Rectangle(((div-erl),min_height),erl,max_height-min_height,alpha=0.3,color="orange")
-    
-    upexticks = [0,erl,erl+irl]
-    exupticks = [0,irl,erl+irl]
-    exdnticks = [0,erl,erl+irl]
-    dnexticks = [0,irl,erl+irl]
-    
-    upextickslabs = ["{} bp".format(erl),"0 bp","{} bp".format(irl)]
-    exuptickslabs = ["{} bp".format(irl),"{} bp".format(erl),"0 bp"]
-    exdntickslabs = ["0 bp","{} bp".format(erl),"{} bp".format(irl)]
-    dnextickslabs = ["{} bp".format(irl),"{} bp".format(erl),"0 bp"]
-    
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(1,4,sharey=True)
-    regions = [ax1, ax2, ax3, ax4]
-    highlights = [downstream_region_upstream_exon,exup,exdn,upstream_region_downstream_exon]
-    ticks = [upexticks,exupticks,exdnticks,dnexticks]
-    ticklabels = [upextickslabs,exuptickslabs,exdntickslabs,dnextickslabs]
-    
-    
-    for region in regions:
-        region.plot(cov[(cov.index > div*i) & (cov.index < div*(i+1))])
-        region.set_xticks(ticks[i])
-        region.set_xlim(0,div)
-        region.set_ylim(min_height,max_height)
-        region.set_xticklabels(ticklabels[i],rotation = "vertical", size= "xx-small")
-        if region == ax1:
-            region.set_ylabel("Density")
-        region.add_patch(highlights[i])
-        i = i + 1
-    f.suptitle("{0}".format(os.path.splitext(input_file_pos)[0]))
-    f.savefig(output_file)
-    plt.close()
-    
-# unused function??? 
-def hasher():
-    return collections.defaultdict(hasher)
 
 # returns True if key combinations exist in a dictionary, False otherwise
 def exists(dictionary, *args):
@@ -304,11 +195,16 @@ def ini(dictionary, direction, *args):
     if args in dictionary:
         #if(-133 in args and 'upstream_region_downstream_exon' in args):
         #    print("adding to the dictionary: {}".format(dictionary[args],direction))
-        return dictionary[args]+direction
+        if(-50 in args and 'downstream_region_upstream_exon' in args):
+            
+            print("{}. adding to the dictionary: {}".format(dictionary[args],(abs(direction))))
+        new_value = dictionary[args]+abs(direction)
+        return new_value
     else:
-        #if(-133 in args and 'upstream_region_downstream_exon' in args):
-        #    print("initializing the dictionary: {}".format(direction))
-        return direction
+        if(-50 in args and 'downstream_region_upstream_exon' in args):
+            
+            print("initializing the dictionary: {}".format(direction))
+        return abs(direction)
 
 def make_density_stranded(pinfile, ninfile, poutfile, noutfile, hashing_val, all_exons, exon_overhang, intron_overhang):
     """
@@ -334,7 +230,7 @@ def make_density_stranded(pinfile, ninfile, poutfile, noutfile, hashing_val, all
                     pstart = int(line[1])
                     pstop = int(line[2])
                     density = float(line[3].strip())
-                    #print(line)
+                    print(line)
                     pstart = pstart + 1
                     x = int(pstart / hashing_val)
                     y = int(pstop / hashing_val)
@@ -569,9 +465,11 @@ USAGE
         parser.add_argument("-mi", "--include_miso", dest="mi", help="miso inclusion annotation file", required = True )
         parser.add_argument("-me", "--exclude_miso", dest="me", help="miso exclusion annotation file", required = True )
         parser.add_argument('-V', "--version", action='version', version=program_version_message)
-        parser.add_argument('-s', "--hashval", dest="hash", help = "hash value (default = 100000)", type=int, default=1000, required = False)
+        parser.add_argument('-s', "--hashval", dest="hash", help = "hash value (default = 100000)", type=int, default=100000, required = False)
         parser.add_argument('-eo', "--exonoverhang", dest="exonoverhang", help = "exon offset overhang (default = 50)", type=int, default=50, required = False)
-        parser.add_argument('-io', "--intronoverhang", dest="intronoverhang", help="intron offset overhange (default = 500)", type=int, default=300, required = False)
+        parser.add_argument('-io', "--intronoverhang", dest="intronoverhang", help="intron offset overhange (default = 500)", type=int, default=500, required = False)
+        parser.add_argument('-r', "--reversed", dest="reversed", help= "if the .pos and .neg suffixes are \
+        reversed (.pos = negative), turn this on", type = int, required = False, default=0)
         # Process arguments
         args = parser.parse_args()
         
@@ -584,7 +482,7 @@ USAGE
         exon_overhang = args.exonoverhang
         intron_overhang = args.intronoverhang
         hashing_val = args.hash
-        
+        isreversed = args.reversed
         
         
         included_exons = annotations.read_four_region_miso(miso_included, 
