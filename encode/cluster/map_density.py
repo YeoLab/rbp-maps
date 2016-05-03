@@ -193,17 +193,15 @@ def exists(dictionary, *args):
 
 def ini(dictionary, direction, *args):
     if args in dictionary:
-        #if(-133 in args and 'upstream_region_downstream_exon' in args):
-        #    print("adding to the dictionary: {}".format(dictionary[args],direction))
-        if(-50 in args and 'downstream_region_upstream_exon' in args):
+        """if(-50 in args and 'downstream_region_upstream_exon' in args):
             
-            print("{}. adding to the dictionary: {}".format(dictionary[args],(abs(direction))))
+            print("{}. adding to the dictionary: {}".format(dictionary[args],(abs(direction))))"""
         new_value = dictionary[args]+abs(direction)
         return new_value
     else:
-        if(-50 in args and 'downstream_region_upstream_exon' in args):
+        """if(-50 in args and 'downstream_region_upstream_exon' in args):
             
-            print("initializing the dictionary: {}".format(direction))
+            print("initializing the dictionary: {}".format(direction))"""
         return abs(direction)
 
 def make_density_stranded(pinfile, ninfile, poutfile, noutfile, hashing_val, all_exons, exon_overhang, intron_overhang):
@@ -230,8 +228,7 @@ def make_density_stranded(pinfile, ninfile, poutfile, noutfile, hashing_val, all
                     pstart = int(line[1])
                     pstop = int(line[2])
                     density = float(line[3].strip())
-                    print(line)
-                    pstart = pstart + 1
+                    # pstart = pstart + 1
                     x = int(pstart / hashing_val)
                     y = int(pstop / hashing_val)
                     stra = '+' if '.neg' in infile else '-'

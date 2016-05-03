@@ -27,7 +27,9 @@ class ReadDensity():
                 raise("Strand neither + or -")
         except RuntimeError: # the chromosome is not in the bigwig file
             # print("chrom: {}".format(chrom))
-            return []*np.abs(end-start)
+            a = np.empty(np.abs(end-start))
+            a[:] = np.nan
+            return a
 def miso_to_bed(exon):
     """for exon in miso_list:
         chrom, start, stop, strand = exon.split(":")
@@ -36,48 +38,64 @@ def miso_to_bed(exon):
     chrom, start, stop, strand = exon.split(":")
     return pybedtools.create_interval_from_list([chrom,start,stop,"0","0",strand])
 # return densitity values that overlap a particular interval
-"""def five_prime_site(rbp, upstream_interval, interval):
-    intron_offset = 500
-    exon_offset = 50
+"""def five_prime_site(rbp, downstream_interval, interval):
+    if interval.strand == "+":
+        wiggle = rbp.values(interval.chrom, interval.start - 500, interval.start + 50, interval.strand)
+    elif interval.strand == "-":
+        wiggle = rbp.values(interval.chrom, interval.end - 50, interval.end + 500, interval.strand)
+    return wiggle"""
+def five_prime_site(rbp, upstream_interval, interval):
+    intron_offset = 0
+    exon_offset = 0
+    # print("original interval: {} - {} - {} - {}".format(interval.chrom,interval.start,interval.end,interval.strand))
+    # print("upstream interval: {} - {} - {} - {}".format(upstream_interval.chrom,upstream_interval.start,upstream_interval.end,upstream_interval.strand))
     
     if interval.strand == "+":
-        if interval.start + exon_offset > interval.end:
+        if interval.start + 50 > interval.end: # if exon (+50) goes past the end, shorten overhang
             exon_offset = interval.end - interval.start
-        if interval.end - intron_offset < upstream_interval.end:
+        if interval.start - 500 < upstream_interval.end: # if intron (-500) leaks over to the upstream exon, shorten overhang
             intron_offset = interval.start - upstream_interval.end
-        wiggle = rbp.values(interval.chrom, (interval.start - intron_offset), (interval.start + exon_offset), interval.strand)
+            
+        print("getting values from over region: {} - {} - {} - {}".format(interval.chrom, (interval.start - 500), (interval.start + 50), interval.strand))
+        wiggle = rbp.values(interval.chrom, (interval.start - 500), (interval.start + 50), interval.strand)
+        print(wiggle)
+        for i in range(0,(500-intron_offset)):
+            wiggle[i] = float('nan')
+        for i in range(550-exon_offset,550):
+            wiggle[i] = float('nan')
+        print(wiggle)
+        
     elif interval.strand == "-":
-        if interval.end - exon_offset < interval.start:
+        if interval.end - exon_offset < interval.start: # if 
             exon_offset = interval.end - interval.start
         if interval.end + intron_offset > upstream_interval.start:
             intron_offset = upstream_interval.start - interval.end
         wiggle = rbp.values(interval.chrom, (interval.end - exon_offset), (interval.end + intron_offset), interval.strand)
+    if(intron_offset > 500 or intron_offset < 0):
+        print("this is not supposed to happen!")
+    if(exon_offset > 50 or exon_offset < 0):
+        print("this is nt supposed to happen!")
     return wiggle
+"""
 
 def three_prime_site(rbp, downstream_interval, interval):
     exon_offset = 50
     intron_offset = 500
+    
     if interval.strand == "+":
         if interval.end + intron_offset > downstream_interval.start:
             intron_offset = downstream_interval.start - interval.end
         if interval.end - exon_offset < interval.start:
             exon_offset = interval.end - interval.start
-        wiggle = rbp.values(interval.chrom, interval.end - exon_offset, interval.end + intron_offset, interval.strand)
+        wiggle = rbp.values(interval.chrom, (interval.end - exon_offset), (interval.end + intron_offset), interval.strand)
     elif interval.strand == "-":
         if interval.start + exon_offset > interval.end:
             exon_offset = interval.end - interval.start
         if interval.start - intron_offset < downstream_interval.end:
             intron_offset = interval.start - downstream_interval.end
-        wiggle = rbp.values(interval.chrom, interval.start - intron_offset, interval.start + exon_offset, interval.strand)
+        wiggle = rbp.values(interval.chrom, (interval.start - intron_offset), (interval.start + exon_offset), interval.strand)
     return wiggle
 """
-def five_prime_site(rbp, downstream_interval, interval):
-    if interval.strand == "+":
-        wiggle = rbp.values(interval.chrom, interval.start - 500, interval.start + 50, interval.strand)
-    elif interval.strand == "-":
-        wiggle = rbp.values(interval.chrom, interval.end - 50, interval.end + 500, interval.strand)
-    return wiggle
-
 def three_prime_site(rbp, downstream_interval, interval):
     if interval.strand == "+":
         wiggle = rbp.values(interval.chrom, interval.end - 50, interval.end + 500, interval.strand)
@@ -132,8 +150,8 @@ def plot_miso(miso_names, rbp):
         three_prime_upstream_wiggle = three_prime_site(rbp, skipped_exon, upstream_exon)
         if not all(np.isnan(three_prime_upstream_wiggle)):
             # add min normalized read number here:
-            #for w in range(0,len(three_prime_upstream_wiggle)):
-            #    three_prime_upstream_wiggle[w] = abs(three_prime_upstream_wiggle[w])
+            for w in range(0,len(three_prime_upstream_wiggle)):
+                three_prime_upstream_wiggle[w] = abs(three_prime_upstream_wiggle[w])
             #three_prime_upstream_wiggle = three_prime_upstream_wiggle + min(np.abs(n) for n in three_prime_upstream_wiggle if pd.isnull(n)==False )
             # three_prime_upstream_wiggle[np.isnan(three_prime_upstream_wiggle)] = 0
             three_prime_upstream.append(three_prime_upstream_wiggle)
@@ -141,8 +159,8 @@ def plot_miso(miso_names, rbp):
     
         five_prime_se_wiggle = five_prime_site(rbp, upstream_exon, skipped_exon)
         if not all(np.isnan(five_prime_se_wiggle)):
-            #for w in range(0,len(five_prime_se_wiggle)):
-            #    five_prime_se_wiggle[w] = abs(five_prime_se_wiggle[w])
+            for w in range(0,len(five_prime_se_wiggle)):
+                five_prime_se_wiggle[w] = abs(five_prime_se_wiggle[w])
             # add min normalized read number here:
             #five_prime_se_wiggle = five_prime_se_wiggle + min(np.abs(n) for n in five_prime_se_wiggle if pd.isnull(n)==False )
             # five_prime_se_wiggle[np.isnan(five_prime_se_wiggle)] = 0
@@ -150,8 +168,8 @@ def plot_miso(miso_names, rbp):
     
         three_prime_se_wiggle = three_prime_site(rbp, downstream_exon, skipped_exon)
         if not all(np.isnan(three_prime_se_wiggle)):
-            #for w in range(0,len(three_prime_se_wiggle)):
-            #    three_prime_se_wiggle[w] = abs(three_prime_se_wiggle[w])
+            for w in range(0,len(three_prime_se_wiggle)):
+                three_prime_se_wiggle[w] = abs(three_prime_se_wiggle[w])
             # add min normalized read number here:
             #three_prime_se_wiggle = three_prime_se_wiggle + min(np.abs(n) for n in three_prime_se_wiggle if pd.isnull(n)==False )
             # three_prime_se_wiggle[np.isnan(three_prime_se_wiggle)] = 0
@@ -160,8 +178,8 @@ def plot_miso(miso_names, rbp):
 
         five_prime_downstream_wiggle = five_prime_site(rbp, skipped_exon, downstream_exon)
         if not all(np.isnan(five_prime_downstream_wiggle)):
-            #for w in range(0,len(five_prime_downstream_wiggle)):
-            #    five_prime_downstream_wiggle[w] = abs(five_prime_downstream_wiggle[w])
+            for w in range(0,len(five_prime_downstream_wiggle)):
+                five_prime_downstream_wiggle[w] = abs(five_prime_downstream_wiggle[w])
             # add min normalized read number here:
             #five_prime_downstream_wiggle = five_prime_downstream_wiggle + min(np.abs(n) for n in five_prime_downstream_wiggle if pd.isnull(n)==False )
             # five_prime_downstream_wiggle[np.isnan(five_prime_downstream_wiggle)] = 0
@@ -187,13 +205,13 @@ def modify_plot(df):
     # print(df.ix[0])
     # return df.div(df.sum(axis=1), axis=0).dropna().mean()
     
-    return df.round(8).sum(axis=0)
+    return df.round(8).abs().sum(axis=0)
 
 def plot_splice_map_se(rbp, included, excluded, out_name):
     linewidth = 2.5
     # max_height = .0190
-    min_height = 0 # .00015
-    
+    min_height = 2000 # .00015
+    max_height = 10000
     included_events = included
     excluded_events = excluded
     inc_three_prime_upstream, inc_five_prime_se, inc_three_prime_se, inc_five_prime_downstream = plot_miso(included_events.event_name, rbp)
@@ -205,30 +223,27 @@ def plot_splice_map_se(rbp, included, excluded, out_name):
         ax = fig.add_subplot(1,4,1)
         
         ax.plot(modify_plot(inc_three_prime_upstream), linewidth=linewidth, alpha=.7)
-        
         # ax.plot(modify_plot(exc_three_prime_upstream), linewidth=linewidth, alpha=.7)
-        inc_three_prime_upstream.to_csv("testfiles/inc_three_prime_upstream.csv",sep="\t")
         sns.despine(ax=ax)
-        #ax.set_ylim(min_height, max_height)
+        ax.set_ylim(min_height, max_height)
         ax.set_xticklabels(np.arange(-50, 501, 100))
         ax.set_ylabel("Mean Read Density")
         
+        
         ax = fig.add_subplot(1,4,2)
         ax.plot(modify_plot(inc_five_prime_se), linewidth=linewidth, alpha=.7)
-        
+        inc_five_prime_se.fillna(-1).to_csv("testfiles/inc_five_prime_se_after.csv",sep="\t")
         # ax.plot(modify_plot(exc_five_prime_se), linewidth=linewidth, alpha=.7)
-
         sns.despine(ax=ax, left=True)
-        #ax.set_ylim(min_height, max_height)
+        ax.set_ylim(min_height, max_height)
         ax.set_xticklabels(np.arange(-500, 51, 100))
         ax.set_yticklabels([])
 
         ax = fig.add_subplot(1,4,3)
         ax.plot(modify_plot(inc_three_prime_se), linewidth=linewidth, alpha=.7)
         # ax.plot(modify_plot(exc_three_prime_se), linewidth=linewidth, alpha=.7)
-
         sns.despine(ax=ax, left=True)
-        #ax.set_ylim(min_height, max_height)
+        ax.set_ylim(min_height, max_height)
         ax.set_xticklabels(np.arange(-50, 501, 100))
         ax.set_yticklabels([])
 
@@ -238,7 +253,7 @@ def plot_splice_map_se(rbp, included, excluded, out_name):
         
         ax.legend()
         sns.despine(ax=ax, left=True)
-        #ax.set_ylim(min_height, max_height)
+        ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
         ax.set_xticklabels(np.arange(-500, 51, 100))
         
@@ -259,4 +274,4 @@ excluded = pd.concat([excluded_1,excluded_2])
 included = pd.concat([included_1,included_2])
 """
 
-plot_splice_map_se(rbfox2, included, excluded, "204_01_RBFOX2.splice_map.unnormalized.trunc.svg")
+plot_splice_map_se(rbfox2, included, excluded, "204_01_RBFOX2.splice_map.trunc.svg")
