@@ -67,7 +67,7 @@ def main(argv=None): # IGNORE:C0111
             rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
             plot.plot_single_frame(rbp,
                       txstarts,
-                      os.path.join(outdir,my_name),
+                      os.path.join(outdir,my_name)+".svg",
                       color = sns.color_palette("hls", 8)[4],
                       label = "txStart",
                       left = 300,
