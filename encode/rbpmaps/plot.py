@@ -3,6 +3,9 @@ Created on May 3, 2016
 
 @author: brianyee
 '''
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # from rbpmaps import intervals
 import intervals
