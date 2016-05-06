@@ -231,8 +231,8 @@ def main():
 
     """
     
-    exon_bedfile = '/Users/brianyee/Documents/workspace/encode_clip/cluster/hg19_exons.bed'
-    plot_single_region_map(density, exon_bedfile, "single_region.png")
+    exon_bedfile = '/Users/brianyee/Documents/workspace/encode_clip/rbpmaps/hg19_exons.bed'
+    plot_single_region_map(rbpmaps, exon_bedfile, "single_region.png")
     """
 if __name__ == '__main__':
     main()

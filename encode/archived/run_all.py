@@ -16,12 +16,12 @@
 
 import sys
 import os
-# from cluster import map_peaks
-# from cluster import map_density
-# from cluster import annotations
-import map_peaks
-import annotations
-import clust
+# from rbpmaps import map_peaks
+# from rbpmaps import map_density
+# from rbpmaps import annotations
+from archived import map_peaks
+from archived import annotations
+from archived import clust
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -120,7 +120,7 @@ USAGE
         print("End dictionary build.")
         fin = open(infiles,'r')
         lines = fin.readlines()
-        # generate individual maps for each line in manifest
+        # generate individual rbpmaps for each line in manifest
         for line in lines:
             line = line.strip().split('\t')
             
@@ -165,9 +165,9 @@ USAGE
                     names.append("{0}_0{1}-{2}-{3}".format(name,i+1,celltype,maptype))
                     outfiles.append(outfile)
             
-        # cluster stuff
+        # rbpmaps stuff
         """
-        # generate individual maps for each line in manifest
+        # generate individual rbpmaps for each line in manifest
         for line in lines:
             
             line = line.strip().split('\t')
@@ -227,7 +227,7 @@ USAGE
                     names.append("{0}_0{1}-{2}".format(name,i+1,celltype))
                     outfiles.append(outfile)
          """   
-        # cluster stuff
+        # rbpmaps stuff
         import pandas as pd
         na = pd.Series(names)
         ot = pd.Series(outfiles)
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     if PROFILE:
         import cProfile
         import pstats
-        profile_filename = 'cluster.overlap_peak_with_annot_profile.txt'
+        profile_filename = 'rbpmaps.overlap_peak_with_annot_profile.txt'
         cProfile.run('main()', profile_filename)
         statsfile = open("profile_stats.txt", "wb")
         p = pstats.Stats(profile_filename, stream=statsfile)
