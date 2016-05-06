@@ -57,22 +57,26 @@ def main(argv=None): # IGNORE:C0111
     input_file = args.input
     outdir = args.output
     txstarts = pb.BedTool(args.tx)
+    errorlog = open('error.log','a')
     with open(input_file,'r') as f:
         for line in f:
-            line = line.split('\t')
-            my_name = line[0]
-            positive = line[1]
-            negative = line[2].strip()
-            print("Processing {}".format(my_name))
-            rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
-            plot.plot_single_frame(rbp,
-                      txstarts,
-                      os.path.join(outdir,my_name)+".svg",
-                      color = sns.color_palette("hls", 8)[4],
-                      label = "txStart",
-                      left = 300,
-                      right = 300)
-    
+            try:
+                line = line.split('\t')
+                my_name = line[0]
+                positive = line[1]
+                negative = line[2].strip()
+                print("Processing {}".format(my_name))
+                rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
+                plot.plot_single_frame(rbp,
+                          txstarts,
+                          os.path.join(outdir,my_name)+".svg",
+                          color = sns.color_palette("hls", 8)[4],
+                          label = "txStart",
+                          left = 300,
+                          right = 300)
+            except Exception as e:
+                print("Failed to Process {}".format(my_name))
+                errorlog.write(my_name)
 
 if __name__ == "__main__":
     main()
