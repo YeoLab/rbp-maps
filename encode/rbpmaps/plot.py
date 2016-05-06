@@ -4,7 +4,8 @@ Created on May 3, 2016
 @author: brianyee
 '''
 import matplotlib.pyplot as plt
-from rbpmaps import intervals
+# from rbpmaps import intervals
+import intervals
 import ReadDensity
 import numpy as np
 import pandas as pd
@@ -48,9 +49,12 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
                       shade_label = None,
                       ax = None):
     mytitle = rbp.get_name() if title is None else title
-    
+    count = 0
     densities = []
     for interval in bed_tool:
+        count = count + 1
+        if count % 50000 == 0:
+            print('processed {} features'.format(count))
         wiggle = intervals.some_range(rbp, interval, left, right)
         if not all(np.isnan(pd.Series(wiggle))):
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
@@ -58,6 +62,7 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
             wiggle = wiggle + min(wiggle) # add a minimum pseudocount
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
+    print("Data frame built.")
     # f, ax = plt.subplots()
     if ax is None:
         ax = plt.gca()
@@ -75,8 +80,13 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
 
     ax.set_ylim([ymin,ymax])
     ax.plot(density_normed,color=color)
-    ax.set_xticks([0,left,right,left+right])
-    ax.set_xticklabels(['upstream','{}'.format(label),'downstream'])
+    
+    if left == right:
+        ax.set_xticklabels(['upstream','{}'.format(label),'downstream'])
+        ax.set_xticks([0,left,left+right])
+    else:
+        ax.set_xticklabels(['upstream','{}'.format(label),'{}'.format(label),'downstream'])
+        ax.set_xticks([0,left,right,left+right])
     ax.set_ylabel('Mean Density')
     ax.set_title(mytitle,y=1.03)
     ax.axvline(left,alpha=0.3)
@@ -88,7 +98,8 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
         
     if output_file is not None:
         plt.savefig(output_file)
-
+    
+    ax.clear()
     return density_normed
 
 def main(argv=None): # IGNORE:C0111
@@ -124,19 +135,32 @@ USAGE
     parser.add_argument("-p", "--positive", dest="positive", help="positive bw file", required = True )
     parser.add_argument("-n", "--negative", dest="negative", help="negative bw file", required = True )
     parser.add_argument("-b", "--bed", dest="bedfile", help="bedfile containing region of interest", required = True )
+    parser.add_argument("-l", "--left", dest="left", help="left margins", required = False, default = 300)
+    parser.add_argument("-r", "--right", dest="right", help="right margins", required = False, default = 300)
+    parser.add_argument("-c", "--color", dest="color", help="line color", required = False, default = sns.color_palette("hls", 8)[4])
+    parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
+
     args = parser.parse_args()
     outfile = args.output
     positive_bw = args.positive
     negative_bw = args.negative
     bedfile = args.bedfile
+    
+    left_mar = args.left
+    right_mar = args.right
+    col = args.color
+    lab = args.label
+    
     rbp = ReadDensity.ReadDensity(pos=positive_bw,
                       neg=negative_bw)
     txends = bt.BedTool(bedfile)
     # output = 'testfiles/rbfox2_txend_test.png'
-    plot_single_frame(rbp,
+    n = plot_single_frame(rbp,
                       txends,
                       outfile,
-                      color = sns.color_palette("hls", 8)[4],
-                      label = 'txends')
+                      color = col,
+                      label = lab,
+                      left = left_mar,
+                      right = right_mar)
 if __name__ == "__main__":
     main()
