@@ -107,7 +107,6 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
         ax.set_xticklabels(['upstream','{}'.format(label),'downstream'])
         ax.set_xticks([0,left,left+right])
         ax.axvline(left,alpha=0.3)
-        print("left is right")
     else:
         ax.set_xticklabels(['upstream','{}'.format(label),'{}'.format(label),'downstream'])
         ax.set_xticks([0,left,right,left+right])

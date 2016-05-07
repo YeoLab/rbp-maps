@@ -7,7 +7,7 @@ rbpmaps.plot_all_tss is a description
 
 It defines classes_and_methods
 
-@author:     user_name
+@author:     brian
 
 @copyright:  2016 organization_name. All rights reserved.
 
