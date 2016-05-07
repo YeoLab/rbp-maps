@@ -75,7 +75,7 @@ def main(argv=None): # IGNORE:C0111
                           label = "txStart",
                           left = 300,
                           right = 300,
-                          distribution = True)
+                          distribution = False)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(my_name))
