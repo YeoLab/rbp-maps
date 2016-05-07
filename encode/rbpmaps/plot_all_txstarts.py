@@ -78,8 +78,8 @@ def main(argv=None): # IGNORE:C0111
                           distribution = False)
             except Exception as e:
                 print(e)
-                print("Failed to Process {}".format(my_name))
-                errorlog.write(my_name)
+                print("Failed to Process {}".format(line))
+                errorlog.write(line)
 
 if __name__ == "__main__":
     main()
