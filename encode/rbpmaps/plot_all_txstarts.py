@@ -62,9 +62,10 @@ def main(argv=None): # IGNORE:C0111
         for line in f:
             try:
                 line = line.split('\t')
-                my_name = line[0]
+                
                 positive = line[1]
                 negative = line[2].strip()
+                my_name = os.path.basename(positive).replace('pos','*')
                 print("Processing {}".format(my_name))
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 plot.plot_single_frame(rbp,
@@ -73,8 +74,10 @@ def main(argv=None): # IGNORE:C0111
                           color = sns.color_palette("hls", 8)[4],
                           label = "txStart",
                           left = 300,
-                          right = 300)
+                          right = 300,
+                          distribution = True)
             except Exception as e:
+                print(e)
                 print("Failed to Process {}".format(my_name))
                 errorlog.write(my_name)
 

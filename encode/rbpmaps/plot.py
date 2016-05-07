@@ -43,14 +43,20 @@ def plot_txends(rbp,txends,output_file):
                       output_file,
                       color = sns.color_palette("hls", 8)[1],
                       label = 'txends')
-    
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i+n].mean()
+        
 def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
                       label=None,title=None,
                       ymax=None,ymin=None,
                       left=300,right=300,
                       left_shade=0,right_shade=0,
                       shade_label = None,
-                      ax = None):
+                      ax = None,
+                      distribution = False):
     mytitle = rbp.get_name() if title is None else title
     count = 0
     densities = []
@@ -59,10 +65,19 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
         if count % 50000 == 0:
             print('processed {} features'.format(count))
         wiggle = intervals.some_range(rbp, interval, left, right)
-        if not all(np.isnan(pd.Series(wiggle))):
+        wiggle = pd.Series(wiggle)
+        if not all(np.isnan(wiggle)):
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
-            wiggle = wiggle + min(wiggle) # add a minimum pseudocount
+            pseudocount = min(i for i in wiggle if i > 0)
+            wiggle = wiggle + pseudocount# add a minimum pseudocount
+            if(distribution == True):
+                wiggle = (chunks(wiggle,len(wiggle)/100))
+                wiggle = pd.Series(wiggle)
+                if len(wiggle) > 100:
+                    wiggle[99] = (wiggle[99] + wiggle[100])/2
+                    wiggle = wiggle[:100] # no really good way of doing this?
+                
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
     print("Data frame built.")
@@ -71,29 +86,35 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
         ax = plt.gca()
         
     density_normed = normalize(densities)
-    ymax = ymax if ymax is not None else max(density_normed) * 1.3
-    ymin = ymin if ymin is not None else 0
+    ymax = ymax if ymax is not None else max(density_normed) * 1.1
+    ymin = ymin if ymin is not None else min(density_normed) * 0.9
     
-    shaded_area = patches.Rectangle(((left-left_shade),0),
+    shaded_area = patches.Rectangle(((left-left_shade),ymin),
                                     width=(left_shade+right_shade),
                                     height=ymax,
                                     alpha=0.3,
                                     color="orange",label=shade_label)
-    ax.add_patch(shaded_area)
+    # ax.add_patch(shaded_area)
 
-    ax.set_ylim([ymin,ymax])
+    # ax.set_ylim([ymin,ymax])
     ax.plot(density_normed,color=color)
     
-    if left == right:
+    if distribution == True:
+        ax.set_xticklabels(['{}'.format(label),'{}'.format(label)])
+        ax.set_xticks([0,99])
+        ax.set_xlim(0,99)
+    elif left == right:
         ax.set_xticklabels(['upstream','{}'.format(label),'downstream'])
         ax.set_xticks([0,left,left+right])
+        ax.axvline(left,alpha=0.3)
     else:
         ax.set_xticklabels(['upstream','{}'.format(label),'{}'.format(label),'downstream'])
         ax.set_xticks([0,left,right,left+right])
+        ax.axvline(left,alpha=0.3)
+        ax.axvline(right,alpha=0.3)
     ax.set_ylabel('Mean Density')
     ax.set_title(mytitle,y=1.03)
-    ax.axvline(left,alpha=0.3)
-    ax.axvline(right,alpha=0.3)
+    
     
     if(shade_label):
         legend = ax.legend(loc=1,shadow=True,frameon=True)
@@ -142,7 +163,7 @@ USAGE
     parser.add_argument("-r", "--right", dest="right", help="right margins", required = False, default = 300)
     parser.add_argument("-c", "--color", dest="color", help="line color", required = False, default = sns.color_palette("hls", 8)[4])
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
-
+    parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution")
     args = parser.parse_args()
     outfile = args.output
     positive_bw = args.positive
@@ -153,7 +174,7 @@ USAGE
     right_mar = args.right
     col = args.color
     lab = args.label
-    
+    dist = args.dist
     rbp = ReadDensity.ReadDensity(pos=positive_bw,
                       neg=negative_bw)
     txends = bt.BedTool(bedfile)
@@ -164,6 +185,7 @@ USAGE
                       color = col,
                       label = lab,
                       left = left_mar,
-                      right = right_mar)
+                      right = right_mar,
+                      distribution = dist)
 if __name__ == "__main__":
     main()
