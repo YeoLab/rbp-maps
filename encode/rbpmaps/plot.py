@@ -163,7 +163,8 @@ USAGE
     parser.add_argument("-r", "--right", dest="right", help="right margins", required = False, default = 300)
     parser.add_argument("-c", "--color", dest="color", help="line color", required = False, default = sns.color_palette("hls", 8)[4])
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
-    parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution")
+    parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution", action='store_true')
+    parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution", action='store_false')
     args = parser.parse_args()
     outfile = args.output
     positive_bw = args.positive
@@ -174,7 +175,6 @@ USAGE
     right_mar = args.right
     col = args.color
     lab = args.label
-    dist = args.dist
     rbp = ReadDensity.ReadDensity(pos=positive_bw,
                       neg=negative_bw)
     txends = bt.BedTool(bedfile)
@@ -186,6 +186,6 @@ USAGE
                       label = lab,
                       left = left_mar,
                       right = right_mar,
-                      distribution = dist)
+                      distribution = args.dist)
 if __name__ == "__main__":
     main()
