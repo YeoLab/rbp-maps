@@ -306,8 +306,6 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
         if not all(np.isnan(wiggle)):
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
-            pseudocount = min(i for i in wiggle if i > 0)
-            wiggle = wiggle + pseudocount# add a minimum pseudocount
             if(distribution == True):
                 wiggle = (chunks(wiggle,len(wiggle)/100))
                 wiggle = pd.Series(wiggle)
