@@ -17,17 +17,23 @@ import seaborn as sns
 import matplotlib.patches as patches
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
+from gscripts.general import dataviz
+
 import sys
 import os
+from IPython.core.display import HTML
+
 __all__ = []
 __version__ = 0.1
 __date__ = '2016-5-5'
 __updated__ = '2016-5-5'
 
-def normalize(densities):
-    density_rowsums = densities.sum(axis=1)
-    densities_div = densities.div(density_rowsums, axis=0) # divide each position by row total
-    return densities_div.mean() # return mean
+def normalize(densities,trunc=True):
+    densities = densities.replace(-1, np.nan)   
+    df = densities[densities.sum(axis=1) > 5]
+    min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
+    df = df + min_normalized_read_number
+    return df.div(df.sum(axis=1), axis=0).dropna().mean()
 
 def plot_txstarts(rbp,txstarts,output_file):
     
@@ -44,11 +50,242 @@ def plot_txends(rbp,txends,output_file):
                       color = sns.color_palette("hls", 8)[1],
                       label = 'txends')
 
+def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
+    three_upstream = []
+    five_skipped = []
+    three_skipped = []
+    five_downstream = []
+    
+    with open(miso_file) as f:
+        # f.next() # for title
+        for line in f:
+            event = line.split('\t')[0]
+            upstream, se, downstream = event.split('@')
+            
+            upstream_interval = get_bed_tool(upstream)
+            interval = get_bed_tool(se)
+            downstream_interval = get_bed_tool(downstream)
+            
+            """three prime upstream region"""
+            left_pad, wiggle, right_pad = intervals.three_prime_site(rbp, 
+                                                                interval,
+                                                                upstream_interval,
+                                                                exon_offset,
+                                                                intron_offset)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                # pseudocount = min(i for i in wiggle if i > 0)
+                # print(pseudocount)
+                # wiggle = wiggle + pseudocount# add a minimum pseudocount
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) #
+                three_upstream.append(wiggle)
+
+            """five prime site of skipped region"""
+            left_pad, wiggle, right_pad = intervals.five_prime_site(rbp, 
+                                                                    upstream_interval,
+                                                                    interval,
+                                                                    exon_offset,
+                                                                    intron_offset)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) #
+                five_skipped.append(wiggle)
+
+            """three prime site of skipped region"""
+            left_pad, wiggle, right_pad = intervals.three_prime_site(rbp, 
+                                                                     downstream_interval,
+                                                                     interval,
+                                                                     exon_offset,
+                                                                     intron_offset)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) #
+                three_skipped.append(wiggle)
+
+            """five prime site of downstream region"""
+            left_pad, wiggle, right_pad = intervals.five_prime_site(rbp, 
+                                                                    interval,
+                                                                    downstream_interval,
+                                                                    exon_offset,
+                                                                    intron_offset)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) # convert all nans to 0
+                five_downstream.append(wiggle)   
+            """
+            """
+                #Repeat using a non-truncated version
+            """
+            
+            """
+            # three prime upstream region
+            """
+            left_pad, wiggle, right_pad = intervals.three_prime_site(rbp, 
+                                                                interval,
+                                                                upstream_interval,
+                                                                trunc = False)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                # pseudocount = min(i for i in wiggle if i > 0)
+                # print(pseudocount)
+                # wiggle = wiggle + pseudocount# add a minimum pseudocount
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) #
+                three_upstream_nt.append(wiggle)
+
+            """
+            #five prime site of skipped region
+            """
+            left_pad, wiggle, right_pad = intervals.five_prime_site(rbp, 
+                                                                    upstream_interval,
+                                                                    interval,
+                                                                    trunc = False)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) #
+                five_skipped_nt.append(wiggle)
+
+            """
+            # three prime site of skipped region
+            """
+            left_pad, wiggle, right_pad = intervals.three_prime_site(rbp, 
+                                                                     downstream_interval,
+                                                                     interval,
+                                                                     trunc = False)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) #
+                three_skipped_nt.append(wiggle)
+
+            """
+            # five prime site of downstream region
+            """
+            left_pad, wiggle, right_pad = intervals.five_prime_site(rbp, 
+                                                                    interval,
+                                                                    downstream_interval,
+                                                                    trunc = False)
+            wiggle = pd.Series(wiggle)
+            if not all(np.isnan(wiggle)):
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) # convert all nans to 0
+                five_downstream_nt.append(wiggle) """
+
+        three_upstream = pd.DataFrame(three_upstream)
+        five_skipped = pd.DataFrame(five_skipped)
+        three_skipped = pd.DataFrame(three_skipped)
+        five_downstream = pd.DataFrame(five_downstream)
+        
+        three_upstream_normed = normalize(three_upstream)
+        five_skipped_normed = normalize(five_skipped)
+        three_skipped_normed = normalize(three_skipped)
+        five_downstream_normed = normalize(five_downstream)
+        
+        """
+        For comparison between original vs truncated
+        """
+        """
+        three_upstream_normed_nt = normalize(pd.DataFrame(three_upstream_nt))
+        five_skipped_normed_nt = normalize(pd.DataFrame(five_skipped_nt))
+        three_skipped_normed_nt = normalize(pd.DataFrame(three_skipped_nt))
+        five_downstream_normed_nt = normalize(pd.DataFrame(five_downstream_nt))
+        """
+    plot_four_frame(three_upstream_normed,
+                    five_skipped_normed,
+                    three_skipped_normed,
+                    five_downstream_normed,
+                    output_file,
+                    exon_offset,
+                    intron_offset,
+                    mytitle,
+                    color)
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i+n].mean()
+
+def get_bed_tool(miso_annotation):
+    chrom, start, end, strand = miso_annotation.split(':')
+    some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
+    return some_bedtool
+def plot_four_frame(region1,
+                    region2,
+                    region3,
+                    region4,
+                    output_file,
+                    exon_offset,
+                    intron_offset,
+                    mytitle,
+                    color):
+    
+    """
+    three_upstream_nt = []
+    five_skipped_nt = []
+    three_skipped_nt = []
+    five_downstream_nt = []
+    """
+    num_rows = 1
+    num_cols = 4
+    with dataviz.Figure(os.path.join(output_file), figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+        min_height = min(min(region1),min(region2),min(region3),min(region4))
+        max_height = max(max(region1),max(region2),max(region3),max(region4))
+        linewidth = 2.5
+        ax = fig.add_subplot(1,4,1)
+        ax.plot(region1, linewidth=linewidth, alpha=.7, color = color)
+        # ax.plot(three_upstream_normed_nt, linewidth=linewidth, alpha=.7, color = 'blue')
+        sns.despine(ax=ax)
+        ax.set_ylim(min_height, max_height)
+        ax.set_xticklabels(np.arange(-exon_offset, intron_offset+1, 50))
+        ax.set_ylabel("Mean Read Density")
         
+        ax = fig.add_subplot(1,4,2)
+        ax.plot(region2, linewidth=linewidth, alpha=.7, color = color)
+        # ax.plot(five_skipped_normed_nt, linewidth=linewidth, alpha=.7, color = 'blue')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_xticklabels(np.arange(-intron_offset, exon_offset+1, 50))
+        ax.set_yticklabels([])
+        
+        ax = fig.add_subplot(1,4,3)
+        ax.plot(region3, linewidth=linewidth, alpha=.7, color = color)
+        # ax.plot(three_skipped_normed_nt, linewidth=linewidth, alpha=.7, color = 'blue')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_xticklabels(np.arange(-exon_offset, intron_offset+1, 50))
+        ax.set_yticklabels([])
+        
+        ax = fig.add_subplot(1,4,4)
+        ax.plot(region4, linewidth=linewidth, alpha=.7, color = color)
+        # ax.plot(five_downstream_normed_nt, linewidth=linewidth, alpha=.7, color = 'blue')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_xticklabels(np.arange(-intron_offset, exon_offset+1, 50))
+        ax.set_yticklabels([])
+        plt.suptitle(mytitle,y=1.03)
+        """
+        import matplotlib.patches as mpatches
+
+        red_patch = mpatches.Patch(color='red', label='Truncated short exon/intron')
+        blue_patch = mpatches.Patch(color='blue', label='Original')
+        
+        ax.legend(handles=[red_patch,blue_patch])
+        """
 def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
                       label=None,title=None,
                       ymax=None,ymin=None,
@@ -80,6 +317,7 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
                 
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
+    print(densities)
     print("Data frame built.")
     # f, ax = plt.subplots()
     if ax is None:
@@ -159,8 +397,10 @@ USAGE
     parser.add_argument("-p", "--positive", dest="positive", help="positive bw file", required = True )
     parser.add_argument("-n", "--negative", dest="negative", help="negative bw file", required = True )
     parser.add_argument("-b", "--bed", dest="bedfile", help="bedfile containing region of interest", required = True )
-    parser.add_argument("-l", "--left", dest="left", help="left margins", required = False, default = 300)
-    parser.add_argument("-r", "--right", dest="right", help="right margins", required = False, default = 300)
+    parser.add_argument("-l", "--left", dest="left", help="left margins. For a given single region, how many nt upstream of the pointsource/region boundary should we extend?", required = False, default = 300)
+    parser.add_argument("-r", "--right", dest="right", help="right margins. For a given single region, how many nt downstream of the pointsource/region boundary should we extend?", required = False, default = 300)
+    parser.add_argument("-e", "--exon_offset", dest="exonoffset", help="exon offset margins. For a given region, how much should we extend into exon feature?", required = False, default = 50)
+    parser.add_argument("-i", "--intron_offset", dest="intronoffset", help="intron offset margins. For a given region, how much should we extend outside the exon feature?", required = False, default = 50)
     parser.add_argument("-c", "--color", dest="color", help="line color", required = False, default = sns.color_palette("hls", 8)[4])
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
     parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution", action='store_true')
@@ -179,13 +419,14 @@ USAGE
                       neg=negative_bw)
     txends = bt.BedTool(bedfile)
     # output = 'testfiles/rbfox2_txend_test.png'
-    n = plot_single_frame(rbp,
+    """n = plot_single_frame(rbp,
                       txends,
                       outfile,
                       color = col,
                       label = lab,
                       left = left_mar,
                       right = right_mar,
-                      distribution = args.dist)
+                      distribution = args.dist)"""
+    # plot_se(rbp,bedfile,outfile, 50, 300, "rbfox2", sns.color_palette("hls", 8)[5])
 if __name__ == "__main__":
     main()

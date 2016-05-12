@@ -63,8 +63,8 @@ def main(argv=None): # IGNORE:C0111
             try:
                 line = line.split('\t')
                 
-                positive = line[1]
-                negative = line[2].strip()
+                positive = line[0]
+                negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
                 print("Processing {}".format(my_name))
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
@@ -79,7 +79,6 @@ def main(argv=None): # IGNORE:C0111
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))
-                errorlog.write(line)
 
 if __name__ == "__main__":
     main()

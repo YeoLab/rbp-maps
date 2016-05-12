@@ -4,7 +4,7 @@ Created on May 3, 2016
 @author: Gabe
 '''
 import pyBigWig
-
+import numpy as np
 class ReadDensity():
     """
     BigWig class
@@ -39,4 +39,6 @@ class ReadDensity():
             else:
                 raise("Strand neither + or -")
         except RuntimeError:
-            return []*abs(start-end)
+            
+            return [np.NaN]*abs(start-end)
+        
