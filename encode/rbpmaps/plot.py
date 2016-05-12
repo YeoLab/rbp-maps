@@ -33,7 +33,9 @@ def normalize(densities,trunc=True):
     df = densities[densities.sum(axis=1) > 5]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
-    return df.div(df.sum(axis=1), axis=0).dropna().mean()
+    # df2 = df.fillna('x')
+    # df2.to_csv('testfiles/normed_pseudocount.csv')
+    return df.div(df.sum(axis=1), axis=0).mean()
 
 def plot_txstarts(rbp,txstarts,output_file):
     
@@ -217,6 +219,17 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i+n].mean()
 
+def get_distribution(wiggle):
+    """
+    given a list of arbitrary length > 100, 
+    normalize them into a list of length 100
+    """
+    wiggle = (chunks(wiggle,len(wiggle)/100))
+    wiggle = pd.Series(wiggle)
+    if len(wiggle) > 100:
+        wiggle[99] = (wiggle[99] + wiggle[100])/2
+        wiggle = wiggle[:100] # no really good way of doing this?
+    return wiggle
 def get_bed_tool(miso_annotation):
     chrom, start, end, strand = miso_annotation.split(':')
     some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
@@ -307,11 +320,7 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
             if(distribution == True):
-                wiggle = (chunks(wiggle,len(wiggle)/100))
-                wiggle = pd.Series(wiggle)
-                if len(wiggle) > 100:
-                    wiggle[99] = (wiggle[99] + wiggle[100])/2
-                    wiggle = wiggle[:100] # no really good way of doing this?
+                wiggle = distribution(wiggle)
                 
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
@@ -425,6 +434,6 @@ USAGE
                       left = left_mar,
                       right = right_mar,
                       distribution = args.dist)"""
-    # plot_se(rbp,bedfile,outfile, 50, 300, "rbfox2", sns.color_palette("hls", 8)[5])
+    plot_se(rbp,bedfile,outfile, 50, 300, "rbfox2", sns.color_palette("hls", 8)[5])
 if __name__ == "__main__":
     main()
