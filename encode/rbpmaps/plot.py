@@ -34,7 +34,7 @@ def normalize(densities,trunc=True):
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
     # df2 = df.fillna('x')
-    # df2.to_csv('testfiles/normed_pseudocount.csv')
+    df.to_csv('normed_pseudocount.csv')
     return df.div(df.sum(axis=1), axis=0).mean()
 
 def plot_txstarts(rbp,txstarts,output_file):
@@ -58,6 +58,7 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
     three_skipped = []
     five_downstream = []
     
+    five_downstream_dictionary = {}
     with open(miso_file) as f:
         # f.next() # for title
         for line in f:
@@ -121,7 +122,9 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
-                five_downstream.append(wiggle)   
+                five_downstream.append(wiggle) 
+                five_downstream_dictionary[event] = wiggle
+              
             """
             """
                 #Repeat using a non-truncated version
@@ -190,12 +193,13 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
         five_skipped = pd.DataFrame(five_skipped)
         three_skipped = pd.DataFrame(three_skipped)
         five_downstream = pd.DataFrame(five_downstream)
+        five_downstream_dictionary = pd.DataFrame(five_downstream_dictionary)
         
         three_upstream_normed = normalize(three_upstream)
         five_skipped_normed = normalize(five_skipped)
         three_skipped_normed = normalize(three_skipped)
         five_downstream_normed = normalize(five_downstream)
-        
+        five_downstream_dictionary_normed = normalize(five_downstream_dictionary)
         """
         For comparison between original vs truncated
         """
