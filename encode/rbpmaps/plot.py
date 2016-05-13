@@ -28,13 +28,12 @@ __version__ = 0.1
 __date__ = '2016-5-5'
 __updated__ = '2016-5-5'
 
-def normalize(densities,trunc=True):
+def normalize(densities,min_density_threshold=0):
     densities = densities.replace(-1, np.nan)   
-    df = densities[densities.sum(axis=1) > 5]
+    df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
-    # df2 = df.fillna('x')
-    df.to_csv('normed_pseudocount.csv')
+    df.to_csv('testfiles/density_normed.csv')
     return df.div(df.sum(axis=1), axis=0).mean()
 
 def plot_txstarts(rbp,txstarts,output_file):
@@ -53,12 +52,16 @@ def plot_txends(rbp,txends,output_file):
                       label = 'txends')
 
 def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
-    three_upstream = []
-    five_skipped = []
-    three_skipped = []
-    five_downstream = []
+    # three_upstream = []
+    # five_skipped = []
+    # three_skipped = []
+    # five_downstream = []
     
-    five_downstream_dictionary = {}
+    three_upstream = {}
+    five_skipped = {}
+    three_skipped = {}
+    five_downstream = {}
+    
     with open(miso_file) as f:
         # f.next() # for title
         for line in f:
@@ -83,7 +86,8 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
                 # wiggle = wiggle + pseudocount# add a minimum pseudocount
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) #
-                three_upstream.append(wiggle)
+                three_upstream[event] = wiggle
+                # three_upstream.append(wiggle)
 
             """five prime site of skipped region"""
             left_pad, wiggle, right_pad = intervals.five_prime_site(rbp, 
@@ -96,7 +100,8 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) #
-                five_skipped.append(wiggle)
+                five_skipped[event] = wiggle
+                # five_skipped.append(wiggle)
 
             """three prime site of skipped region"""
             left_pad, wiggle, right_pad = intervals.three_prime_site(rbp, 
@@ -109,7 +114,8 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) #
-                three_skipped.append(wiggle)
+                three_skipped[event] = wiggle
+                # three_skipped.append(wiggle)
 
             """five prime site of downstream region"""
             left_pad, wiggle, right_pad = intervals.five_prime_site(rbp, 
@@ -122,8 +128,8 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
-                five_downstream.append(wiggle) 
-                five_downstream_dictionary[event] = wiggle
+                # five_downstream.append(wiggle) 
+                five_downstream[event] = wiggle
               
             """
             """
@@ -189,17 +195,23 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
                 five_downstream_nt.append(wiggle) """
 
+        three_upstream = pd.DataFrame(three_upstream).T
+        five_skipped = pd.DataFrame(five_skipped).T
+        three_skipped = pd.DataFrame(three_skipped).T
+        five_downstream = pd.DataFrame(five_downstream).T
+        # five_downstream.to_csv('testfiles/fivep_downstream_dictionary.csv')
+        
+        """
         three_upstream = pd.DataFrame(three_upstream)
         five_skipped = pd.DataFrame(five_skipped)
         three_skipped = pd.DataFrame(three_skipped)
         five_downstream = pd.DataFrame(five_downstream)
-        five_downstream_dictionary = pd.DataFrame(five_downstream_dictionary)
-        
+        """
         three_upstream_normed = normalize(three_upstream)
         five_skipped_normed = normalize(five_skipped)
         three_skipped_normed = normalize(three_skipped)
         five_downstream_normed = normalize(five_downstream)
-        five_downstream_dictionary_normed = normalize(five_downstream_dictionary)
+        # five_downstream_dictionary_normed = normalize(five_downstream_dictionary)
         """
         For comparison between original vs truncated
         """
@@ -416,6 +428,7 @@ USAGE
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
     parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution", action='store_true')
     parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution", action='store_false')
+    
     args = parser.parse_args()
     outfile = args.output
     positive_bw = args.positive
