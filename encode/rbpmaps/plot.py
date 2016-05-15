@@ -219,6 +219,8 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
         three_skipped_normed.to_csv("{}_3p_skipped_normed_means.csv".format(output_file.replace('.svg','')))
         five_downstream_normed.to_csv("{}_5p_downstream_normed_means.csv".format(output_file.replace('.svg','')))
 
+        all_regions = pd.concat([three_upstream_normed,five_skipped_normed,three_skipped_normed,five_downstream_normed])
+        all_regions.to_csv(output_file.replace('.svg','.allmeans.txt'))
         """
         For comparison between original vs truncated
         """
@@ -435,6 +437,7 @@ USAGE
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
     parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution", action='store_true')
     parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution", action='store_false')
+    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_false')
     
     args = parser.parse_args()
     outfile = args.output
