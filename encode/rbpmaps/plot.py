@@ -28,12 +28,13 @@ __version__ = 0.1
 __date__ = '2016-5-5'
 __updated__ = '2016-5-5'
 
-def normalize(densities,min_density_threshold=0):
+def normalize(densities,min_density_threshold,name):
     densities = densities.replace(-1, np.nan)   
     df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
-    df.to_csv('testfiles/density_normed.csv')
+    df.to_csv(name)
+
     return df.div(df.sum(axis=1), axis=0).mean()
 
 def plot_txstarts(rbp,txstarts,output_file):
@@ -207,11 +208,17 @@ def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
         three_skipped = pd.DataFrame(three_skipped)
         five_downstream = pd.DataFrame(five_downstream)
         """
-        three_upstream_normed = normalize(three_upstream)
-        five_skipped_normed = normalize(five_skipped)
-        three_skipped_normed = normalize(three_skipped)
-        five_downstream_normed = normalize(five_downstream)
-        # five_downstream_dictionary_normed = normalize(five_downstream_dictionary)
+        three_upstream_normed = normalize(three_upstream,0,"{}_3p_upstream.csv".format(output_file.replace('.svg','')))
+        five_skipped_normed = normalize(five_skipped,0,"{}_5p_skipped.csv".format(output_file.replace('.svg','')))
+        three_skipped_normed = normalize(three_skipped,0,"{}_3p_skipped.csv".format(output_file.replace('.svg','')))
+        five_downstream_normed = normalize(five_downstream,0,"{}_5p_downstream.csv".format(output_file.replace('.svg','')))
+        
+        
+        three_upstream_normed.to_csv("{}_3p_upstream_normed_means.csv".format(output_file.replace('.svg','')))
+        five_skipped_normed.to_csv("{}_5p_skipped_normed_means.csv".format(output_file.replace('.svg','')))
+        three_skipped_normed.to_csv("{}_3p_skipped_normed_means.csv".format(output_file.replace('.svg','')))
+        five_downstream_normed.to_csv("{}_5p_downstream_normed_means.csv".format(output_file.replace('.svg','')))
+
         """
         For comparison between original vs truncated
         """
