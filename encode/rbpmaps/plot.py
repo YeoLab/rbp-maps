@@ -21,7 +21,7 @@ from gscripts.general import dataviz
 
 import sys
 import os
-from IPython.core.display import HTML
+# from IPython.core.display import HTML
 
 __all__ = []
 __version__ = 0.1
