@@ -430,22 +430,23 @@ USAGE
     parser.add_argument("-p", "--positive", dest="positive", help="positive bw file", required = True )
     parser.add_argument("-n", "--negative", dest="negative", help="negative bw file", required = True )
     parser.add_argument("-b", "--bed", dest="bedfile", help="bedfile containing region of interest", required = True )
-    parser.add_argument("-l", "--left", dest="left", help="left margins. For a given single region, how many nt upstream of the pointsource/region boundary should we extend?", required = False, default = 300)
-    parser.add_argument("-r", "--right", dest="right", help="right margins. For a given single region, how many nt downstream of the pointsource/region boundary should we extend?", required = False, default = 300)
-    parser.add_argument("-e", "--exon_offset", dest="exonoffset", help="exon offset margins. For a given region, how much should we extend into exon feature?", required = False, default = 50)
-    parser.add_argument("-i", "--intron_offset", dest="intronoffset", help="intron offset margins. For a given region, how much should we extend outside the exon feature?", required = False, default = 50)
+    parser.add_argument("-l", "--left", dest="left", help="left margins. For a given single region, how many nt upstream of the pointsource/region boundary should we extend?", required = False, default = 300, type = int)
+    parser.add_argument("-r", "--right", dest="right", help="right margins. For a given single region, how many nt downstream of the pointsource/region boundary should we extend?", required = False, default = 300, type = int)
+    parser.add_argument("-e", "--exon_offset", dest="exonoffset", help="exon offset margins. For a given region, how much should we extend into exon feature?", required = False, default = 50, type = int)
+    parser.add_argument("-i", "--intron_offset", dest="intronoffset", help="intron offset margins. For a given region, how much should we extend outside the exon feature?", required = False, default = 50, type = int)
     parser.add_argument("-c", "--color", dest="color", help="line color", required = False, default = sns.color_palette("hls", 8)[4])
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
     parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution", action='store_true')
     parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution", action='store_true')
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
+    parser.add_argument("-m", "--min", dest="minthreshold", help="minimum density read threshold", default=0, type = int)
     
     args = parser.parse_args()
     outfile = args.output
     positive_bw = args.positive
     negative_bw = args.negative
     bedfile = args.bedfile
-    
+    min_read_threshold = args.minthreshold
     
     left_mar = args.left
     right_mar = args.right
