@@ -349,13 +349,14 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
                 
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
-    print(densities)
+    # print(densities)
     print("Data frame built.")
     # f, ax = plt.subplots()
     if ax is None:
         ax = plt.gca()
         
     density_normed = normalize(densities)
+    density_normed.to_csv(output_file.replace('.svg','.allmeans.txt'))
     ymax = ymax if ymax is not None else max(density_normed) * 1.1
     ymin = ymin if ymin is not None else min(density_normed) * 0.9
     
@@ -436,8 +437,8 @@ USAGE
     parser.add_argument("-c", "--color", dest="color", help="line color", required = False, default = sns.color_palette("hls", 8)[4])
     parser.add_argument("-lbl", "--label", dest="label", help="label or feature", required = False, default = "feature")
     parser.add_argument("-d", "--dist", dest="dist", help="if regions of varying length, plot distribution", action='store_true')
-    parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution", action='store_false')
-    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_false')
+    parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution", action='store_true')
+    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
     
     args = parser.parse_args()
     outfile = args.output
@@ -445,11 +446,17 @@ USAGE
     negative_bw = args.negative
     bedfile = args.bedfile
     
+    
     left_mar = args.left
     right_mar = args.right
     col = args.color
     lab = args.label
-    rbp = ReadDensity.ReadDensity(pos=positive_bw,
+    if args.flipped == True:
+        print("flipped pos=neg, neg=pos.")
+        rbp = ReadDensity.ReadDensity(pos=negative_bw,
+                      neg=positive_bw)
+    else:
+        rbp = ReadDensity.ReadDensity(pos=positive_bw,
                       neg=negative_bw)
     txends = bt.BedTool(bedfile)
     # output = 'testfiles/rbfox2_txend_test.png'
@@ -461,6 +468,6 @@ USAGE
                       left = left_mar,
                       right = right_mar,
                       distribution = args.dist)"""
-    plot_se(rbp,bedfile,outfile, 50, 300, "rbfox2", sns.color_palette("hls", 8)[5])
+    # plot_se(rbp,bedfile,outfile, 50, 300, "rbfox2", sns.color_palette("hls", 8)[5])
 if __name__ == "__main__":
     main()
