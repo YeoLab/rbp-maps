@@ -51,7 +51,7 @@ def main(argv=None): # IGNORE:C0111
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-i", "--input", dest="input",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
-    parser.add_argument("-tx", "--tx", dest="tx ends",required=True)
+    parser.add_argument("-tx", "--tx", dest="tx",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
     
     # Process arguments

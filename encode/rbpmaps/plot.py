@@ -355,7 +355,7 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
     if ax is None:
         ax = plt.gca()
         
-    density_normed = normalize(densities)
+    density_normed = normalize(densities,0,output_file.replace('.svg','density_matrix.csv'))
     density_normed.to_csv(output_file.replace('.svg','.allmeans.txt'))
     ymax = ymax if ymax is not None else max(density_normed) * 1.1
     ymin = ymin if ymin is not None else min(density_normed) * 0.9
