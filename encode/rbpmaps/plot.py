@@ -52,6 +52,19 @@ def plot_txends(rbp,txends,output_file):
                       color = sns.color_palette("hls", 8)[1],
                       label = 'txends')
 
+def plot_a3ss(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
+    three_upstream = {}
+    five_skipped = {}
+    three_skipped = {}
+    five_downstream = {}
+    
+    with open(miso_file) as f:
+        # f.next() # for title
+        for line in f:
+            event = line.split('\t')[0]
+            
+    pass
+
 def plot_se(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
     # three_upstream = []
     # five_skipped = []
@@ -370,15 +383,15 @@ def plot_single_frame(rbp,bed_tool,output_file=None,color='red',
     # ax.set_ylim([ymin,ymax])
     ax.plot(density_normed,color=color)
     
-    if distribution == True:
+    if distribution == True: # scale from 0 to 100
         ax.set_xticklabels(['{}'.format(label),'{}'.format(label)])
         ax.set_xticks([0,99])
         ax.set_xlim(0,99)
-    elif left == right:
+    elif left == right: # single point with equadistant flanks
         ax.set_xticklabels(['upstream','{}'.format(label),'downstream'])
         ax.set_xticks([0,left,left+right])
         ax.axvline(left,alpha=0.3)
-    else:
+    else: 
         ax.set_xticklabels(['upstream','{}'.format(label),'{}'.format(label),'downstream'])
         ax.set_xticks([0,left,right,left+right])
         ax.axvline(left,alpha=0.3)
