@@ -52,6 +52,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-i", "--input", dest="input",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-tx", "--tx", dest="tx",required=True)
+    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
@@ -62,11 +63,17 @@ def main(argv=None): # IGNORE:C0111
         for line in f:
             try:
                 line = line.split('\t')
-                
-                positive = line[0]
-                negative = line[1].strip()
+                if(args.flipped):
+                    negative = line[0]
+                    positive = line[1].strip()
+                else:
+                    positive = line[0]
+                    negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
                 print("Processing {}".format(my_name))
+                print("positive file = {}".format(positive))
+                print("negative file = {}".format(negative))
+                
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 plot.plot_single_frame(rbp,
                           txstarts,

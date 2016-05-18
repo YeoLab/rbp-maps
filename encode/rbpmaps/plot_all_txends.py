@@ -65,13 +65,15 @@ def main(argv=None): # IGNORE:C0111
             try:
                 line = line.split('\t')
                 if(args.flipped):
-                    positive = line[0]
-                    negative = line[1].strip()
-                else:
                     negative = line[0]
                     positive = line[1].strip()
+                else:
+                    positive = line[0]
+                    negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
                 print("Processing {}".format(my_name))
+                print("positive file = {}".format(positive))
+                print("negative file = {}".format(negative))
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 plot.plot_single_frame(rbp,
                           txends,
