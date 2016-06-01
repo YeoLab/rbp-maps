@@ -49,7 +49,7 @@ def normalize_with_input(densities, input_densities,
         df.to_csv(output_file)
         
 def plot_txstarts(rbp,txstarts, output_file, col,
-                  label, left, right):
+                  label, left, right, csv):
     
     plot_single_frame(rbp,
                       txstarts,
@@ -59,10 +59,10 @@ def plot_txstarts(rbp,txstarts, output_file, col,
                       left = left,
                       right = right,
                       distribution = False,
-                      csv = True)
+                      csv = csv)
 
 def plot_txends(rbp,txends, output_file, col,
-                label, left, right):
+                label, left, right, csv):
     
     plot_single_frame(rbp,
                       txends,
@@ -72,9 +72,9 @@ def plot_txends(rbp,txends, output_file, col,
                       left = left,
                       right = right,
                       distribution = False,
-                      csv = True)
+                      csv = csv)
 def plot_cdsstarts(rbp, cdsstarts, output_file, col,
-                   label, left, right):
+                   label, left, right, csv):
     
     plot_single_frame(rbp,
                       cdsstarts,
@@ -84,10 +84,10 @@ def plot_cdsstarts(rbp, cdsstarts, output_file, col,
                       left = left,
                       right = right,
                       distribution = False,
-                      csv = True)
+                      csv = csv)
 
 def plot_cdsends(rbp, cdsends, output_file, col,
-                 label, left, right):
+                 label, left, right, csv):
     
     plot_single_frame(rbp,
                       cdsends,
@@ -97,7 +97,7 @@ def plot_cdsends(rbp, cdsends, output_file, col,
                       left = left,
                       right = right,
                       distribution = False,
-                      csv = True)
+                      csv = csv)
     
 def plot_a3ss(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
     three_upstream = {}
