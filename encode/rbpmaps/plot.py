@@ -28,18 +28,14 @@ __version__ = 0.1
 __date__ = '2016-5-5'
 __updated__ = '2016-5-5'
 
-def normalize(densities, min_density_threshold,
-              output_file = None):
+def normalize(densities, min_density_threshold):
     
     densities = densities.replace(-1, np.nan)   
     df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
     
-    if(output_file != None):
-        df.to_csv(output_file)
-
-    return df.div(df.sum(axis=1), axis=0).mean()
+    return df, df.div(df.sum(axis=1), axis=0).mean()
 
 def normalize_with_input(densities, input_densities,
                          min_density_threshold, output_file = None):
@@ -62,7 +58,8 @@ def plot_txstarts(rbp,txstarts, output_file, col,
                       label = label,
                       left = left,
                       right = right,
-                      distribution = False)
+                      distribution = False,
+                      csv = True)
 
 def plot_txends(rbp,txends, output_file, col,
                 label, left, right):
@@ -74,7 +71,8 @@ def plot_txends(rbp,txends, output_file, col,
                       label = label,
                       left = left,
                       right = right,
-                      distribution = False)
+                      distribution = False,
+                      csv = True)
 def plot_cdsstarts(rbp, cdsstarts, output_file, col,
                    label, left, right):
     
@@ -85,7 +83,8 @@ def plot_cdsstarts(rbp, cdsstarts, output_file, col,
                       label = label,
                       left = left,
                       right = right,
-                      distribution = False)
+                      distribution = False,
+                      csv = True)
 
 def plot_cdsends(rbp, cdsends, output_file, col,
                  label, left, right):
@@ -97,7 +96,8 @@ def plot_cdsends(rbp, cdsends, output_file, col,
                       label = label,
                       left = left,
                       right = right,
-                      distribution = False)
+                      distribution = False,
+                      csv = True)
     
 def plot_a3ss(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color):
     three_upstream = {}
@@ -191,24 +191,14 @@ def plot_se(rbp, miso_file, output_file,
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
         
-        if(csv):
-            intermediate_matrices = ["{}_3p_upstream.csv".format(os.path.splitext(output_file)[0]),
-                                     "{}_5p_skipped.csv".format(os.path.splitext(output_file)[0]),
-                                     "{}_3p_skipped.csv".format(os.path.splitext(output_file)[0]),
-                                     "{}_5p_downstream.csv".format(os.path.splitext(output_file)[0])
-                                    ]
-        three_upstream_normed = normalize(three_upstream,
-                                          min_density_threshold,
-                                          intermediate_matrices[0])
-        five_skipped_normed = normalize(five_skipped,
-                                        min_density_threshold,
-                                        intermediate_matrices[1])
-        three_skipped_normed = normalize(three_skipped,
-                                         min_density_threshold,
-                                         intermediate_matrices[2])
-        five_downstream_normed = normalize(five_downstream,
-                                           min_density_threshold,
-                                           intermediate_matrices[3])
+        three_upstream_df, three_upstream_normed = normalize(three_upstream,
+                                          min_density_threshold)
+        five_skipped_df, five_skipped_normed = normalize(five_skipped,
+                                        min_density_threshold)
+        three_skipped_df, three_skipped_normed = normalize(three_skipped,
+                                         min_density_threshold)
+        five_downstream_df, five_downstream_normed = normalize(five_downstream,
+                                           min_density_threshold)
         
         all_regions = pd.concat([three_upstream_normed,five_skipped_normed,three_skipped_normed,five_downstream_normed])
         
@@ -217,7 +207,11 @@ def plot_se(rbp, miso_file, output_file,
             five_skipped_normed.to_csv("{}_5p_skipped_normed_means.csv".format(os.path.splitext(output_file)[0]))
             three_skipped_normed.to_csv("{}_3p_skipped_normed_means.csv".format(os.path.splitext(output_file)[0]))
             five_downstream_normed.to_csv("{}_5p_downstream_normed_means.csv".format(os.path.splitext(output_file)[0]))
-
+            
+            three_upstream_df.to_csv("{}_3p_upstream.csv".format(os.path.splitext(output_file)[0]))
+            five_skipped_df.to_csv("{}_5p_skipped.csv".format(os.path.splitext(output_file)[0]))
+            three_skipped_df.to_csv("{}_3p_skipped.csv".format(os.path.splitext(output_file)[0]))
+            five_downstream_df.to_csv("{}_5p_downstream.csv".format(os.path.splitext(output_file)[0]))
             all_regions.to_csv(os.path.splitext(output_file)[0]+'.allmeans.txt')
         
     plot_four_frame(three_upstream_normed,
@@ -322,7 +316,8 @@ def plot_single_frame(rbp, bed_tool,
                       points = True,
                       norm = True,
                       verbose = True,
-                      min_read_density_sum = 0):
+                      min_read_density_sum = 0,
+                      csv = True):
     """
     Plots a single frame RBP map
     
@@ -344,7 +339,7 @@ def plot_single_frame(rbp, bed_tool,
         distribution: if feature includes multi-length regions, we must scale from 0-100(%). This must be True
         points: True if a feature is a single nucleotide (default), False if feature is a region
         norm: True if plotting a normalized RBP map, otherwise 
-        verbose: output density matrix, normalized density matrix, and all PDF means
+        csv: output density matrix, normalized density matrix, and all PDF means
         min_read_density_sum: for each region, only report regions whose minimum density sum > min_read_density_sum
     Returns:
         Ax
@@ -374,13 +369,13 @@ def plot_single_frame(rbp, bed_tool,
         ax = plt.gca()
     
     
-    density_normed = normalize(densities,
-                               min_read_density_sum,
-                               output_file.replace('.svg','normed_density_matrix.csv'))
-    
-    if(verbose):
-        density_normed.to_csv(output_file.replace('.svg','.allmeans.txt'))
-        densities.to_csv(output_file.replace('.svg','.density_matrix.csv'))
+    density_df, density_normed = normalize(densities,
+                               min_read_density_sum)
+        
+    if(csv):
+        density_df.to_csv('{}.normed_density_matrix.csv'.format(os.path.splitext(output_file)[0]))
+        density_normed.to_csv('{}.allmeans.txt'.format(os.path.splitext(output_file)[0]))
+        densities.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(output_file)[0]))
         
     #ymax = ymax if ymax is not None else max(density_normed) * 1.1
     #ymin = ymin if ymin is not None else min(density_normed) * 0.9

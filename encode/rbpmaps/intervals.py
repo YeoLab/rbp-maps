@@ -19,8 +19,8 @@ def some_range(rbp, interval, left_flank = 0, right_flank = 0):
 def five_prime_site(rbp, 
                     upstream_interval, 
                     interval, 
-                    exon_offset = 50,
-                    intron_offset = 300,
+                    exon_offset,
+                    intron_offset,
                     trunc = True):
     
     exon = exon_offset
@@ -52,8 +52,8 @@ def five_prime_site(rbp,
 def three_prime_site(rbp, 
                      downstream_interval, 
                      interval, 
-                     exon_offset = 50,
-                     intron_offset = 300,
+                     exon_offset,
+                     intron_offset,
                      trunc = True):
     # [      ]-----|-----[   |   ]-----|----[   ]
 

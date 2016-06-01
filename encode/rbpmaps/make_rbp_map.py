@@ -65,7 +65,7 @@ USAGE
     parser.add_argument("-m", "--min", dest="minthreshold", help="minimum density read threshold", default=0, type = float)
     parser.add_argument("-t", "--title", dest="title", help="plot title", default=None)
     parser.add_argument("-ty", "--type", dest="type", help="--type [se, txstarts, txends, cdsstarts, cdsstops] or NONE if plotting something generic.")
-    parser.add_argument("-csv", "--csv", dest="csv", help="If true, also output intermediate csv files", action='store_true')
+    parser.add_argument("-csv", "--csv", dest="csv", help="If true, also output intermediate csv files", action='store_true', default = False)
     
     args = parser.parse_args()
  
