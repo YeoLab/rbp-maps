@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 def some_range(rbp, interval, left_flank = 0, right_flank = 0):
-    
     if interval.strand == "+":
         wiggle = rbp.values(interval.chrom, interval.start - left_flank, interval.end + right_flank, interval.strand)
     elif interval.strand == "-":

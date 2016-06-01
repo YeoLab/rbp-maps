@@ -5,6 +5,7 @@ Created on May 3, 2016
 '''
 import pyBigWig
 import numpy as np
+
 class ReadDensity():
     """
     BigWig class
@@ -18,6 +19,9 @@ class ReadDensity():
         self.name = name if name is not None else pos.replace('pos','*').replace('neg','*')
         
     def get_name(self):
+        """
+        returns name
+        """
         return self.name
     
     def values(self, chrom, start, end, strand):
@@ -39,6 +43,6 @@ class ReadDensity():
             else:
                 raise("Strand neither + or -")
         except RuntimeError:
-            
+            # usually occurs when no chromosome exists in the bigwig file
             return [np.NaN]*abs(start-end)
         
