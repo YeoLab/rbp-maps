@@ -48,9 +48,9 @@ def normalize_with_input(densities, input_densities,
     if(output_file):
         df.to_csv(output_file)
         
-def plot_txstarts(rbp,txstarts, output_file, col,
+def plot_txstarts(rbp,annotation, output_file, col,
                   label, left, right, csv):
-    
+    txstarts = bt.BedTool(annotation)
     plot_single_frame(rbp,
                       txstarts,
                       output_file,
@@ -61,9 +61,9 @@ def plot_txstarts(rbp,txstarts, output_file, col,
                       distribution = False,
                       csv = csv)
 
-def plot_txends(rbp,txends, output_file, col,
+def plot_txends(rbp,annotation, output_file, col,
                 label, left, right, csv):
-    
+    txends = bt.BedTool(annotation)
     plot_single_frame(rbp,
                       txends,
                       output_file,
@@ -73,9 +73,9 @@ def plot_txends(rbp,txends, output_file, col,
                       right = right,
                       distribution = False,
                       csv = csv)
-def plot_cdsstarts(rbp, cdsstarts, output_file, col,
+def plot_cdsstarts(rbp, annotation, output_file, col,
                    label, left, right, csv):
-    
+    cdsstarts = bt.BedTool(annotation)
     plot_single_frame(rbp,
                       cdsstarts,
                       output_file,
@@ -86,9 +86,9 @@ def plot_cdsstarts(rbp, cdsstarts, output_file, col,
                       distribution = False,
                       csv = csv)
 
-def plot_cdsends(rbp, cdsends, output_file, col,
+def plot_cdsends(rbp, annotation, output_file, col,
                  label, left, right, csv):
-    
+    cdsends = bt.BedTool(annotation)
     plot_single_frame(rbp,
                       cdsends,
                       output_file,

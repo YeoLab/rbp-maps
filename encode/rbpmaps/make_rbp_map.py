@@ -89,41 +89,40 @@ USAGE
                      min_density_threshold = args.minthreshold,
                      csv = args.csv)
     elif(args.type == 'txstarts'):
-        annotations = bt.BedTool(args.annotation)
-        plot.plot_txstarts(rbp, 'txstarts', 
+        plot.plot_txstarts(rbp, 
+                           args.annotation, 
                            args.output, 
                            sns.color_palette("hls", 8)[args.color], 
                            args.label,
                            args.left, args.right,
                            csv = args.csv)
     elif(args.type == 'txends'):
-        annotations = bt.BedTool(args.annotation)
-        plot.plot_txends(rbp, 'txends', 
-                           args.output, 
-                           sns.color_palette("hls", 8)[args.color], 
-                           args.label,
-                           args.left, args.right,
-                           csv = args.csv)
+        plot.plot_txends(rbp, 
+                         args.annotation, 
+                         args.output, 
+                         sns.color_palette("hls", 8)[args.color], 
+                         args.label,
+                         args.left, args.right,
+                         csv = args.csv)
     elif(args.type == 'cdsstarts'):
-        annotations = bt.BedTool(args.annotation)
-        plot.plot_cdsstarts(rbp, 'cdsstarts', 
-                           args.output, 
-                           sns.color_palette("hls", 8)[args.color], 
-                           args.label,
-                           args.left, args.right,
-                           csv = args.csv)
+        plot.plot_cdsstarts(rbp, 
+                            args.annotation, 
+                            args.output, 
+                            sns.color_palette("hls", 8)[args.color], 
+                            args.label,
+                            args.left, args.right,
+                            csv = args.csv)
     elif(args.type == 'cdsends'):
-        annotations = bt.BedTool(args.annotation)
-        plot.plot_cdsends(rbp, 'cdsends', 
-                           args.output, 
-                           sns.color_palette("hls", 8)[args.color],
-                           args.label,
-                           args.left, args.right,
-                           csv = args.csv)
+        plot.plot_cdsends(rbp, 
+                          args.annotation, 
+                          args.output, 
+                          sns.color_palette("hls", 8)[args.color],
+                          args.label,
+                          args.left, args.right,
+                          csv = args.csv)
     else:
-        annotations = bt.BedTool(args.annotation)
         plot.plot_single_frame(rbp,
-                               annotations,
+                               args.annotation,
                                args.output,
                                color = sns.color_palette("hls", 8)[args.color],
                                label = args.label,
