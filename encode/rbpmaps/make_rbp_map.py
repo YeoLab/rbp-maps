@@ -62,75 +62,76 @@ USAGE
     parser.add_argument("-d", "--dist", dest="dist", help="specifiy this flag if trying to plot regions of varying length", action='store_true')
     parser.add_argument("-nu", "--nucl", dest="dist", help="if regions are of same length, we can plot nucleotide resolution (conflicts with -d)", action='store_false')
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
-    parser.add_argument("-m", "--min", dest="minthreshold", help="minimum density read threshold", default=0, type = int)
+    parser.add_argument("-m", "--min", dest="minthreshold", help="minimum density read threshold", default=0, type = float)
     parser.add_argument("-t", "--title", dest="title", help="plot title", default=None)
     parser.add_argument("-ty", "--type", dest="type", help="--type [se, txstarts, txends, cdsstarts, cdsstops] or NONE if plotting something generic.")
     parser.add_argument("-csv", "--csv", dest="csv", help="If true, also output intermediate csv files", action='store_true')
     
     args = parser.parse_args()
-    outfile = args.output
-    positive_bw = args.positive
-    negative_bw = args.negative
-    annotation = args.annotation
-    min_read_threshold = args.minthreshold
-    
-    col = sns.color_palette("hls", 8)[args.color]
-    lab = args.label
-    mytitle = args.title
+ 
     
     if args.flipped == True:
-        print("flipped pos={}, neg={}.".format(negative_bw,positive_bw))
-        rbp = ReadDensity.ReadDensity(pos=negative_bw,
-                                      neg=positive_bw)
+        print("flipped pos={}, neg={}.".format(args.negative,args.positive))
+        rbp = ReadDensity.ReadDensity(pos=args.negative,
+                                      neg=args.positive)
     else:
-        rbp = ReadDensity.ReadDensity(pos=positive_bw,
-                                      neg=negative_bw)
+        rbp = ReadDensity.ReadDensity(pos=args.positive,
+                                      neg=args.negative)
     
     if(args.type == 'se'):
         plot.plot_se(rbp, 
-                     annotation, 
-                     outfile, 
+                     args.annotation, 
+                     args.output, 
                      exon_offset = args.exonoffset, 
                      intron_offset = args.intronoffset, 
-                     title = mytitle, 
-                     color = col,
+                     title = args.title, 
+                     color = sns.color_palette("hls", 8)[args.color],
+                     min_density_threshold = args.minthreshold,
                      csv = args.csv)
     elif(args.type == 'txstarts'):
-        annotations = bt.BedTool(annotation)
+        annotations = bt.BedTool(args.annotation)
         plot.plot_txstarts(rbp, 'txstarts', 
-                           outfile, col, lab,
+                           args.output, 
+                           sns.color_palette("hls", 8)[args.color], 
+                           args.label,
                            args.left, args.right,
                            csv = args.csv)
     elif(args.type == 'txends'):
-        annotations = bt.BedTool(annotation)
+        annotations = bt.BedTool(args.annotation)
         plot.plot_txends(rbp, 'txends', 
-                           outfile, col, lab,
+                           args.output, 
+                           sns.color_palette("hls", 8)[args.color], 
+                           args.label,
                            args.left, args.right,
                            csv = args.csv)
     elif(args.type == 'cdsstarts'):
-        annotations = bt.BedTool(annotation)
+        annotations = bt.BedTool(args.annotation)
         plot.plot_cdsstarts(rbp, 'cdsstarts', 
-                           outfile, col, lab,
+                           args.output, 
+                           sns.color_palette("hls", 8)[args.color], 
+                           args.label,
                            args.left, args.right,
                            csv = args.csv)
     elif(args.type == 'cdsends'):
-        annotations = bt.BedTool(annotation)
+        annotations = bt.BedTool(args.annotation)
         plot.plot_cdsends(rbp, 'cdsends', 
-                           outfile, col, lab,
+                           args.output, 
+                           sns.color_palette("hls", 8)[args.color],
+                           args.label,
                            args.left, args.right,
                            csv = args.csv)
     else:
-        annotations = bt.BedTool(annotation)
+        annotations = bt.BedTool(args.annotation)
         plot.plot_single_frame(rbp,
                                annotations,
-                               outfile,
-                               color = col,
-                               label = lab,
+                               args.output,
+                               color = sns.color_palette("hls", 8)[args.color],
+                               label = args.label,
                                left = args.left,
                                right = args.right,
                                distribution = args.dist,
-                               title = mytitle,
-                               min_read_density_sum = min_read_threshold,
+                               title = args.title,
+                               min_read_density_sum = args.minthreshold,
                                csv = args.csv)
 if __name__ == "__main__":
     main()
