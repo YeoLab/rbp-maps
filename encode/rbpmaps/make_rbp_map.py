@@ -64,7 +64,7 @@ USAGE
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
     parser.add_argument("-m", "--min", dest="minthreshold", help="minimum density read threshold", default=0, type = int)
     parser.add_argument("-t", "--title", dest="title", help="plot title", default=None)
-    parser.add_argument("-ty", "--type", dest="type", help="--type [se, txstarts, txends, cdsstarts, cdsstops]")
+    parser.add_argument("-ty", "--type", dest="type", help="--type [se, txstarts, txends, cdsstarts, cdsstops] or NONE if plotting something generic.")
     
     args = parser.parse_args()
     outfile = args.output
@@ -72,9 +72,6 @@ USAGE
     negative_bw = args.negative
     annotation = args.annotation
     min_read_threshold = args.minthreshold
-    
-    left_mar = args.left
-    right_mar = args.right
     
     col = sns.color_palette("hls", 8)[args.color]
     lab = args.label
@@ -92,30 +89,30 @@ USAGE
         plot.plot_se(rbp, 
                      annotation, 
                      outfile, 
-                     exon_offset = left_mar, 
-                     intron_offset = right_mar, 
+                     exon_offset = args.exonoffset, 
+                     intron_offset = args.intronoffset, 
                      title = mytitle, 
                      color = col)
     elif(args.type == 'txstarts'):
         annotations = bt.BedTool(annotation)
         plot.plot_txstarts(rbp, 'txstarts', 
                            outfile, col, lab,
-                           left_mar, right_mar)
+                           args.left, args.right)
     elif(args.type == 'txends'):
         annotations = bt.BedTool(annotation)
         plot.plot_txends(rbp, 'txends', 
                            outfile, col, lab,
-                           left_mar, right_mar)
+                           args.left, args.right)
     elif(args.type == 'cdsstarts'):
         annotations = bt.BedTool(annotation)
         plot.plot_cdsstarts(rbp, 'cdsstarts', 
                            outfile, col, lab,
-                           left_mar, right_mar)
+                           args.left, args.right)
     elif(args.type == 'cdsends'):
         annotations = bt.BedTool(annotation)
         plot.plot_cdsends(rbp, 'cdsends', 
                            outfile, col, lab,
-                           left_mar, right_mar)
+                           args.left, args.right)
     else:
         annotations = bt.BedTool(annotation)
         plot.plot_single_frame(rbp,
@@ -123,8 +120,8 @@ USAGE
                                outfile,
                                color = col,
                                label = lab,
-                               left = left_mar,
-                               right = right_mar,
+                               left = args.left,
+                               right = args.right,
                                distribution = args.dist,
                                title = mytitle,
                                min_read_density_sum = min_read_threshold)
