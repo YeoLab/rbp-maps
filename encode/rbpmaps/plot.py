@@ -36,7 +36,7 @@ def normalize(densities, min_density_threshold,
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
     
-    if(output_file):
+    if(output_file != None):
         df.to_csv(output_file)
 
     return df.div(df.sum(axis=1), axis=0).mean()
@@ -114,12 +114,14 @@ def plot_a3ss(rbp,miso_file,output_file,exon_offset,intron_offset,mytitle,color)
 
 def plot_se(rbp, miso_file, output_file,
             exon_offset, intron_offset,
-            title, color):
+            title, color, min_density_threshold,
+            csv):
     
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
     five_downstream = {}
+    intermediate_matrices = [None, None, None, None]
     
     with open(miso_file) as f:
         # f.next() # for title
@@ -189,20 +191,34 @@ def plot_se(rbp, miso_file, output_file,
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
         
-        three_upstream_normed = normalize(three_upstream,0,"{}_3p_upstream.csv".format(output_file.replace('.svg','')))
-        five_skipped_normed = normalize(five_skipped,0,"{}_5p_skipped.csv".format(output_file.replace('.svg','')))
-        three_skipped_normed = normalize(three_skipped,0,"{}_3p_skipped.csv".format(output_file.replace('.svg','')))
-        five_downstream_normed = normalize(five_downstream,0,"{}_5p_downstream.csv".format(output_file.replace('.svg','')))
+        if(csv):
+            intermediate_matrices = ["{}_3p_upstream.csv".format(os.path.splitext(output_file)[0]),
+                                     "{}_5p_skipped.csv".format(os.path.splitext(output_file)[0]),
+                                     "{}_3p_skipped.csv".format(os.path.splitext(output_file)[0]),
+                                     "{}_5p_downstream.csv".format(os.path.splitext(output_file)[0])
+                                    ]
+        three_upstream_normed = normalize(three_upstream,
+                                          min_density_threshold,
+                                          intermediate_matrices[0])
+        five_skipped_normed = normalize(five_skipped,
+                                        min_density_threshold,
+                                        intermediate_matrices[1])
+        three_skipped_normed = normalize(three_skipped,
+                                         min_density_threshold,
+                                         intermediate_matrices[2])
+        five_downstream_normed = normalize(five_downstream,
+                                           min_density_threshold,
+                                           intermediate_matrices[3])
         
         all_regions = pd.concat([three_upstream_normed,five_skipped_normed,three_skipped_normed,five_downstream_normed])
         
-        
-        three_upstream_normed.to_csv("{}_3p_upstream_normed_means.csv".format(output_file.replace('.svg','')))
-        five_skipped_normed.to_csv("{}_5p_skipped_normed_means.csv".format(output_file.replace('.svg','')))
-        three_skipped_normed.to_csv("{}_3p_skipped_normed_means.csv".format(output_file.replace('.svg','')))
-        five_downstream_normed.to_csv("{}_5p_downstream_normed_means.csv".format(output_file.replace('.svg','')))
+        if(csv):
+            three_upstream_normed.to_csv("{}_3p_upstream_normed_means.csv".format(os.path.splitext(output_file)[0]))
+            five_skipped_normed.to_csv("{}_5p_skipped_normed_means.csv".format(os.path.splitext(output_file)[0]))
+            three_skipped_normed.to_csv("{}_3p_skipped_normed_means.csv".format(os.path.splitext(output_file)[0]))
+            five_downstream_normed.to_csv("{}_5p_downstream_normed_means.csv".format(os.path.splitext(output_file)[0]))
 
-        all_regions.to_csv(output_file.replace('.svg','.allmeans.txt'))
+            all_regions.to_csv(os.path.splitext(output_file)[0]+'.allmeans.txt')
         
     plot_four_frame(three_upstream_normed,
                     five_skipped_normed,

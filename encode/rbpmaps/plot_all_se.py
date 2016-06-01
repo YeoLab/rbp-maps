@@ -58,6 +58,7 @@ def main(argv=None): # IGNORE:C0111
     outdir = args.output
     miso_file = args.se
     errorlog = open('error.log','a')
+    
     with open(input_file,'r') as f:
         for line in f:
             try:
@@ -67,14 +68,19 @@ def main(argv=None): # IGNORE:C0111
                 negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
                 print("Processing {}".format(my_name))
-                rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
-                plot.plot_se(rbp, 
-                             miso_file, 
-                             os.path.join(outdir,my_name)+".svg", 
-                             50, 
-                             300, 
-                             my_name, 
-                             sns.color_palette("hls", 8)[5])
+                rbp = ReadDensity.ReadDensity(pos=positive,
+                                              neg=negative,
+                                              name=my_name)
+                
+                plot.plot_se(rbp = rbp, 
+                             miso_file = miso_file, 
+                             output_file = os.path.join(outdir,my_name)+".svg", 
+                             exon_offset = 50, 
+                             intron_offset = 300, 
+                             title = my_name, 
+                             color = sns.color_palette("hls", 8)[5],
+                             min_density_threshold = 0,
+                             csv = True)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

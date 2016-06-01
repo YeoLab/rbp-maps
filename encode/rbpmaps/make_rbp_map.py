@@ -65,6 +65,7 @@ USAGE
     parser.add_argument("-m", "--min", dest="minthreshold", help="minimum density read threshold", default=0, type = int)
     parser.add_argument("-t", "--title", dest="title", help="plot title", default=None)
     parser.add_argument("-ty", "--type", dest="type", help="--type [se, txstarts, txends, cdsstarts, cdsstops] or NONE if plotting something generic.")
+    parser.add_argument("-csv", "--csv", dest="csv", help="If true, also output intermediate csv files", action='store_true')
     
     args = parser.parse_args()
     outfile = args.output
@@ -92,27 +93,32 @@ USAGE
                      exon_offset = args.exonoffset, 
                      intron_offset = args.intronoffset, 
                      title = mytitle, 
-                     color = col)
+                     color = col,
+                     csv = args.csv)
     elif(args.type == 'txstarts'):
         annotations = bt.BedTool(annotation)
         plot.plot_txstarts(rbp, 'txstarts', 
                            outfile, col, lab,
-                           args.left, args.right)
+                           args.left, args.right,
+                           csv = args.csv)
     elif(args.type == 'txends'):
         annotations = bt.BedTool(annotation)
         plot.plot_txends(rbp, 'txends', 
                            outfile, col, lab,
-                           args.left, args.right)
+                           args.left, args.right,
+                           csv = args.csv)
     elif(args.type == 'cdsstarts'):
         annotations = bt.BedTool(annotation)
         plot.plot_cdsstarts(rbp, 'cdsstarts', 
                            outfile, col, lab,
-                           args.left, args.right)
+                           args.left, args.right,
+                           csv = args.csv)
     elif(args.type == 'cdsends'):
         annotations = bt.BedTool(annotation)
         plot.plot_cdsends(rbp, 'cdsends', 
                            outfile, col, lab,
-                           args.left, args.right)
+                           args.left, args.right,
+                           csv = args.csv)
     else:
         annotations = bt.BedTool(annotation)
         plot.plot_single_frame(rbp,
@@ -124,6 +130,7 @@ USAGE
                                right = args.right,
                                distribution = args.dist,
                                title = mytitle,
-                               min_read_density_sum = min_read_threshold)
+                               min_read_density_sum = min_read_threshold,
+                               csv = args.csv)
 if __name__ == "__main__":
     main()
