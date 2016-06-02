@@ -94,6 +94,7 @@ USAGE
                            output_file = args.output, 
                            color = sns.color_palette("hls", 8)[args.color], 
                            label = 'txstarts',
+                           title = args.title,
                            left = args.left, 
                            right = args.right,
                            csv = args.csv)
@@ -103,6 +104,7 @@ USAGE
                          output_file = args.output, 
                          color = sns.color_palette("hls", 8)[args.color], 
                          label = 'txends',
+                         title = args.title,
                          left = args.left, 
                          right = args.right,
                          csv = args.csv)
@@ -112,6 +114,7 @@ USAGE
                             output_file = args.output, 
                             color = sns.color_palette("hls", 8)[args.color], 
                             label = 'cdsstarts',
+                            title = args.title,
                             left = args.left, 
                             right = args.right,
                             csv = args.csv)
@@ -121,6 +124,7 @@ USAGE
                           output_file = args.output, 
                           color = sns.color_palette("hls", 8)[args.color],
                           label = 'cdsends',
+                          title = args.title,
                           left = args.left, 
                           right = args.right,
                           csv = args.csv)

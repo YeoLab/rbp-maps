@@ -9,6 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # from rbpmaps import intervals
 import intervals
+import itertools
 import ReadDensity
 import numpy as np
 import pandas as pd
@@ -48,52 +49,56 @@ def normalize_with_input(densities, input_densities,
     if(output_file):
         df.to_csv(output_file)
         
-def plot_txstarts(rbp,annotation, output_file, color,
-                  label, left, right, csv):
+def plot_txstarts(rbp, annotation, output_file, color,
+                  title, label, left, right, csv):
     txstarts = bt.BedTool(annotation)
-    plot_single_frame(rbp,
-                      txstarts,
-                      output_file,
+    plot_single_frame(rbp = rbp,
+                      bed_tool = txstarts,
+                      output_file = output_file,
                       color = color,
                       label = label,
+                      title = title,
                       left = left,
                       right = right,
                       distribution = False,
                       csv = csv)
 
-def plot_txends(rbp,annotation, output_file, color,
-                label, left, right, csv):
+def plot_txends(rbp, annotation, output_file, color,
+                title, label, left, right, csv):
     txends = bt.BedTool(annotation)
-    plot_single_frame(rbp,
-                      txends,
-                      output_file,
+    plot_single_frame(rbp = rbp,
+                      bed_tool = txends,
+                      output_file = output_file,
                       color = color,
                       label = label,
+                      title = title,
                       left = left,
                       right = right,
                       distribution = False,
                       csv = csv)
 def plot_cdsstarts(rbp, annotation, output_file, color,
-                   label, left, right, csv):
+                   title, label, left, right, csv):
     cdsstarts = bt.BedTool(annotation)
-    plot_single_frame(rbp,
-                      cdsstarts,
-                      output_file,
+    plot_single_frame(rbp = rbp,
+                      bed_tool = cdsstarts,
+                      output_file = output_file,
                       color = color,
                       label = label,
+                      title = title,
                       left = left,
                       right = right,
                       distribution = False,
                       csv = csv)
 
 def plot_cdsends(rbp, annotation, output_file, color,
-                 label, left, right, csv):
+                 title, label, left, right, csv):
     cdsends = bt.BedTool(annotation)
-    plot_single_frame(rbp,
-                      cdsends,
-                      output_file,
+    plot_single_frame(rbp = rbp,
+                      bed_tool = cdsends,
+                      output_file = output_file,
                       color = color,
                       label = label,
+                      title = title,
                       left = left,
                       right = right,
                       distribution = False,
@@ -231,11 +236,16 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i+n].mean()
 
+def multiply(n):
+    return [n]*100
+
 def get_distribution(wiggle):
     """
     given a list of arbitrary length > 100, 
     normalize them into a list of length 100
     """
+    if len(wiggle) < 100:
+        wiggle = itertools.chain.from_iterable([multiply(w) for w in wiggle])
     wiggle = (chunks(wiggle,len(wiggle)/100))
     wiggle = pd.Series(wiggle)
     if len(wiggle) > 100:
@@ -315,7 +325,6 @@ def plot_single_frame(rbp, bed_tool,
                       distribution = False,
                       points = True,
                       norm = True,
-                      verbose = True,
                       min_read_density_sum = 0,
                       csv = True):
     """
@@ -360,49 +369,34 @@ def plot_single_frame(rbp, bed_tool,
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
             if(distribution == True):
-                wiggle = distribution(wiggle)
+                wiggle = get_distribution(wiggle)
                 
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
     # f, ax = plt.subplots()
-    if ax is None:
-        ax = plt.gca()
-    
+    ax = plt.gca()
     
     density_df, density_normed = normalize(densities,
                                min_read_density_sum)
-        
-    if(csv):
-        density_df.to_csv('{}.normed_density_matrix.csv'.format(os.path.splitext(output_file)[0]))
-        density_normed.to_csv('{}.allmeans.txt'.format(os.path.splitext(output_file)[0]))
-        densities.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(output_file)[0]))
-        
-    #ymax = ymax if ymax is not None else max(density_normed) * 1.1
-    #ymin = ymin if ymin is not None else min(density_normed) * 0.9
-    """
-    shaded_area = patches.Rectangle(((left-left_shade),ymin),
-                                    width=(left_shade+right_shade),
-                                    height=ymax,
-                                    alpha=0.3,
-                                    color="orange",label=shade_label)
-    ax.add_patch(shaded_area) 
-    """
-
-    ax.plot(density_normed,color=color)
+    
+    ax.plot(density_normed , color = color)
     
     if points == True:
         if distribution == True: # scale from 0 to 100
-            ax.set_xticklabels(['{}'.format(label),'{}'.format(label)])
+            ax.set_xticklabels(['0% {}'.format(label),'100% {}'.format(label)])
             ax.set_xticks([0,99])
             ax.set_xlim(0,99)
-        elif left == 0 and right == 0:
-            pass
         elif left == right: # single point with equadistant flanks
-            ax.set_xticklabels(['upstream','{}'.format(label),'downstream'])
+            ax.set_xticklabels(['upstream ({} nt)'.format(left),
+                                '{}'.format(label),
+                                'downstream ({} nt)'.format(right)])
             ax.set_xticks([0,left,left+right])
             ax.axvline(left,alpha=0.3)
         else: 
-            ax.set_xticklabels(['upstream','{}'.format(label),'{}'.format(label),'downstream'])
+            ax.set_xticklabels(['upstream ({} nt)'.format(left),
+                                '{}'.format(label),
+                                '{}'.format(label),
+                                'downstream ({} nt)'.format(right)])
             ax.set_xticks([0,left,right,left+right])
             ax.axvline(left,alpha=0.3)
             ax.axvline(right,alpha=0.3)
@@ -410,8 +404,10 @@ def plot_single_frame(rbp, bed_tool,
     ax.set_ylabel('Mean Read Density')
     ax.set_title(mytitle,y=1.03)
     
+    ymax = ymax if ymax is not None else max(density_normed) * 1.1
+    ymin = ymin if ymin is not None else min(density_normed) * 0.9
     ax.set_ylim([ymin,ymax])
-    ax.set_xlim([0,abs(interval.start - interval.end)])
+    # ax.set_xlim([0,abs(interval.start - interval.end)])
     
     """
     if(shade_label):
@@ -423,7 +419,23 @@ def plot_single_frame(rbp, bed_tool,
         plt.savefig(output_file)
     
     ax.clear()
-    return ax
+        
+    if(csv):
+        density_df.to_csv('{}.normed_density_matrix.csv'.format(os.path.splitext(output_file)[0]))
+        density_normed.to_csv('{}.allmeans.txt'.format(os.path.splitext(output_file)[0]))
+        densities.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(output_file)[0]))
+        
+    
+    """
+    shaded_area = patches.Rectangle(((left-left_shade),ymin),
+                                    width=(left_shade+right_shade),
+                                    height=ymax,
+                                    alpha=0.3,
+                                    color="orange",label=shade_label)
+    ax.add_patch(shaded_area) 
+    """
+    
+    return density_normed
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
