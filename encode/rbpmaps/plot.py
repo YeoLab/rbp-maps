@@ -245,7 +245,7 @@ def get_distribution(wiggle):
     normalize them into a list of length 100
     """
     if len(wiggle) < 100:
-        wiggle = itertools.chain.from_iterable([multiply(w) for w in wiggle])
+        wiggle = list(itertools.chain.from_iterable([multiply(w) for w in wiggle]))
     wiggle = (chunks(wiggle,len(wiggle)/100))
     wiggle = pd.Series(wiggle)
     if len(wiggle) > 100:
