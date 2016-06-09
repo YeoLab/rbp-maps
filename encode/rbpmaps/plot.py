@@ -385,7 +385,7 @@ def plot_single_frame(rbp, bed_tool,
         wiggle = intervals.some_range(rbp, interval, left, right)
         wiggle = pd.Series(wiggle)
         if not all(np.isnan(wiggle)):
-            wiggle.to_csv('testfiles/204_01_rbfox2/longregion.rawdensities.csv',sep=',',index=None)
+            # wiggle.to_csv('testfiles/204_01_rbfox2/longregion.rawdensities.csv',sep=',',index=None)
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
             # print(wiggle)
