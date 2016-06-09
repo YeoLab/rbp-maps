@@ -1,3 +1,4 @@
+
 '''
 Created on May 3, 2016
 
@@ -19,6 +20,7 @@ import matplotlib.patches as patches
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from gscripts.general import dataviz
+from multiprocessing import Pool
 
 import sys
 import os
@@ -250,6 +252,24 @@ def get_distribution(wiggle):
     wiggle = pd.Series(wiggle)
     return wiggle
 
+def get_distribution2(wiggle):
+    dist = [0]*100
+
+    x = 0
+    step = 0.01
+    y = 0
+    
+    for pos, value in enumerate(wiggle):
+        if(float(pos)/len(wiggle)) < step:
+            dist[x] = dist[x] + value
+            y = y + 1
+        else:
+            dist[x] = dist[x] / y
+            step = step + 0.01
+            x = x + 1
+            y = 0
+    
+    return pd.Series(dist)
 def get_bed_tool_from_miso(miso_annotation):
     """
     takes a single miso annotation in the form of:
@@ -310,7 +330,7 @@ def plot_four_frame(region1, region2, region3, region4,
         # ax.set_xticklabels(np.arange(-intron_offset, exon_offset+1, 50))
         ax.set_yticklabels([])
         plt.suptitle(mytitle,y=1.03)
-        
+
 def plot_single_frame(rbp, bed_tool, 
                       output_file = None, color = 'red',
                       label = None, title = None,
@@ -355,7 +375,7 @@ def plot_single_frame(rbp, bed_tool,
     densities = []
     
     for interval in bed_tool:
-        print(interval)
+        # print(interval)
         if abs(interval.start - interval.end) > 1:
             # print abs(interval.start - interval.end)
             points = False
@@ -368,9 +388,9 @@ def plot_single_frame(rbp, bed_tool,
             wiggle.to_csv('testfiles/204_01_rbfox2/longregion.rawdensities.csv',sep=',',index=None)
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
-            print(wiggle)
+            # print(wiggle)
             if(distribution == True):
-                wiggle = get_distribution(wiggle)
+                wiggle = get_distribution2(wiggle)
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
     
