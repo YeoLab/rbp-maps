@@ -269,7 +269,7 @@ def get_distribution2(wiggle):
             step = step + 0.01
             x = x + 1
             y = 0
-    
+    dist[x] = dist[x] / y
     return pd.Series(dist)
 def get_bed_tool_from_miso(miso_annotation):
     """
