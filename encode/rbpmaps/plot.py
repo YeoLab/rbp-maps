@@ -245,13 +245,9 @@ def get_distribution(wiggle):
     given a list of arbitrary length > 100, 
     normalize them into a list of length 100
     """
-    if len(wiggle) < 100:
-        wiggle = list(itertools.chain.from_iterable([multiply(w) for w in wiggle]))
-    wiggle = (chunks(wiggle,len(wiggle)/100))
+    wiggle = list(itertools.chain.from_iterable([multiply(w) for w in wiggle]))
+    wiggle = (chunks(pd.Series(wiggle),len(wiggle)/100))
     wiggle = pd.Series(wiggle)
-    if len(wiggle) > 100:
-        wiggle[99] = (wiggle[99] + wiggle[100])/2
-        wiggle = wiggle[:100] # no really good way of doing this?
     return wiggle
 
 def get_bed_tool_from_miso(miso_annotation):
@@ -369,8 +365,10 @@ def plot_single_frame(rbp, bed_tool,
         wiggle = intervals.some_range(rbp, interval, left, right)
         wiggle = pd.Series(wiggle)
         if not all(np.isnan(wiggle)):
+            wiggle.to_csv('testfiles/204_01_rbfox2/longregion.rawdensities.csv',sep=',',index=None)
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
+            print(wiggle)
             if(distribution == True):
                 wiggle = get_distribution(wiggle)
             densities.append(wiggle)
