@@ -258,7 +258,8 @@ def get_distribution2(wiggle):
     x = 0
     step = 0.01
     y = 0
-    
+    if len(wiggle) < 100:
+        wiggle = pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
     for pos, value in enumerate(wiggle):
         if(float(pos)/len(wiggle)) < step:
             dist[x] = dist[x] + value
