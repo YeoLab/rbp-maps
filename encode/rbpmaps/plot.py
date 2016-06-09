@@ -78,9 +78,10 @@ def plot_txends(rbp, annotation, output_file, color,
                       csv = csv)
 def plot_cdsstarts(rbp, annotation, output_file, color,
                    title, label, left, right, csv):
-    cdsstarts = bt.BedTool(annotation)
+    
+    # cdsstarts = bt.BedTool(annotation)
     plot_single_frame(rbp = rbp,
-                      bed_tool = cdsstarts,
+                      bed_tool = annotation,
                       output_file = output_file,
                       color = color,
                       label = label,
@@ -356,7 +357,9 @@ def plot_single_frame(rbp, bed_tool,
     mytitle = rbp.get_name() if title is None else title
     count = 0
     densities = []
+    
     for interval in bed_tool:
+        print(interval)
         if abs(interval.start - interval.end) > 1:
             # print abs(interval.start - interval.end)
             points = False
@@ -370,9 +373,9 @@ def plot_single_frame(rbp, bed_tool,
             wiggle = abs(wiggle) # convert all values to positive
             if(distribution == True):
                 wiggle = get_distribution(wiggle)
-                
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
+    
     # f, ax = plt.subplots()
     ax = plt.gca()
     

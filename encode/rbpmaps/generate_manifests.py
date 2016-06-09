@@ -13,20 +13,21 @@ def generate_list_of_differentially_expressed_genes(manifest_file, kd_dir, uid, 
     uid: 204
     rep: 1
     """
-    df = pd.read_table(manifest_file)
-    #
+    df = pd.read_table(manifest_file,dtype={'uID':str,'padj':float,'log2FoldChange':float})
     control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
+    # print(control)
     rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
     csv_filestring = os.path.join(kd_dir,rbp+'_vs_'+control+".csv")
+    # print(csv_filestring)
     diffexp = pd.read_table(csv_filestring,sep=",")
-    diffexp = diffexp[(diffexp['padj'].astype(float) <= padj) & \
-                      (diffexp['log2FoldChange'].astype(float) >= log2FoldChange)]
+    diffexp = diffexp[(diffexp['padj'] <= padj) & \
+                      (diffexp['log2FoldChange'] >= log2FoldChange)]
     return list(diffexp['Unnamed: 0'])
     
 def parse_diffexp(deseq2_file):
     deseq2 = pd.read_table(deseq2_file,sep='\t')
     
-def generate_cdsstarts_manifest_from_eric(infile,outfile,feature,filter_list):
+def generate_bedfile_from_ucsc_tableformat(infile,outfile,feature,filter_list):
     """
     infile: /home/bay001/projects/maps_20160420/permanent_data/gencode.v19.chr_patch_hapl_scaff.annotation.gtf.parsed_ucsc_tableformat
     outfile: /home/bay001/projects/maps_20160420/permanent_data/cds
@@ -110,10 +111,10 @@ def generate_rep_manifests_from_eric(manifest_file, rep1output, rep2output, inpu
     inputneg.columns = ['neg']
     pd.concat([inputpos,inputneg],axis=1).to_csv(inputoutput,
                                           sep='\t',index=None,header=None)
-ann = 'testfiles/annotations/gencode.v19.chr_patch_hapl_scaff.annotation.gtf.parsed_ucsc_tableformat'
+"""ann = 'testfiles/annotations/gencode.v19.chr_patch_hapl_scaff.annotation.gtf.parsed_ucsc_tableformat'
 out = 'testfiles/annotations/tx'
 manifest_file = 'testfiles/annotations/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv'
 uid = 205
 kd_dir = 'testfiles/annotations/'
 filter_list = generate_list_of_differentially_expressed_genes(manifest_file, kd_dir, uid, padj=0.05, log2FoldChange=1.5)
-generate_cdsstarts_manifest_from_eric(ann, out,'tx',filter_list)
+"""

@@ -26,6 +26,9 @@ import plot
 import ReadDensity
 import seaborn as sns
 import pybedtools as pb
+import generate_manifests as gm
+import pandas as pd
+
 __all__ = []
 __version__ = 0.1
 __date__ = '2016-05-06'
@@ -53,16 +56,30 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-c", "--cds", dest="cds",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
+    parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
+    parser.add_argument("-m", "--manifest", dest="manifest")
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
     outdir = args.output
-    cdsstarts = pb.BedTool(args.cds)
-    errorlog = open('error.log','a')
+    
+    
+    cds_df = pd.read_table(args.cds)
+    cds_df.columns = ['chrom','start','stop','name','score','strand']
     with open(input_file,'r') as f:
         for line in f:
             try:
                 line = line.split('\t')
+                if(args.kd):
+                    uid = line[2].strip()
+                    filter_list = gm.generate_list_of_differentially_expressed_genes(
+                        args.manifest, args.kd, uid, padj=0.05, log2FoldChange=1.5)
+                    # print(cds_df[cds_df['name'].isin(filter_list)])
+                    print(filter_list)
+                    cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
+                    cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
+                else:
+                    cdsstarts = pb.BedTool().from_dataframe(cds_df)
                 if(args.flipped):
                     negative = line[0]
                     positive = line[1].strip()
@@ -73,16 +90,18 @@ def main(argv=None): # IGNORE:C0111
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
-                
+                # Generate RBP KD manifest
+
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
-                plot.plot_single_frame(rbp,
-                          cdsstarts,
-                          os.path.join(outdir,my_name)+".svg",
+                plot.plot_cdsstarts(rbp = rbp,
+                          annotation = cdsstarts,
+                          output_file = os.path.join(outdir,my_name)+".svg",
                           color = sns.color_palette("hls", 8)[4],
+                          title = os.path.join(outdir,my_name)+".csv",
                           label = "cdsStart",
                           left = 300,
                           right = 300,
-                          distribution = False)
+                          csv = False)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))
