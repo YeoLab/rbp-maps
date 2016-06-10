@@ -253,12 +253,14 @@ def get_distribution(wiggle):
     return wiggle
 
 def get_distribution2(wiggle):
+    print(len(wiggle))
     if(len(wiggle)==100): # no need to do any calculating.
         return wiggle
-    elif len(wiggle) < 100: 
-        wiggle = pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
     elif len(wiggle) == 1:
         return pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
+    elif len(wiggle) < 100: 
+        wiggle = pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
+    
     dist = [0]*100
     x = 0
     step = 0.01
