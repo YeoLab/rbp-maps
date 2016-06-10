@@ -253,24 +253,30 @@ def get_distribution(wiggle):
     return wiggle
 
 def get_distribution2(wiggle):
+    if(len(wiggle)==100): # no need to do any calculating.
+        return wiggle
+    elif len(wiggle) < 100: 
+        wiggle = pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
+    elif len(wiggle) == 1:
+        return pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
     dist = [0]*100
-
     x = 0
     step = 0.01
     y = 0
-    if len(wiggle) < 100:
-        wiggle = pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
+    
     for pos, value in enumerate(wiggle):
-        if(float(pos)/len(wiggle)) < step:
-            dist[x] = dist[x] + value
+        if(float(pos+1)/len(wiggle)) < step:
             y = y + 1
+            dist[x] = dist[x] + value            
         else:
             dist[x] = dist[x] / y
+            
             step = step + 0.01
             x = x + 1
-            y = 0
+            dist[x] = value
+            y = 1
     dist[x] = dist[x] / y
-    return pd.Series(dist)
+    return(pd.Series(dist))
 def get_bed_tool_from_miso(miso_annotation):
     """
     takes a single miso annotation in the form of:
