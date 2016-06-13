@@ -386,7 +386,7 @@ def plot_single_frame(rbp, bed_tool,
     """
     mytitle = rbp.get_name() if title is None else title
     count = 0
-    densities = []
+    densities = {}
     
     for interval in bed_tool:
         # print(interval)
@@ -405,9 +405,9 @@ def plot_single_frame(rbp, bed_tool,
             # print(wiggle)
             if(distribution == True):
                 wiggle = get_distribution(wiggle)
-            densities.append(wiggle)
-    densities = pd.DataFrame(densities)
-    
+            densities[interval] = wiggle
+    densities = pd.DataFrame(densities).T
+    print("Density matrix size: {}".format(densities.shape[0]))
     # f, ax = plt.subplots()
     ax = plt.gca()
     

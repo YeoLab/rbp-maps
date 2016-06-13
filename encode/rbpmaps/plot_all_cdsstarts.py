@@ -59,28 +59,26 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
     parser.add_argument("-m", "--manifest", dest="manifest")
     parser.add_argument("-d", "--direction", dest="direction", help="up, down, or both", default="both")
+    parser.add_argument("-p", "--padj", dest="padj", help="p-adjusted value cutoff for significance", default=0.05, type=float)
+    parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
+    
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
     outdir = args.output
     
+    # Process significance cutoffs
+    padjusted = args.padj
+    log2fc = args.log2fc
     
     cds_df = pd.read_table(args.cds)
     cds_df.columns = ['chrom','start','stop','name','score','strand']
     with open(input_file,'r') as f:
         for line in f:
             try:
+                
                 line = line.split('\t')
-                if(args.kd):
-                    uid = line[2].strip()
-                    filter_list = gm.generate_list_of_differentially_expressed_genes(
-                        args.manifest, args.kd, uid, padj=0.05, log2FoldChange=1.5, direction=args.direction)
-                    # print(cds_df[cds_df['name'].isin(filter_list)])
-                    print(filter_list)
-                    cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
-                    cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
-                else:
-                    cdsstarts = pb.BedTool().from_dataframe(cds_df)
+                
                 if(args.flipped):
                     negative = line[0]
                     positive = line[1].strip()
@@ -88,6 +86,25 @@ def main(argv=None): # IGNORE:C0111
                     positive = line[0]
                     negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
+                
+                if(args.kd):
+                    uid = line[2].strip()
+                    filter_list = gm.generate_list_of_differentially_expressed_genes(
+                        args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
+                    # print(cds_df[cds_df['name'].isin(filter_list)])
+                    cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
+                    cdsstarts_intermediate_output = open(os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction),'a')
+                    cdsstarts_intermediate_output.write("# UID: {}".format(uid))
+                    cdsstarts_intermediate_output.write("# POS: {}".format(positive))
+                    cdsstarts_intermediate_output.write("# NEG: {}".format(negative))
+                    cdsstarts_intermediate_output.write("# Padj: {}".format(padjusted))
+                    cdsstarts_intermediate_output.write("# Log2foldchange: {}".format(log2fc))
+                    
+                    cdsstarts.to_csv(cdsstarts_intermediate_output, sep="\t", header=None)
+                    cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
+                else:
+                    cdsstarts = pb.BedTool().from_dataframe(cds_df)
+                
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
@@ -102,7 +119,7 @@ def main(argv=None): # IGNORE:C0111
                           label = "cdsStart",
                           left = 300,
                           right = 300,
-                          csv = False)
+                          csv = True)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

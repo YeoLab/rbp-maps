@@ -24,6 +24,8 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     csv_filestring = os.path.join(kd_dir,rbp+'_vs_'+control+".csv")
     # print(csv_filestring)
     diffexp = pd.read_table(csv_filestring,sep=",")
+    
+    print("for UID: {}, corresponding KD is: {}".format(uid,csv_filestring))
     if(direction=="both"):
         print("Selected direction: BOTH (UP+DOWN with respect to WT)")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
@@ -35,7 +37,8 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     elif(direction=="down"):
         print("Selected direction: DOWN with respect to WT")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
-                          (diffexp['log2FoldChange'] <= log2FoldChange)]
+                          (diffexp['log2FoldChange'] <= -log2FoldChange)]
+    print(list(diffexp['Unnamed: 0']))
     return list(diffexp['Unnamed: 0'])
     
 def parse_diffexp(deseq2_file):
