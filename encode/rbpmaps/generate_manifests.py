@@ -25,12 +25,15 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     # print(csv_filestring)
     diffexp = pd.read_table(csv_filestring,sep=",")
     if(direction=="both"):
+        print("Selected direction: BOTH (UP+DOWN with respect to WT)")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
                           (abs(diffexp['log2FoldChange']) >= log2FoldChange)]
     elif(direction=="up"):
+        print("Selected direction: UP with respect to WT")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
                           (diffexp['log2FoldChange'] >= log2FoldChange)]
     elif(direction=="down"):
+        print("Selected direction: DOWN with respect to WT")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
                           (diffexp['log2FoldChange'] <= log2FoldChange)]
     return list(diffexp['Unnamed: 0'])
