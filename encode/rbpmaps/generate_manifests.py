@@ -7,7 +7,11 @@ import pandas as pd
 import os
 
 
-def generate_list_of_differentially_expressed_genes(manifest_file, kd_dir, uid, padj=0.05, log2FoldChange=1.5):
+def generate_list_of_differentially_expressed_genes(manifest_file, 
+                                                    kd_dir, 
+                                                    uid, padj=0.05, 
+                                                    log2FoldChange=1.5,
+                                                    direction="both"):
     """
     manifest: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
     uid: 204
@@ -20,8 +24,15 @@ def generate_list_of_differentially_expressed_genes(manifest_file, kd_dir, uid, 
     csv_filestring = os.path.join(kd_dir,rbp+'_vs_'+control+".csv")
     # print(csv_filestring)
     diffexp = pd.read_table(csv_filestring,sep=",")
-    diffexp = diffexp[(diffexp['padj'] <= padj) & \
-                      (diffexp['log2FoldChange'] >= log2FoldChange)]
+    if(direction=="both"):
+        diffexp = diffexp[(diffexp['padj'] <= padj) & \
+                          (abs(diffexp['log2FoldChange']) >= log2FoldChange)]
+    elif(direction=="up"):
+        diffexp = diffexp[(diffexp['padj'] <= padj) & \
+                          (diffexp['log2FoldChange'] >= log2FoldChange)]
+    elif(direction=="down"):
+        diffexp = diffexp[(diffexp['padj'] <= padj) & \
+                          (diffexp['log2FoldChange'] <= log2FoldChange)]
     return list(diffexp['Unnamed: 0'])
     
 def parse_diffexp(deseq2_file):

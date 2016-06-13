@@ -6,6 +6,7 @@ Created on May 3, 2016
 '''
 
 import matplotlib
+from HTSeq import WiggleReader
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # from rbpmaps import intervals
@@ -247,13 +248,17 @@ def get_distribution(wiggle):
     given a list of arbitrary length > 100, 
     normalize them into a list of length 100
     """
-    wiggle = list(itertools.chain.from_iterable([multiply(w) for w in wiggle]))
+    if(len(wiggle)==100):
+        return wiggle
+    elif(len(wiggle)==1):
+        return pd.Series(multiply(wiggle))
+    elif len(wiggle) < 100:
+        wiggle = pd.Series(np.vstack(([wiggle]*100)).reshape((-1,),order='F'))
     wiggle = (chunks(pd.Series(wiggle),len(wiggle)/100))
     wiggle = pd.Series(wiggle)
     return wiggle
 
 def get_distribution2(wiggle):
-    print(len(wiggle))
     if(len(wiggle)==100): # no need to do any calculating.
         return wiggle
     elif len(wiggle) == 1:
@@ -399,7 +404,7 @@ def plot_single_frame(rbp, bed_tool,
             wiggle = abs(wiggle) # convert all values to positive
             # print(wiggle)
             if(distribution == True):
-                wiggle = get_distribution2(wiggle)
+                wiggle = get_distribution(wiggle)
             densities.append(wiggle)
     densities = pd.DataFrame(densities)
     

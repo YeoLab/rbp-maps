@@ -58,6 +58,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
     parser.add_argument("-m", "--manifest", dest="manifest")
+    parser.add_argument("-d", "--direction", dest="direction", help="up, down, or both", default="both")
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
@@ -73,7 +74,7 @@ def main(argv=None): # IGNORE:C0111
                 if(args.kd):
                     uid = line[2].strip()
                     filter_list = gm.generate_list_of_differentially_expressed_genes(
-                        args.manifest, args.kd, uid, padj=0.05, log2FoldChange=1.5)
+                        args.manifest, args.kd, uid, padj=0.05, log2FoldChange=1.5, direction=args.direction)
                     # print(cds_df[cds_df['name'].isin(filter_list)])
                     print(filter_list)
                     cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
