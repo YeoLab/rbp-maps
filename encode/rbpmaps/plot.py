@@ -258,7 +258,7 @@ def get_distribution(wiggle):
     wiggle = pd.Series(wiggle)
     return wiggle
 
-def scale(wiggle):
+def get_scale(wiggle):
     if(len(wiggle)==100): # no need to do any calculating.
         return wiggle
     elif len(wiggle) == 1:
@@ -353,7 +353,7 @@ def plot_single_frame(rbp, bed_tool,
                       left_shade = 0, right_shade = 0,
                       shade_label = None,
                       ax = None,
-                      distribution = False,
+                      scale = False,
                       points = True,
                       norm = True,
                       min_read_density_sum = 0,
@@ -376,7 +376,7 @@ def plot_single_frame(rbp, bed_tool,
         right_shade: *experimental* right region in map to shade
         shade_label: *experimental* label of shade
         ax: sets axis object if you want to use this function as part of multi region plot
-        distribution: if feature includes multi-length regions, we must scale from 0-100(%). This must be True
+        scale: if feature includes multi-length regions, we must scale from 0-100(%). This must be True
         points: True if a feature is a single nucleotide (default), False if feature is a region
         norm: True if plotting a normalized RBP map, otherwise 
         csv: output density matrix, normalized density matrix, and all PDF means
@@ -403,24 +403,24 @@ def plot_single_frame(rbp, bed_tool,
             wiggle = np.nan_to_num(wiggle) # convert all nans to 0
             wiggle = abs(wiggle) # convert all values to positive
             # print(wiggle)
-            if(distribution == True):
-                wiggle = get_distribution(wiggle)
+            if(scale == True):
+                wiggle = get_scale(wiggle)
             densities[interval] = wiggle
     try:
         densities = pd.DataFrame(densities).T
         print("Density matrix size: {}".format(densities.shape[0]))
         # f, ax = plt.subplots()
         ax = plt.gca()
-        
-        density_df, density_normed = normalize(densities,
-                                   min_read_density_sum)
-        
-        ax.plot(density_normed , color = color)
     except Exception as e:
         print(e)
-        densities.to_csv('/home/bay001/error.txt')
+        densities.to_csv('/home/bay001/software/ENCODE/encode/rbpmaps/error.txt')    
+    density_df, density_normed = normalize(densities,
+                                           min_read_density_sum)
+        
+    ax.plot(density_normed, color = color)
+    
     if points == True:
-        if distribution == True: # scale from 0 to 100
+        if scale == True: # scale from 0 to 100
             ax.set_xticklabels(['0% {}'.format(label),'100% {}'.format(label)])
             ax.set_xticks([0,99])
             ax.set_xlim(0,99)
@@ -549,7 +549,7 @@ USAGE
                       label = lab,
                       left = left_mar,
                       right = right_mar,
-                      distribution = args.dist,
+                      scale = args.dist,
                       title = mytitle,
                       min_read_density_sum = min_read_threshold)
 if __name__ == "__main__":
