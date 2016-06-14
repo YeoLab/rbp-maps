@@ -38,7 +38,7 @@ def normalize(densities, min_density_threshold):
     df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
-    
+    # make a change to the dataframe
     return df.div(df.sum(axis=1), axis=0), df.div(df.sum(axis=1), axis=0).mean()
 
 def normalize_with_input(densities, input_densities,
