@@ -26,6 +26,9 @@ import plot
 import ReadDensity
 import seaborn as sns
 import pybedtools as pb
+import generate_manifests as gm
+import pandas as pd
+
 __all__ = []
 __version__ = 0.1
 __date__ = '2016-05-06'
@@ -52,18 +55,30 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-i", "--input", dest="input",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-c", "--cds", dest="cds",required=True)
-    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
+    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
+    parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
+    parser.add_argument("-m", "--manifest", dest="manifest")
+    parser.add_argument("-d", "--direction", dest="direction", help="up, down, or both", default="both")
+    parser.add_argument("-p", "--padj", dest="padj", help="p-adjusted value cutoff for significance", default=0.05, type=float)
+    parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
     
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
     outdir = args.output
-    cdsends = pb.BedTool(args.cds)
-    errorlog = open('error.log','a')
+    
+    # Process significance cutoffs
+    padjusted = args.padj
+    log2fc = args.log2fc
+    
+    cds_df = pd.read_table(args.cds)
+    cds_df.columns = ['chrom','start','stop','name','score','strand']
     with open(input_file,'r') as f:
         for line in f:
             try:
+                
                 line = line.split('\t')
+                
                 if(args.flipped):
                     negative = line[0]
                     positive = line[1].strip()
@@ -71,18 +86,40 @@ def main(argv=None): # IGNORE:C0111
                     positive = line[0]
                     negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
+                
+                if(args.kd):
+                    uid = line[2].strip()
+                    filter_list = gm.generate_list_of_differentially_expressed_genes(
+                        args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
+                    # print(cds_df[cds_df['name'].isin(filter_list)])
+                    cdsends = cds_df[cds_df['name'].isin(filter_list)]
+                    cdsends_intermediate_output = open(os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction),'a')
+                    cdsends_intermediate_output.write("# UID: {}".format(uid))
+                    cdsends_intermediate_output.write("# POS: {}".format(positive))
+                    cdsends_intermediate_output.write("# NEG: {}".format(negative))
+                    cdsends_intermediate_output.write("# Padj: {}".format(padjusted))
+                    cdsends_intermediate_output.write("# Log2foldchange: {}".format(log2fc))
+                    
+                    cdsends.to_csv(cdsends_intermediate_output, sep="\t", header=None)
+                    cdsends = pb.BedTool().from_dataframe(cdsends)
+                else:
+                    cdsends = pb.BedTool().from_dataframe(cds_df)
+                
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
+                # Generate RBP KD manifest
+
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
-                plot.plot_single_frame(rbp,
-                          cdsends,
-                          os.path.join(outdir,my_name)+".svg",
-                          color = sns.color_palette("hls", 8)[7],
+                plot.plot_cdsends(rbp = rbp,
+                          annotation = cdsends,
+                          output_file = os.path.join(outdir,my_name)+".svg",
+                          color = sns.color_palette("hls", 8)[3],
+                          title = "{}, {} events".format(my_name, len(filter_list)), # os.path.join(outdir,my_name)+".csv",
                           label = "cdsEnd",
                           left = 300,
                           right = 300,
-                          distribution = False)
+                          csv = True)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))
