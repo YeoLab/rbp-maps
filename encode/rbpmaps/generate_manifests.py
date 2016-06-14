@@ -38,7 +38,7 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
         print("Selected direction: DOWN with respect to WT")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
                           (diffexp['log2FoldChange'] <= -log2FoldChange)]
-    print(list(diffexp['Unnamed: 0']))
+    # print(list(diffexp['Unnamed: 0']))
     return list(diffexp['Unnamed: 0'])
     
 def parse_diffexp(deseq2_file):
