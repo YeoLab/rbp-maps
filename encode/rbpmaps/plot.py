@@ -406,14 +406,12 @@ def plot_single_frame(rbp, bed_tool,
             if(scale == True):
                 wiggle = get_scale(wiggle)
             densities[interval] = wiggle
-    try:
-        densities = pd.DataFrame(densities).T
-        print("Density matrix size: {}".format(densities.shape[0]))
-        # f, ax = plt.subplots()
-        ax = plt.gca()
-    except Exception as e:
-        print(e)
-        densities.to_csv('/home/bay001/software/ENCODE/encode/rbpmaps/error.txt')    
+    
+    densities = pd.DataFrame(densities).T
+    print("Density matrix size: {}".format(densities.shape[0]))
+    # f, ax = plt.subplots()
+    ax = plt.gca()
+       
     density_df, density_normed = normalize(densities,
                                            min_read_density_sum)
         
