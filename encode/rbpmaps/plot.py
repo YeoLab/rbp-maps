@@ -345,6 +345,10 @@ def plot_four_frame(region1, region2, region3, region4,
         ax.set_yticklabels([])
         plt.suptitle(mytitle,y=1.03)
 
+def rename_index(interval_name):
+    chrom, start, end, name, score, strand = str(interval_name).strip().split('\t')
+    return "{}:{}-{}:{}:{}".format(chrom, start, end, name, strand)
+
 def plot_single_frame(rbp, bed_tool, 
                       output_file = None, color = 'red',
                       label = None, title = None,
@@ -405,7 +409,8 @@ def plot_single_frame(rbp, bed_tool,
             # print(wiggle)
             if(scale == True):
                 wiggle = get_scale(wiggle)
-            densities[interval] = wiggle
+            densities[rename_index(interval)] = wiggle
+            
     
     densities = pd.DataFrame(densities).T
     print("Density matrix size: {}".format(densities.shape[0]))
