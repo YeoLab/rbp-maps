@@ -94,11 +94,12 @@ def main(argv=None): # IGNORE:C0111
                     # print(cds_df[cds_df['name'].isin(filter_list)])
                     cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
                     cdsstarts_intermediate_output = open(os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction),'a')
-                    cdsstarts_intermediate_output.write("# UID: {}".format(uid))
-                    cdsstarts_intermediate_output.write("# POS: {}".format(positive))
-                    cdsstarts_intermediate_output.write("# NEG: {}".format(negative))
-                    cdsstarts_intermediate_output.write("# Padj: {}".format(padjusted))
-                    cdsstarts_intermediate_output.write("# Log2foldchange: {}".format(log2fc))
+                    
+                    cdsstarts_intermediate_output.write("# UID: {}\n".format(uid))
+                    cdsstarts_intermediate_output.write("# POS: {}\n".format(positive))
+                    cdsstarts_intermediate_output.write("# NEG: {}\n".format(negative))
+                    cdsstarts_intermediate_output.write("# Padj: {}\n".format(padjusted))
+                    cdsstarts_intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
                     
                     cdsstarts.to_csv(cdsstarts_intermediate_output, sep="\t", header=None)
                     cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
@@ -113,7 +114,7 @@ def main(argv=None): # IGNORE:C0111
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 plot.plot_cdsstarts(rbp = rbp,
                           annotation = cdsstarts,
-                          output_file = os.path.join(outdir,my_name)+".svg",
+                          output_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction),
                           color = sns.color_palette("hls", 8)[4],
                           title = os.path.join(outdir,my_name)+".csv",
                           label = "cdsStart",

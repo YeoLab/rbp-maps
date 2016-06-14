@@ -17,14 +17,17 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     uid: 204
     rep: 1
     """
+    csv_filestring = ""
     df = pd.read_table(manifest_file,dtype={'uID':str,'padj':float,'log2FoldChange':float})
-    control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
-    # print(control)
-    rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
-    csv_filestring = os.path.join(kd_dir,rbp+'_vs_'+control+".csv")
-    # print(csv_filestring)
+    try:
+        control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
+        rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
+        csv_filestring = os.path.join(kd_dir,rbp+'_vs_'+control+".csv")
+        
+    except Exception as e:
+        print("Could not find the diffexp files for uid: {}".format(uid))
+        print(e)
     diffexp = pd.read_table(csv_filestring,sep=",")
-    
     print("for UID: {}, corresponding KD is: {}".format(uid,csv_filestring))
     if(direction=="both"):
         print("Selected direction: BOTH (UP+DOWN with respect to WT)")
@@ -38,7 +41,7 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
         print("Selected direction: DOWN with respect to WT")
         diffexp = diffexp[(diffexp['padj'] <= padj) & \
                           (diffexp['log2FoldChange'] <= -log2FoldChange)]
-    print(list(diffexp['Unnamed: 0']))
+    # print(list(diffexp['Unnamed: 0']))
     return list(diffexp['Unnamed: 0'])
     
 def parse_diffexp(deseq2_file):

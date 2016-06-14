@@ -258,7 +258,7 @@ def get_distribution(wiggle):
     wiggle = pd.Series(wiggle)
     return wiggle
 
-def get_distribution2(wiggle):
+def scale(wiggle):
     if(len(wiggle)==100): # no need to do any calculating.
         return wiggle
     elif len(wiggle) == 1:
@@ -406,16 +406,19 @@ def plot_single_frame(rbp, bed_tool,
             if(distribution == True):
                 wiggle = get_distribution(wiggle)
             densities[interval] = wiggle
-    densities = pd.DataFrame(densities).T
-    print("Density matrix size: {}".format(densities.shape[0]))
-    # f, ax = plt.subplots()
-    ax = plt.gca()
-    
-    density_df, density_normed = normalize(densities,
-                               min_read_density_sum)
-    
-    ax.plot(density_normed , color = color)
-    
+    try:
+        densities = pd.DataFrame(densities).T
+        print("Density matrix size: {}".format(densities.shape[0]))
+        # f, ax = plt.subplots()
+        ax = plt.gca()
+        
+        density_df, density_normed = normalize(densities,
+                                   min_read_density_sum)
+        
+        ax.plot(density_normed , color = color)
+    except Exception as e:
+        print(e)
+        densities.to_csv('/home/bay001/error.txt')
     if points == True:
         if distribution == True: # scale from 0 to 100
             ax.set_xticklabels(['0% {}'.format(label),'100% {}'.format(label)])
