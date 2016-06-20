@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import itertools
 
+
 def multiply(n):
     return [n]*100
 

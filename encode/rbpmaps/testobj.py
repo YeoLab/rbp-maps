@@ -16,8 +16,8 @@ def main():
     my_map_type = 'se'
     my_map_name =  'rbfox2 se'
     my_is_scaled = False
-    my_left_mar = 300
-    my_right_mar = 300
+    my_left_mar = 500
+    my_right_mar = 500
     my_min_read_density_sum = 0
                  
     some_map = Map.Map(ReadDensity=my_readdensity,
