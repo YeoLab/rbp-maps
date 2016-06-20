@@ -134,7 +134,6 @@ def main(argv=None): # IGNORE:C0111
                    min_read_density_sum=0)
     
                 out_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction)
-                print(some_map.get_matrices())
                 some_plot = Mplot.Mplot(some_map, out_file, 'blue')
     
                 some_plot.single_frame()

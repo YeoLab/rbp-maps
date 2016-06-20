@@ -36,7 +36,6 @@ class Map(object):
         if map_type == 'se':
             self.matrices = self.create_se_matrix()
         else:
-            print("PLOT TYPE IS NOT SE")
             self.matrices = self.create_single_frame_matrix()
         
     def get_name(self):
