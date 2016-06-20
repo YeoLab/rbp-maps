@@ -146,7 +146,6 @@ class Map(object):
     def create_single_frame_matrix(self):
         count = 0
         densities = {}
-        print("self annotation: {}".format(self.annotation))
         if(type(self.annotation) != pybedtools.bedtool.BedTool):
             bed_tool = misc.create_bedtool(self.annotation)
         else:

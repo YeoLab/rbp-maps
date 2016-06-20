@@ -12,7 +12,7 @@ import pandas as pd
 from gscripts.general import dataviz
 import os
 
-class Mplot(object):
+class Plot(object):
     '''
     classdocs
     '''
@@ -35,7 +35,7 @@ class Mplot(object):
         
         ax.plot(means, color = self.color)
         plt.savefig(self.output_file)
-    
+        ax.clear()
     def four_frame(self):
         num_rows = 1
         num_cols = 4

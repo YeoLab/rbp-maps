@@ -5,7 +5,7 @@ Created on Jun 20, 2016
 '''
 import Map
 import ReadDensity
-import Mplot
+from rbpmaps import Plot
 
 def main():
     
@@ -30,7 +30,7 @@ def main():
                    min_read_density_sum=my_min_read_density_sum)
     
     out_file = 'testfiles/204_01_rbfox2/testobj/204_01_se.svg'
-    some_plot = Mplot.Mplot(some_map, out_file, 'blue')
+    some_plot = Plot.Plot(some_map, out_file, 'blue')
     
     some_plot.four_frame()
     
