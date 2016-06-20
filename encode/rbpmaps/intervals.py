@@ -5,7 +5,42 @@ Created on May 3, 2016
 '''
 import numpy as np
 import pandas as pd
+import itertools
 
+def multiply(n):
+    return [n]*100
+
+def rename_index(interval_name):
+        chrom, start, end, name, score, strand = str(interval_name).strip().split('\t')
+        return "{}:{}-{}:{}:{}".format(chrom, start, end, name, strand)
+
+def get_scale(wiggle):
+        if(len(wiggle)==100): # no need to do any calculating.
+            return wiggle
+        elif len(wiggle) == 1:
+            return pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
+        elif len(wiggle) < 100: 
+            wiggle = pd.Series(list(itertools.chain.from_iterable([multiply(w) for w in wiggle])))
+        
+        dist = [0]*100
+        x = 0
+        step = 0.01
+        y = 0
+        
+        for pos, value in enumerate(wiggle):
+            if(float(pos+1)/len(wiggle)) < step:
+                y = y + 1
+                dist[x] = dist[x] + value            
+            else:
+                dist[x] = dist[x] / y
+                
+                step = step + 0.01
+                x = x + 1
+                dist[x] = value
+                y = 1
+        dist[x] = dist[x] / y
+        return(pd.Series(dist))
+    
 def some_range(rbp, interval, left_flank = 0, right_flank = 0):
     if interval.strand == "+":
         wiggle = rbp.values(interval.chrom, interval.start - left_flank, interval.end + right_flank, interval.strand)

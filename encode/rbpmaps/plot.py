@@ -32,6 +32,22 @@ __version__ = 0.1
 __date__ = '2016-5-5'
 __updated__ = '2016-5-5'
 
+# plt.plot(n[:10])
+def get_limit(n,bins):
+    """
+    Gets the limit where the distance between bins is the greatest.
+    """
+    x = 0 # bin position
+    mx = 0 # max distance
+    prev = n[0]
+    for i in n[1:]:
+        dist = prev - i
+        prev = i
+        if dist > mx:
+            mx = dist
+            x = x + 1
+    return bins[x]
+
 def normalize(densities, min_density_threshold):
     
     densities = densities.replace(-1, np.nan)   
@@ -43,15 +59,25 @@ def normalize(densities, min_density_threshold):
 
 def normalize_with_input(densities, input_densities,
                          min_density_threshold, output_file = None):
-    
+    """
+    Takes two raw densities (input and ip)
+    """
     densities = densities.replace(-1, np.nan)   
-    df = densities[densities.sum(axis=1) > min_density_threshold]
-    min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
-    df = df + min_normalized_read_number
+    ip = densities[densities.sum(axis=1) > min_density_threshold]
+    min_normalized_read_number = min([item for item in ip.unstack().values if item > 0])
+    ip = ip + min_normalized_read_number
+    ip = ip.div(ip.sum(axis=1),axis=0)
+
+    input_densities = input_densities.replace(-1, np.nan)   
+    inp = input_densities[input_densities.sum(axis=1) > min_density_threshold]
+    min_normalized_read_number = min([item for item in inp.unstack().values if item > 0])
+    inp = inp + min_normalized_read_number
+    inp = inp.div(inp.sum(axis=1),axis=0)
+
+    ipMinusInput = ip.sub(inp).dropna()
     
-    if(output_file):
-        df.to_csv(output_file)
-        
+    return ipMinusInput.mean()
+    
 def plot_txstarts(rbp, annotation, output_file, color,
                   title, label, left, right, csv):
     txstarts = bt.BedTool(annotation)
