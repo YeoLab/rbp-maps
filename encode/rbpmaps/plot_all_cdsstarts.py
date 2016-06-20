@@ -17,19 +17,16 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 
-import sys
 import os
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-from deprecated import plot
 import ReadDensity
 import Map
 import Mplot
-import seaborn as sns
-import pybedtools as pb
 import generate_manifests as gm
 import pandas as pd
+import pybedtools as pb
 
 __all__ = []
 __version__ = 0.1
@@ -100,7 +97,9 @@ def main(argv=None): # IGNORE:C0111
                         args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
                     # print(cds_df[cds_df['name'].isin(filter_list)])
                     cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
-                    cdsstarts_intermediate_output = open(os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction),'a')
+                    
+                    temp = os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction)
+                    cdsstarts_intermediate_output = open(temp,'a')
                     
                     cdsstarts_intermediate_output.write("# UID: {}\n".format(uid))
                     cdsstarts_intermediate_output.write("# POS: {}\n".format(positive))
@@ -108,10 +107,10 @@ def main(argv=None): # IGNORE:C0111
                     cdsstarts_intermediate_output.write("# Padj: {}\n".format(padjusted))
                     cdsstarts_intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
                     
-                    cdsstarts.to_csv(cdsstarts_intermediate_output, sep="\t", header=None)
-                    cds = cdsstarts_intermediate_output
+                    cdsstarts.to_csv(cdsstarts_intermediate_output, sep="\t", header=None, index=None)
+                    cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
                 else:
-                    cds = args.cds
+                    cdsstarts = pb.BedTool().from_dataframe(cds_df)
                 
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
@@ -126,7 +125,7 @@ def main(argv=None): # IGNORE:C0111
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 
                 some_map = Map.Map(ReadDensity=rbp,
-                   annotation=cds,
+                   annotation=cdsstarts,
                    map_type='cdsstart',
                    map_name=my_name,
                    is_scaled=False,
@@ -135,6 +134,7 @@ def main(argv=None): # IGNORE:C0111
                    min_read_density_sum=0)
     
                 out_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction)
+                print(some_map.get_matrices())
                 some_plot = Mplot.Mplot(some_map, out_file, 'blue')
     
                 some_plot.single_frame()

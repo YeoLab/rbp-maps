@@ -5,7 +5,7 @@ Created on Jun 18, 2016
 '''
 import pandas as pd
 import numpy as np
-
+import pybedtools
 import intervals
 import misc
 
@@ -36,6 +36,7 @@ class Map(object):
         if map_type == 'se':
             self.matrices = self.create_se_matrix()
         else:
+            print("PLOT TYPE IS NOT SE")
             self.matrices = self.create_single_frame_matrix()
         
     def get_name(self):
@@ -146,9 +147,11 @@ class Map(object):
     def create_single_frame_matrix(self):
         count = 0
         densities = {}
-        
-        bed_tool = misc.create_bedtool(self.annotation)
-        
+        print("self annotation: {}".format(self.annotation))
+        if(type(self.annotation) != pybedtools.bedtool.BedTool):
+            bed_tool = misc.create_bedtool(self.annotation)
+        else:
+            bed_tool = self.annotation
         for interval in bed_tool:
             # print(interval)
             count = count + 1
@@ -169,7 +172,7 @@ class Map(object):
         raw = pd.DataFrame(densities).T
         # print("Density matrix size: {}".format(densities.shape[0]))
         # f, ax = plt.subplots()           
-        normed, means = self.normalize(densities, self.min_read_density_sum)
+        normed, means = self.normalize(raw, self.min_read_density_sum)
         
         return raw, normed, means
         
