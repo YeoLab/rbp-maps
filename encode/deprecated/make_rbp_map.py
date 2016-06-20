@@ -5,7 +5,7 @@ Created on May 3, 2016
 '''
 
 import ReadDensity
-import plot
+from deprecated import plot
 import pybedtools as bt
 import seaborn as sns
 from argparse import ArgumentParser

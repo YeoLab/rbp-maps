@@ -22,7 +22,7 @@ import os
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import plot
+from deprecated import plot
 import ReadDensity
 import seaborn as sns
 import pybedtools as pb
@@ -49,43 +49,38 @@ def main(argv=None): # IGNORE:C0111
     
     # Setup argument parser
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-i", "--input", dest="input",required=True)
-    parser.add_argument("-o", "--output", dest="output",required=True)
-    parser.add_argument("-tx", "--tx", dest="tx",required=True)
-    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
+    parser.add_argument("-i", "--input", dest="input",required=True, help="manifest file")
+    parser.add_argument("-o", "--output", dest="output",required=True, help="output directory for individual rbp maps")
+    parser.add_argument("-tx", "--tx", dest="tx",required=True, help="bedfile containing single-nucleotide features to plot")
+    parser.add_argument("-l", "--label", dest="label",required=False,help="name of the feature being plotted")
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
     outdir = args.output
     txstarts = pb.BedTool(args.tx)
+    lab = args.label
     errorlog = open('error.log','a')
     with open(input_file,'r') as f:
         for line in f:
             try:
                 line = line.split('\t')
-                if(args.flipped):
-                    negative = line[0]
-                    positive = line[1].strip()
-                else:
-                    positive = line[0]
-                    negative = line[1].strip()
+                
+                positive = line[1]
+                negative = line[2].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
                 print("Processing {}".format(my_name))
-                print("positive file = {}".format(positive))
-                print("negative file = {}".format(negative))
-                
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 plot.plot_single_frame(rbp,
                           txstarts,
                           os.path.join(outdir,my_name)+".svg",
-                          color = sns.color_palette("hls", 8)[4],
-                          label = "txStart",
+                          color = sns.color_palette("hls", 8)[3],
+                          label = lab,
                           left = 300,
                           right = 300,
                           distribution = False)
             except Exception as e:
-                print(e)
-                print("Failed to Process {}".format(line))
+                print("Failed to Process {}".format(my_name))
+                errorlog.write(my_name)
 
 if __name__ == "__main__":
     main()

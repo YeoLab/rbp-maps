@@ -22,7 +22,7 @@ import os
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import plot
+from deprecated import plot
 import ReadDensity
 import seaborn as sns
 import pybedtools as pb

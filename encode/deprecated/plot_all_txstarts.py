@@ -22,7 +22,7 @@ import os
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import plot
+from deprecated import plot
 import ReadDensity
 import seaborn as sns
 import pybedtools as pb
@@ -52,13 +52,12 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-i", "--input", dest="input",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-tx", "--tx", dest="tx",required=True)
-    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", action='store_true')
-    
+    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
     outdir = args.output
-    txends = pb.BedTool(args.tx)
+    txstarts = pb.BedTool(args.tx)
     errorlog = open('error.log','a')
     with open(input_file,'r') as f:
         for line in f:
@@ -74,12 +73,13 @@ def main(argv=None): # IGNORE:C0111
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
+                
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 plot.plot_single_frame(rbp,
-                          txends,
+                          txstarts,
                           os.path.join(outdir,my_name)+".svg",
-                          color = sns.color_palette("hls", 8)[7],
-                          label = "txEnd",
+                          color = sns.color_palette("hls", 8)[4],
+                          label = "txStart",
                           left = 300,
                           right = 300,
                           distribution = False)

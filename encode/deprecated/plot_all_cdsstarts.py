@@ -24,8 +24,6 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from deprecated import plot
 import ReadDensity
-import Map
-import Mplot
 import seaborn as sns
 import pybedtools as pb
 import generate_manifests as gm
@@ -89,11 +87,6 @@ def main(argv=None): # IGNORE:C0111
                     negative = line[1].strip()
                 my_name = os.path.basename(positive).replace('pos','*')
                 
-                """
-                
-                create bedfile from DESeq2 diffexpression data
-                
-                """
                 if(args.kd):
                     uid = line[2].strip()
                     filter_list = gm.generate_list_of_differentially_expressed_genes(
@@ -109,36 +102,25 @@ def main(argv=None): # IGNORE:C0111
                     cdsstarts_intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
                     
                     cdsstarts.to_csv(cdsstarts_intermediate_output, sep="\t", header=None)
-                    cds = cdsstarts_intermediate_output
+                    cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
                 else:
-                    cds = args.cds
+                    cdsstarts = pb.BedTool().from_dataframe(cds_df)
                 
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
                 # Generate RBP KD manifest
-                
-                """
-                
-                use the bedfile to generate the RBP map
-                
-                """
-                rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
-                
-                some_map = Map.Map(ReadDensity=rbp,
-                   annotation=cds,
-                   map_type='cdsstart',
-                   map_name=my_name,
-                   is_scaled=False,
-                   left_mar=300,
-                   right_mar=300,
-                   min_read_density_sum=0)
-    
-                out_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction)
-                some_plot = Mplot.Mplot(some_map, out_file, 'blue')
-    
-                some_plot.single_frame()
 
+                rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
+                plot.plot_cdsstarts(rbp = rbp,
+                          annotation = cdsstarts,
+                          output_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction),
+                          color = sns.color_palette("hls", 8)[4],
+                          title = "{}, {} events".format(my_name, len(filter_list)), # os.path.join(outdir,my_name)+".csv",
+                          label = "cdsStart",
+                          left = 300,
+                          right = 300,
+                          csv = True)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))
