@@ -60,7 +60,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-d", "--direction", dest="direction", help="up, down, or both", default="both")
     parser.add_argument("-p", "--padj", dest="padj", help="p-adjusted value cutoff for significance", default=0.05, type=float)
     parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
-    
+    parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, cdsstart, cdsend, txstart, txend]")
     # Process arguments
     args = parser.parse_args()
     input_file = args.input
@@ -70,8 +70,12 @@ def main(argv=None): # IGNORE:C0111
     padjusted = args.padj
     log2fc = args.log2fc
     
-    df = pd.read_table(args.feature)
-    df.columns = ['chrom','start','stop','name','score','strand']
+    if args.event == 'se':
+        df = pd.read_table(args.feature)
+        df.columns = ['miso','name']
+    else:
+        df = pd.read_table(args.feature)
+        df.columns = ['chrom','start','stop','name','score','strand']
     with open(input_file,'r') as f:
         for line in f:
             try:
@@ -99,7 +103,7 @@ def main(argv=None): # IGNORE:C0111
                     feature = df[df['name'].isin(filter_list)]
                     
                     temp = os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction)
-                    intermediate_output = open(temp,'a')
+                    intermediate_output = open(temp,'w')
                     
                     intermediate_output.write("# UID: {}\n".format(uid))
                     intermediate_output.write("# POS: {}\n".format(positive))
@@ -108,10 +112,12 @@ def main(argv=None): # IGNORE:C0111
                     intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
                     
                     feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
-                    feature = pb.BedTool().from_dataframe(feature)
+                    intermediate_output.close()
+                    # feature = pb.BedTool().from_dataframe(feature)
                 else:
-                    feature = pb.BedTool().from_dataframe(df)
-                
+                    # feature = pb.BedTool().from_dataframe(df)
+                    feature = args.feature
+
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
@@ -126,7 +132,7 @@ def main(argv=None): # IGNORE:C0111
                 
                 some_map = Map.Map(ReadDensity=rbp,
                    annotation=feature,
-                   map_type='not_se',
+                   map_type='cdsstart',
                    map_name=my_name,
                    is_scaled=False,
                    left_mar=300,
@@ -135,8 +141,11 @@ def main(argv=None): # IGNORE:C0111
     
                 out_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction)
                 some_plot = Plot.Plot(some_map, out_file, 'blue')
-    
-                some_plot.single_frame()
+                
+                if args.event == 'se':
+                    some_plot.four_frame()
+                else:
+                    some_plot.single_frame()
 
             except Exception as e:
                 print(e)

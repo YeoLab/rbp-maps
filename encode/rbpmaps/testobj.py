@@ -9,12 +9,16 @@ from rbpmaps import Plot
 
 def main():
     
-    pos = 'testfiles/204_01_rbfox2/testobj/204_01_RBFOX2.merged.r2.norm.neg.bw'
-    neg = 'testfiles/204_01_rbfox2/testobj/204_01_RBFOX2.merged.r2.norm.pos.bw'
+    # pos = 'testfiles/204_01_rbfox2/testobj/204_01_RBFOX2.merged.r2.norm.neg.bw'
+    # neg = 'testfiles/204_01_rbfox2/testobj/204_01_RBFOX2.merged.r2.norm.pos.bw'
+    # pos = 'testfiles/242_01_U2AF2/242_01_U2AF2.merged.r2.norm.neg.bw'
+    # neg = 'testfiles/242_01_U2AF2/242_01_U2AF2.merged.r2.norm.pos.bw'
+    pos = 'testfiles/242_01_U2AF2/242_INPUT_CGCTCATT-ATAGAGGC_L005_R1.unassigned.adapterTrim.round2.rmRep.rmDup.sorted.r2.norm.neg.bw'
+    neg = 'testfiles/242_01_U2AF2/242_INPUT_CGCTCATT-ATAGAGGC_L005_R1.unassigned.adapterTrim.round2.rmRep.rmDup.sorted.r2.norm.pos.bw'
     my_readdensity = ReadDensity.ReadDensity(pos, neg)
-    my_annotation = 'testfiles/annotations/miso_se_to_ensembl.tsv'
-    my_map_type = 'se'
-    my_map_name =  'rbfox2 se'
+    my_annotation = 'testfiles/annotations/all_cdsStart.bed'
+    my_map_type = 'cds start'
+    my_map_name =  'cds starts U2AF2 INPUT'
     my_is_scaled = False
     my_left_mar = 500
     my_right_mar = 500
@@ -29,10 +33,10 @@ def main():
                    right_mar=my_right_mar,
                    min_read_density_sum=my_min_read_density_sum)
     
-    out_file = 'testfiles/204_01_rbfox2/testobj/204_01_se.svg'
+    out_file = '/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj/242_01.input.cdsstarts.svg'
     some_plot = Plot.Plot(some_map, out_file, 'blue')
     
-    some_plot.four_frame()
+    some_plot.single_frame()
     
 if __name__ == '__main__':
     main()

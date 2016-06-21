@@ -4,7 +4,6 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import matplotlib
-from rpy2.robjects.lib.grid import Points
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -57,7 +56,7 @@ class Plot(object):
                 ax.set_xticks([0,left,right,left+right])
                 ax.axvline(left,alpha=0.3)
                 ax.axvline(right,alpha=0.3)"""
-    
+
         ax.set_ylabel('Mean Read Density')
         ax.set_title(self.map.get_name(),y=1.03)
         
