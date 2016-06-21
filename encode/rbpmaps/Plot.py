@@ -4,6 +4,7 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import matplotlib
+from rpy2.robjects.lib.grid import Points
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -17,13 +18,14 @@ class Plot(object):
     classdocs
     '''
 
-    def __init__(self, Map, output_file, line_color):
+    def __init__(self, Map, output_file, line_color, points=True):
         '''
         Constructor
         '''
         self.map = Map
         self.output_file = output_file
         self.color = line_color
+        self.points = points
         
     def single_frame(self):
         
@@ -34,6 +36,35 @@ class Plot(object):
         raw.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
         
         ax.plot(means, color = self.color)
+        
+        
+        """if self.points == True:
+            if self.scale == True: # scale from 0 to 100
+                ax.set_xticklabels(['0% {}'.format(label),'100% {}'.format(label)])
+                ax.set_xticks([0,99])
+                ax.set_xlim(0,99)
+            elif left == right: # single point with equadistant flanks
+                ax.set_xticklabels(['upstream ({} nt)'.format(left),
+                                    '{}'.format(label),
+                                    'downstream ({} nt)'.format(right)])
+                ax.set_xticks([0,left,left+right])
+                ax.axvline(left,alpha=0.3)
+            else: 
+                ax.set_xticklabels(['upstream ({} nt)'.format(left),
+                                    '{}'.format(label),
+                                    '{}'.format(label),
+                                    'downstream ({} nt)'.format(right)])
+                ax.set_xticks([0,left,right,left+right])
+                ax.axvline(left,alpha=0.3)
+                ax.axvline(right,alpha=0.3)"""
+    
+        ax.set_ylabel('Mean Read Density')
+        ax.set_title(self.map.get_name(),y=1.03)
+        
+        ymax = max(means) * 1.1
+        ymin = min(means) * 0.9
+        
+        ax.set_ylim([ymin,ymax])
         plt.savefig(self.output_file)
         ax.clear()
     def four_frame(self):

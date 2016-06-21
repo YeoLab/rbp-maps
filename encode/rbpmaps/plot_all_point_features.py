@@ -23,7 +23,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import ReadDensity
 import Map
-from rbpmaps import Plot
+import Plot
 import generate_manifests as gm
 import pandas as pd
 import pybedtools as pb
@@ -53,7 +53,7 @@ def main(argv=None): # IGNORE:C0111
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-i", "--input", dest="input",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
-    parser.add_argument("-c", "--cds", dest="cds",required=True)
+    parser.add_argument("-fe", "--feature", dest="feature",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
     parser.add_argument("-m", "--manifest", dest="manifest")
@@ -70,8 +70,8 @@ def main(argv=None): # IGNORE:C0111
     padjusted = args.padj
     log2fc = args.log2fc
     
-    cds_df = pd.read_table(args.cds)
-    cds_df.columns = ['chrom','start','stop','name','score','strand']
+    df = pd.read_table(args.feature)
+    df.columns = ['chrom','start','stop','name','score','strand']
     with open(input_file,'r') as f:
         for line in f:
             try:
@@ -96,21 +96,21 @@ def main(argv=None): # IGNORE:C0111
                     filter_list = gm.generate_list_of_differentially_expressed_genes(
                         args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
                     # print(cds_df[cds_df['name'].isin(filter_list)])
-                    cdsstarts = cds_df[cds_df['name'].isin(filter_list)]
+                    feature = df[df['name'].isin(filter_list)]
                     
                     temp = os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction)
-                    cdsstarts_intermediate_output = open(temp,'a')
+                    intermediate_output = open(temp,'a')
                     
-                    cdsstarts_intermediate_output.write("# UID: {}\n".format(uid))
-                    cdsstarts_intermediate_output.write("# POS: {}\n".format(positive))
-                    cdsstarts_intermediate_output.write("# NEG: {}\n".format(negative))
-                    cdsstarts_intermediate_output.write("# Padj: {}\n".format(padjusted))
-                    cdsstarts_intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
+                    intermediate_output.write("# UID: {}\n".format(uid))
+                    intermediate_output.write("# POS: {}\n".format(positive))
+                    intermediate_output.write("# NEG: {}\n".format(negative))
+                    intermediate_output.write("# Padj: {}\n".format(padjusted))
+                    intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
                     
-                    cdsstarts.to_csv(cdsstarts_intermediate_output, sep="\t", header=None, index=None)
-                    cdsstarts = pb.BedTool().from_dataframe(cdsstarts)
+                    feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
+                    feature = pb.BedTool().from_dataframe(feature)
                 else:
-                    cdsstarts = pb.BedTool().from_dataframe(cds_df)
+                    feature = pb.BedTool().from_dataframe(df)
                 
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
@@ -125,8 +125,8 @@ def main(argv=None): # IGNORE:C0111
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 
                 some_map = Map.Map(ReadDensity=rbp,
-                   annotation=cdsstarts,
-                   map_type='cdsstart',
+                   annotation=feature,
+                   map_type='not_se',
                    map_name=my_name,
                    is_scaled=False,
                    left_mar=300,
