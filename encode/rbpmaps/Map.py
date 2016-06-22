@@ -56,83 +56,85 @@ class Map(object):
         with open(self.annotation) as f:
             # f.next() # for title
             for line in f:
-                event = line.split('\t')[0]
-                upstream, se, downstream = event.split('@')
-                
-                upstream_interval = misc.create_bed_tool_from_miso(upstream)
-                interval = misc.create_bed_tool_from_miso(se)
-                downstream_interval = misc.create_bed_tool_from_miso(downstream)
-                
-                """three prime upstream region"""
-                left_pad, wiggle, right_pad = intervals.three_prime_site(self.ReadDensity, 
-                                                                    interval,
-                                                                    upstream_interval,
-                                                                    self.exon_offset,
-                                                                    self.intron_offset)
-                wiggle = pd.Series(wiggle)
-                if not all(np.isnan(wiggle)):
-                    wiggle = abs(wiggle) # convert all values to positive
-    
-                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
-                    wiggle = np.nan_to_num(wiggle) #
-                    three_upstream[event] = wiggle
-    
-                """five prime site of skipped region"""
-                left_pad, wiggle, right_pad = intervals.five_prime_site(self.ReadDensity, 
+                if not line.startswith('#'):
+                    event = line.split('\t')[0]
+                    upstream, se, downstream = event.split('@')
+                    
+                    upstream_interval = misc.create_bed_tool_from_miso(upstream)
+                    interval = misc.create_bed_tool_from_miso(se)
+                    downstream_interval = misc.create_bed_tool_from_miso(downstream)
+                    
+                    """three prime upstream region"""
+                    left_pad, wiggle, right_pad = intervals.three_prime_site(self.ReadDensity, 
+                                                                        interval,
                                                                         upstream_interval,
-                                                                        interval,
                                                                         self.exon_offset,
                                                                         self.intron_offset)
-                wiggle = pd.Series(wiggle)
-                if not all(np.isnan(wiggle)):
-                    wiggle = abs(wiggle) # convert all values to positive
-                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
-                    wiggle = np.nan_to_num(wiggle) #
-                    five_skipped[event] = wiggle
-    
-                """three prime site of skipped region"""
-                left_pad, wiggle, right_pad = intervals.three_prime_site(self.ReadDensity, 
-                                                                         downstream_interval,
-                                                                         interval,
-                                                                         self.exon_offset,
-                                                                         self.intron_offset)
-                wiggle = pd.Series(wiggle)
-                if not all(np.isnan(wiggle)):
-                    wiggle = abs(wiggle) # convert all values to positive
-                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
-                    wiggle = np.nan_to_num(wiggle) #
-                    three_skipped[event] = wiggle
-    
-                """five prime site of downstream region"""
-                left_pad, wiggle, right_pad = intervals.five_prime_site(self.ReadDensity, 
-                                                                        interval,
-                                                                        downstream_interval,
-                                                                        self.exon_offset,
-                                                                        self.intron_offset)
-                wiggle = pd.Series(wiggle)
-                if not all(np.isnan(wiggle)):
-                    wiggle = abs(wiggle) # convert all values to positive
-                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
-                    wiggle = np.nan_to_num(wiggle) # convert all nans to 0
-                    five_downstream[event] = wiggle
+                    wiggle = pd.Series(wiggle)
+                    if not all(np.isnan(wiggle)):
+                        wiggle = abs(wiggle) # convert all values to positive
+        
+                        wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                        wiggle = np.nan_to_num(wiggle) #
+                        three_upstream[event] = wiggle
+        
+                    """five prime site of skipped region"""
+                    left_pad, wiggle, right_pad = intervals.five_prime_site(self.ReadDensity, 
+                                                                            upstream_interval,
+                                                                            interval,
+                                                                            self.exon_offset,
+                                                                            self.intron_offset)
+                    wiggle = pd.Series(wiggle)
+                    if not all(np.isnan(wiggle)):
+                        wiggle = abs(wiggle) # convert all values to positive
+                        wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                        wiggle = np.nan_to_num(wiggle) #
+                        five_skipped[event] = wiggle
+        
+                    """three prime site of skipped region"""
+                    left_pad, wiggle, right_pad = intervals.three_prime_site(self.ReadDensity, 
+                                                                             downstream_interval,
+                                                                             interval,
+                                                                             self.exon_offset,
+                                                                             self.intron_offset)
+                    wiggle = pd.Series(wiggle)
+                    if not all(np.isnan(wiggle)):
+                        wiggle = abs(wiggle) # convert all values to positive
+                        wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                        wiggle = np.nan_to_num(wiggle) #
+                        three_skipped[event] = wiggle
+        
+                    """five prime site of downstream region"""
+                    left_pad, wiggle, right_pad = intervals.five_prime_site(self.ReadDensity, 
+                                                                            interval,
+                                                                            downstream_interval,
+                                                                            self.exon_offset,
+                                                                            self.intron_offset)
+                    wiggle = pd.Series(wiggle)
+                    if not all(np.isnan(wiggle)):
+                        wiggle = abs(wiggle) # convert all values to positive
+                        wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                        wiggle = np.nan_to_num(wiggle) # convert all nans to 0
+                        five_downstream[event] = wiggle
                   
             three_upstream = pd.DataFrame(three_upstream).T
             five_skipped = pd.DataFrame(five_skipped).T
             three_skipped = pd.DataFrame(three_skipped).T
             five_downstream = pd.DataFrame(five_downstream).T
             
-            three_upstream_df, three_upstream_normed = self.normalize(three_upstream,
-                                              self.min_read_density_sum)
-            five_skipped_df, five_skipped_normed = self.normalize(five_skipped,
-                                            self.min_read_density_sum)
-            three_skipped_df, three_skipped_normed = self.normalize(three_skipped,
-                                             self.min_read_density_sum)
-            five_downstream_df, five_downstream_normed = self.normalize(five_downstream,
-                                               self.min_read_density_sum)
+            three_upstream_df, three_upstream_normed, three_upstream_error = self.normalize(three_upstream,
+                                                                                            self.min_read_density_sum)
+            five_skipped_df, five_skipped_normed, five_skipped_error = self.normalize(five_skipped,
+                                                                                      self.min_read_density_sum)
+            three_skipped_df, three_skipped_normed, three_skipped_error = self.normalize(three_skipped,
+                                                                                         self.min_read_density_sum)
+            five_downstream_df, five_downstream_normed, five_downstream_error = self.normalize(five_downstream,
+                                                                                               self.min_read_density_sum)
                         
             return {'raw':[three_upstream, five_skipped, three_skipped, five_downstream],
-                                'normed':[three_upstream_df, five_skipped_df, three_skipped_df, five_downstream_df],
-                                'means':[three_upstream_normed, five_skipped_normed, three_skipped_normed, five_downstream_normed]}
+                    'normed':[three_upstream_df, five_skipped_df, three_skipped_df, five_downstream_df],
+                    'means':[three_upstream_normed, five_skipped_normed, three_skipped_normed, five_downstream_normed],
+                    'error':[three_upstream_error, five_skipped_error, three_skipped_error, five_downstream_error]}
     
     def normalize(self, densities, min_density_threshold):
     
@@ -140,8 +142,10 @@ class Map(object):
         df = densities[densities.sum(axis=1) > min_density_threshold]
         min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
         df = df + min_normalized_read_number
+        pdf = df.div(df.sum(axis=1), axis=0)
+        sem = pdf.sem(axis=0)
         # make a change to the dataframe
-        return df.div(df.sum(axis=1), axis=0), df.div(df.sum(axis=1), axis=0).mean()
+        return pdf, pdf.mean(), sem
 
     def create_single_frame_matrix(self):
         count = 0
@@ -170,8 +174,8 @@ class Map(object):
         raw = pd.DataFrame(densities).T
         # print("Density matrix size: {}".format(densities.shape[0]))
         # f, ax = plt.subplots()           
-        normed, means = self.normalize(raw, self.min_read_density_sum)
+        normed, means, error = self.normalize(raw, self.min_read_density_sum)
         
-        return raw, normed, means
+        return raw, normed, means, error
         
     

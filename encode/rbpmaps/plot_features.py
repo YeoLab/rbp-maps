@@ -24,6 +24,7 @@ from argparse import RawDescriptionHelpFormatter
 import ReadDensity
 import Map
 import Plot
+import misc
 import generate_manifests as gm
 import pandas as pd
 import pybedtools as pb
@@ -51,7 +52,7 @@ def main(argv=None): # IGNORE:C0111
     
     # Setup argument parser
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-i", "--input", dest="input",required=True)
+    parser.add_argument("-i", "--input", dest="input",required=True, help="input manifest file that should look something like (per line): ")
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-fe", "--feature", dest="feature",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
@@ -99,8 +100,19 @@ def main(argv=None): # IGNORE:C0111
                     uid = line[2].strip()
                     filter_list = gm.generate_list_of_differentially_expressed_genes(
                         args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
-                    # print(cds_df[cds_df['name'].isin(filter_list)])
-                    feature = df[df['name'].isin(filter_list)]
+                    
+                    if(args.event == 'se'): # this is dumb
+                        filter_list = [misc.ensembl_from_gencode(f) for f in filter_list]
+                        
+                        df = df.dropna() # drops NAN (unannotated events)
+                        df['gene'] = df['name'].str.split(',')
+                        df['inlist'] = df.apply(misc.isin,args=[filter_list],axis=1)
+                        feature = df[df['inlist']==True]
+                        del feature['inlist']
+                        del feature['gene']
+                        
+                    else:
+                        feature = df[df['name'].isin(filter_list)]
                     
                     temp = os.path.join(outdir,my_name)+".diffexp_{}_genes.bed".format(args.direction)
                     intermediate_output = open(temp,'w')
@@ -113,6 +125,7 @@ def main(argv=None): # IGNORE:C0111
                     
                     feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
                     intermediate_output.close()
+                    feature = temp
                     # feature = pb.BedTool().from_dataframe(feature)
                 else:
                     # feature = pb.BedTool().from_dataframe(df)
@@ -132,7 +145,7 @@ def main(argv=None): # IGNORE:C0111
                 
                 some_map = Map.Map(ReadDensity=rbp,
                    annotation=feature,
-                   map_type='cdsstart',
+                   map_type=args.event,
                    map_name=my_name,
                    is_scaled=False,
                    left_mar=300,

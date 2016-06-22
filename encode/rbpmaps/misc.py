@@ -5,6 +5,15 @@ Created on Jun 20, 2016
 '''
 import pybedtools as bt
 
+def isin(row,lst):
+    for g in row['gene']:
+        if g in lst:
+            return True
+    return False
+
+def ensembl_from_gencode(gencode_id):
+    return gencode_id.split('.')[0]
+
 def create_bedtool(annotation):
     return bt.BedTool(annotation)
 

@@ -29,12 +29,15 @@ class Plot(object):
     def single_frame(self):
         
         ax = plt.gca()
-        raw, normed, means = self.map.get_matrices()
+        raw, normed, means, error = self.map.get_matrices()
         normed.to_csv('{}.normed_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
         means.to_csv('{}.allmeans.txt'.format(os.path.splitext(self.output_file)[0]))
         raw.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
+        error.to_csv('{}.standard_error.txt'.format())
         
-        ax.plot(means, color = self.color)
+        ax.plot((means+error), color = sns.color_palette("hls", 8)[0], alpha = 0.3, label = 'Standard Error')
+        ax.plot(means, color = self.color, label = 'Mean Read Density')
+        ax.plot((means-error), color = sns.color_palette("hls", 8)[0], alpha = 0.3)
         
         
         """if self.points == True:
@@ -57,7 +60,7 @@ class Plot(object):
                 ax.axvline(left,alpha=0.3)
                 ax.axvline(right,alpha=0.3)"""
 
-        ax.set_ylabel('Mean Read Density')
+        ax.set_ylabel('Read Density')
         ax.set_title(self.map.get_name(),y=1.03)
         
         ymax = max(means) * 1.1
