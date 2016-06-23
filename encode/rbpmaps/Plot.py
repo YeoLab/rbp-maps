@@ -33,12 +33,12 @@ class Plot(object):
         normed.to_csv('{}.normed_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
         means.to_csv('{}.allmeans.txt'.format(os.path.splitext(self.output_file)[0]))
         raw.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
-        error.to_csv('{}.standard_error.txt'.format())
+        error.to_csv('{}.standard_error.txt'.format(os.path.splitext(self.output_file)[0]))
         
         ax.plot((means+error), color = sns.color_palette("hls", 8)[0], alpha = 0.3, label = 'Standard Error')
         ax.plot(means, color = self.color, label = 'Mean Read Density')
         ax.plot((means-error), color = sns.color_palette("hls", 8)[0], alpha = 0.3)
-        
+        ax.legend()
         
         """if self.points == True:
             if self.scale == True: # scale from 0 to 100

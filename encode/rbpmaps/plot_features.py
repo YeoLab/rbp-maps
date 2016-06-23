@@ -54,7 +54,7 @@ def main(argv=None): # IGNORE:C0111
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-i", "--input", dest="input",required=True, help="input manifest file that should look something like (per line): ")
     parser.add_argument("-o", "--output", dest="output",required=True)
-    parser.add_argument("-fe", "--feature", dest="feature",required=True)
+    parser.add_argument("-fe", "--feature", dest="feature",required=True, help="a bedfile or miso file containing a list of features to map to.")
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
     parser.add_argument("-m", "--manifest", dest="manifest")
