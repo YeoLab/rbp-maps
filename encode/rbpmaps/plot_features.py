@@ -22,7 +22,7 @@ import os
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import ReadDensity
-import Map
+from rbpmaps import Matrix
 import Plot
 import misc
 import generate_manifests as gm
@@ -143,9 +143,8 @@ def main(argv=None): # IGNORE:C0111
                 """
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 
-                some_map = Map.Map(ReadDensity=rbp,
+                some_map = Matrix.Map(ReadDensity=rbp,
                    annotation=feature,
-                   map_type=args.event,
                    map_name=my_name,
                    is_scaled=False,
                    left_mar=300,
@@ -155,10 +154,7 @@ def main(argv=None): # IGNORE:C0111
                 out_file = os.path.join(outdir,my_name)+".{}.svg".format(args.direction)
                 some_plot = Plot.Plot(some_map, out_file, 'blue')
                 
-                if args.event == 'se':
-                    some_plot.four_frame()
-                else:
-                    some_plot.single_frame()
+                some_plot.single_frame()
 
             except Exception as e:
                 print(e)

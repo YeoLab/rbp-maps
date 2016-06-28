@@ -17,48 +17,27 @@ class Plot(object):
     classdocs
     '''
 
-    def __init__(self, Map, output_file, line_color, points=True):
+    def __init__(self, RBP, output_file, line_color, map_type):
         '''
         Constructor
         '''
-        self.map = Map
+        self.rbp = RBP
         self.output_file = output_file
         self.color = line_color
-        self.points = points
+        self.map_type = map_type
         
+        if map_type == 'se':
+            self.rbp.create_se_matrices()
+        else:
+            self.rbp.create_matrices()
+
     def single_frame(self):
         
         ax = plt.gca()
-        raw, normed, means, error = self.map.get_matrices()
-        normed.to_csv('{}.normed_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
-        means.to_csv('{}.allmeans.txt'.format(os.path.splitext(self.output_file)[0]))
-        raw.to_csv('{}.raw_density_matrix.csv'.format(os.path.splitext(self.output_file)[0]))
-        error.to_csv('{}.standard_error.txt'.format(os.path.splitext(self.output_file)[0]))
+        means = self.rbp.normalize()
         
-        ax.plot((means+error), color = sns.color_palette("hls", 8)[0], alpha = 0.3, label = 'Standard Error')
         ax.plot(means, color = self.color, label = 'Mean Read Density')
-        ax.plot((means-error), color = sns.color_palette("hls", 8)[0], alpha = 0.3)
         ax.legend()
-        
-        """if self.points == True:
-            if self.scale == True: # scale from 0 to 100
-                ax.set_xticklabels(['0% {}'.format(label),'100% {}'.format(label)])
-                ax.set_xticks([0,99])
-                ax.set_xlim(0,99)
-            elif left == right: # single point with equadistant flanks
-                ax.set_xticklabels(['upstream ({} nt)'.format(left),
-                                    '{}'.format(label),
-                                    'downstream ({} nt)'.format(right)])
-                ax.set_xticks([0,left,left+right])
-                ax.axvline(left,alpha=0.3)
-            else: 
-                ax.set_xticklabels(['upstream ({} nt)'.format(left),
-                                    '{}'.format(label),
-                                    '{}'.format(label),
-                                    'downstream ({} nt)'.format(right)])
-                ax.set_xticks([0,left,right,left+right])
-                ax.axvline(left,alpha=0.3)
-                ax.axvline(right,alpha=0.3)"""
 
         ax.set_ylabel('Read Density')
         ax.set_title(self.map.get_name(),y=1.03)
@@ -69,29 +48,37 @@ class Plot(object):
         ax.set_ylim([ymin,ymax])
         plt.savefig(self.output_file)
         ax.clear()
+    
+    def single_frame_with_error(self):
+        
+        ax = plt.gca()
+        pdf = self.rbp.normalize()
+        
+        means = pdf.mean()
+        error = pdf.sem()
+        
+        ax.plot((means+error), color = sns.color_palette("hls", 8)[0], alpha = 0.3, label = 'Standard Error')
+        ax.plot(means, color = self.color, label = 'Mean Read Density')
+        ax.plot((means-error), color = sns.color_palette("hls", 8)[0], alpha = 0.3)
+        ax.legend()
+
+        ax.set_ylabel('Read Density')
+        ax.set_title(self.map.get_name(),y=1.03)
+        
+        ymax = max(means) * 1.1
+        ymin = min(means) * 0.9
+        
+        ax.set_ylim([ymin,ymax])
+        plt.savefig(self.output_file)
+        ax.clear()
+           
     def four_frame(self):
         num_rows = 1
         num_cols = 4
         color = 'blue'
-        matrices = self.map.get_matrices()
         
-        region1_raw, region2_raw, region3_raw, region4_raw = matrices['raw']
-        region1_normed, region2_normed, region3_normed, region4_normed = matrices['normed']
-        region1, region2, region3, region4 = matrices['means']
+        region1, region2, region3, region4 = 0
         
-        all_regions = pd.concat([region1_normed,region2_normed,region3_normed,region4_normed])
-        
-        region1_raw.to_csv("{}_region1_raw_density_matrix.csv".format(os.path.splitext(self.output_file)[0]))
-        region2_raw.to_csv("{}_region2_raw_density_matrix.csv".format(os.path.splitext(self.output_file)[0]))
-        region3_raw.to_csv("{}_region3_raw_density_matrix.csv".format(os.path.splitext(self.output_file)[0]))
-        region4_raw.to_csv("{}_region4_raw_density_matrix.csv".format(os.path.splitext(self.output_file)[0]))
-            
-        region1_normed.to_csv("{}_region1_normed_pdf.csv".format(os.path.splitext(self.output_file)[0]))
-        region2_normed.to_csv("{}_region2_normed_pdf.csv".format(os.path.splitext(self.output_file)[0]))
-        region3_normed.to_csv("{}_region3_normed_pdf.csv".format(os.path.splitext(self.output_file)[0]))
-        region4_normed.to_csv("{}_region4_normed_pdf.csv".format(os.path.splitext(self.output_file)[0]))
-        
-        all_regions.to_csv(os.path.splitext(self.output_file)[0]+'.allmeans.txt')
         
         with dataviz.Figure(self.output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             

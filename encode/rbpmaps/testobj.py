@@ -3,7 +3,7 @@ Created on Jun 20, 2016
 
 @author: brianyee
 '''
-import Map
+from rbpmaps import Matrix
 import ReadDensity
 from rbpmaps import Plot
 
@@ -24,7 +24,7 @@ def main():
     my_right_mar = 500
     my_min_read_density_sum = 0
                  
-    some_map = Map.Map(ReadDensity=my_readdensity,
+    some_map = Matrix.Map(ReadDensity=my_readdensity,
                    annotation=my_annotation,
                    map_type=my_map_type,
                    map_name=my_map_name,
