@@ -32,8 +32,11 @@ class Matrix(object):
         self.intron_offset = intron_offset
         self.min_read_density_sum = min_read_density_sum
 
+        self.matrix = None
+        
     def set_annotation(self, annotation):
         self.annotation = annotation
+        print("self annotation is set! {}".format(annotation))
         
     def create_matrix(self):
         count = 0
@@ -59,9 +62,10 @@ class Matrix(object):
                     wiggle = intervals.get_scale(wiggle)
                 densities[intervals.rename_index(interval)] = wiggle
                 
+        return {self.map_name:(pd.DataFrame(densities).T)}
         
-        return {self.map_name:pd.DataFrame(densities).T}
-
+    
+    
     def create_se_matrix(self):
         three_upstream = {}
         five_skipped = {}

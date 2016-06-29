@@ -40,7 +40,8 @@ def normalize(density, min_density_threshold, prefix, base = None):
     """
     This is identical to calculate_pdf.
     """
-    pdf = calculate_pdf(density, min_density_threshold)
+    print(type(density))
+    pdf = calculate_pdf(density, min_density_threshold, prefix, base)
         
     if(base):
         pdf.to_csv("{}.{}.pdf.csv".format(base,prefix))

@@ -30,11 +30,11 @@ class Plot(object):
             self.rbp.create_se_matrices()
         else:
             self.rbp.create_matrices()
-
+            
     def single_frame(self):
         
         ax = plt.gca()
-        means = self.rbp.normalize()
+        means = self.rbp.normalize(self.rbp.get_map_name())
         
         ax.plot(means, color = self.color, label = 'Mean Read Density')
         ax.legend()
@@ -52,7 +52,7 @@ class Plot(object):
     def single_frame_with_error(self):
         
         ax = plt.gca()
-        pdf = self.rbp.normalize()
+        pdf = self.rbp.normalize(self.rbp.get_map_name())
         
         means = pdf.mean()
         error = pdf.sem()
@@ -63,7 +63,7 @@ class Plot(object):
         ax.legend()
 
         ax.set_ylabel('Read Density')
-        ax.set_title(self.map.get_name(),y=1.03)
+        ax.set_title(self.rbp.get_map_name(),y=1.03)
         
         ymax = max(means) * 1.1
         ymin = min(means) * 0.9
@@ -77,8 +77,10 @@ class Plot(object):
         num_cols = 4
         color = 'blue'
         
-        region1, region2, region3, region4 = 0
-        
+        region1 = self.rbp.normalize('three_upstream').mean()
+        region2 = self.rbp.normalize('five_skipped').mean()
+        region3 = self.rbp.normalize('three_skipped').mean()
+        region4 = self.rbp.normalize('five_downstream').mean()
         
         with dataviz.Figure(self.output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
@@ -120,4 +122,6 @@ class Plot(object):
             ax.set_ylim(min_height, max_height)
             # ax.set_xticklabels(np.arange(-intron_offset, exon_offset+1, 50))
             ax.set_yticklabels([])
-            plt.suptitle(self.map.get_name(),y=1.03)
+            plt.suptitle(self.rbp.get_map_name(),y=1.03)
+            
+            ax.clear()

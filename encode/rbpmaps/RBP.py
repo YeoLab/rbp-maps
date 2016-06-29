@@ -23,17 +23,23 @@ class RBP(object):
         self.map_name = map_name
         
         self.raw_density_matrix = None
+        self.output_location = output_location
         
     def set_annotation(self,annotation_file):
+        print("self annotation is set! {}".format(annotation_file))
         self.mtx.set_annotation(annotation_file)
         
     def get_matrices(self):
         return self.raw_density_matrix
     
-    def normalize(self, normfunc = norm.normalize):
-        return normfunc(self.raw_density_matrix).mean()
+    def get_map_name(self):
+        return self.map_name
     
-    def create_matrices(self,prefix):
+    def normalize(self, label, normfunc = norm.normalize):
+        
+        return normfunc(self.raw_density_matrix[label], 0, 'default')
+    
+    def create_matrices(self):
         
         self.raw_density_matrix = self.mtx.create_matrix()
         if(self.output_location):
@@ -42,8 +48,9 @@ class RBP(object):
             self.raw_density_matrix[self.mtx.map_name].to_csv('{}.raw_density_matrix.csv'.format(base))
     
     def create_se_matrices(self):
-        
         self.raw_density_matrix = self.mtx.create_se_matrix()
+        for key in self.raw_density_matrix:
+            print(key)
         if(self.output_location):
             base = os.path.join(self.output_location,self.map_name)
             for key in self.raw_density_matrix.keys():
