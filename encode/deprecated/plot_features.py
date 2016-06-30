@@ -22,7 +22,7 @@ import os
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import ReadDensity
-from rbpmaps import Matrix
+from rbpmaps import matrix_functions
 import Plot
 import misc
 import generate_manifests as gm
@@ -134,16 +134,16 @@ def main(argv=None): # IGNORE:C0111
                 print("Processing {}".format(my_name))
                 print("positive file = {}".format(positive))
                 print("negative file = {}".format(negative))
-                # Generate RBP KD manifest
+                # Generate matrix_functions KD manifest
                 
                 """
                 
-                use the bedfile to generate the RBP map
+                use the bedfile to generate the matrix_functions map
                 
                 """
                 rbp = ReadDensity.ReadDensity(pos=positive,neg=negative,name=my_name)
                 
-                some_map = Matrix.Map(ReadDensity=rbp,
+                some_map = matrix_functions.Map(ReadDensity=rbp,
                    annotation=feature,
                    map_name=my_name,
                    is_scaled=False,

@@ -3,9 +3,9 @@ Created on Jun 20, 2016
 
 @author: brianyee
 '''
-from rbpmaps import Matrix
+from Map import Clip
 import ReadDensity
-import RBP
+from rbpmaps import matrix_functions
 import Plot
 
 def main():
@@ -19,42 +19,34 @@ def main():
     my_readdensity = ReadDensity.ReadDensity(pos, neg)
     my_annotation = 'testfiles/annotations/all_cdsStart.bed'
     my_annotation2 = 'testfiles/annotations/miso_se_to_ensembl.tsv'
-    my_map_type = 'se'
     my_map_name =  'se starts U2AF2 INPUT'
     my_is_scaled = False
     my_left_mar = 500
     my_right_mar = 500
     my_min_read_density_sum = 0
                  
-    some_map = Matrix.Matrix(ReadDensity=my_readdensity,
-                   annotation=my_annotation,
-                   map_name=my_map_name,
-                   is_scaled=my_is_scaled,
-                   left_mar=my_left_mar,
-                   right_mar=my_right_mar,
-                   min_read_density_sum=my_min_read_density_sum)
     
-    out_loc = '/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj2'
-    some_rbp = RBP.RBP(ReadDensity=my_readdensity,
-                       map_name="wat",
+    out_loc = '/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj3/242_01_U2AF2.one.svg'
+    some_rbp = Clip(ReadDensity=my_readdensity,
+                       name="wat",
                        is_scaled=my_is_scaled,
-                       annotation=my_annotation,
-                       output_location=out_loc,
-                       left_mar=my_left_mar,
-                       right_mar=my_right_mar)
-    some_rbp.set_annotation(my_annotation2)
+                       annotation=my_annotation2,
+                       output_file=out_loc,
+                       left=my_left_mar,
+                       right=my_right_mar)
     
-    some_plot = Plot.Plot(RBP=some_rbp,
-                          output_file='/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj2/242_01_U2AF2.four.svg',
-                          line_color='red',
-                          map_type='se')
-    some_plot.four_frame()
-    some_rbp.set_annotation(my_annotation)
-    some_plot2 = Plot.Plot(RBP=some_rbp,
-                          output_file='/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj2/242_01_U2AF2.single.svg',
-                          line_color='red',
-                          map_type='cdsstarts')
-    some_plot2.single_frame_with_error()
+    some_rbp.create_se_matrices()
+    some_rbp.set_matrix()
+    
+    Plot.four_frame(some_rbp.matrix['three_upstream'].mean(), 
+                    some_rbp.matrix['five_skipped'].mean(), 
+                    some_rbp.matrix['three_skipped'].mean(), 
+                    some_rbp.matrix['five_downstream'].mean(), 
+                    title=some_rbp.name,
+                    output_file=some_rbp.output_file)
+"""    Plot.single_frame(means=some_rbp.matrix['some_feature'].mean(),
+                      title=some_rbp.name,
+                      output_file=some_rbp.output_file)"""
     
     
     
