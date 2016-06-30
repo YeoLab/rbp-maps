@@ -36,6 +36,15 @@ def create_matrix(annotation, density, left, right, is_scaled):
                 
     return pd.DataFrame(densities).T
 
+def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled):
+    # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
+    # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
+    
+    splice_junction = {} # essentially three_upstream and five_skipped
+    five_skipped = {}
+    five_downstream = {}
+    
+    
 def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled):
     three_upstream = {}
     five_skipped = {}
@@ -50,9 +59,9 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled)
                 event = line.split('\t')[0]
                 upstream, se, downstream = event.split('@')
                     
-                upstream_interval = misc.create_bed_tool_from_miso(upstream)
-                interval = misc.create_bed_tool_from_miso(se)
-                downstream_interval = misc.create_bed_tool_from_miso(downstream)
+                upstream_interval = misc.create_bed_tool_from_miso_se(upstream)
+                interval = misc.create_bed_tool_from_miso_se(se)
+                downstream_interval = misc.create_bed_tool_from_miso_se(downstream)
                     
                 """three prime upstream region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
@@ -120,8 +129,9 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled)
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
-            
-        return {'three_upstream':three_upstream, 
+        
+        return three_upstream, five_skipped, three_skipped, five_downstream
+        """return {'three_upstream':three_upstream, 
                 'five_skipped':five_skipped, 
                 'three_skipped':three_skipped, 
-                'five_downstream':five_downstream}
+                'five_downstream':five_downstream}"""

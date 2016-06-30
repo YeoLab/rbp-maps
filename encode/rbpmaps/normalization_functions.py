@@ -7,11 +7,11 @@ import pandas as pd
 import numpy as np
 import os
 
-def KLDivergence(density, input_density):
+def KLDivergence(density, input_density, min_density_threshold = 0):
         PDF_CONST = 1.0/len(density.columns)
         
-        pdf = calculate_pdf(density,'ip')
-        input_pdf = calculate_pdf(input_density,'input')
+        pdf = calculate_pdf(density,min_density_threshold)
+        input_pdf = calculate_pdf(input_density,min_density_threshold)
         
         pdft = pd.merge(pdf,input_pdf,how='left',left_index=True,right_index=True).fillna(PDF_CONST)
         
@@ -22,9 +22,9 @@ def KLDivergence(density, input_density):
 
         en = pdf.multiply(np.log2(pdf.div(pdfi)))
         
-        return pdf, pdfi, en, en.mean()
+        return en
     
-def calculate_pdf(density, min_density_threshold):
+def calculate_pdf(density, min_density_threshold = 0):
     densities = density.replace(-1, np.nan)   
     df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
@@ -33,7 +33,7 @@ def calculate_pdf(density, min_density_threshold):
   
     return pdf # , mean, sem
     
-def normalize(density, min_density_threshold):
+def normalize(density, min_density_threshold = 0):
     """
     This is identical to calculate_pdf.
     """
@@ -41,21 +41,21 @@ def normalize(density, min_density_threshold):
 
     return pdf 
     
-def normalize_and_subtract(density, input_density, min_density_threshold):
+def normalize_and_subtract(density, input_density, min_density_threshold = 0):
         
-    pdf = calculate_pdf(density,'ip')
-    input_pdf = calculate_pdf(input_density,'input')
+    pdf = calculate_pdf(density,min_density_threshold)
+    input_pdf = calculate_pdf(input_density,min_density_threshold)
         
-    subtracted = pdf.mean() - input_pdf.mean()
+    subtracted = pd.DataFrame(pdf.mean() - input_pdf.mean()).T
       
     return subtracted
     
-def normalize_and_per_region_subtract(density, input_density, min_density_threshold):
+def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
         
     PDF_CONST = 1.0/len(density.columns)
         
-    pdf = calculate_pdf(density, 'ip')
-    input_pdf = calculate_pdf(input_density, 'input')
+    pdf = calculate_pdf(density, min_density_threshold)
+    input_pdf = calculate_pdf(input_density, min_density_threshold)
         
     pdft = pd.merge(pdf,input_pdf, how='left',left_index=True,right_index=True).fillna(PDF_CONST)
         

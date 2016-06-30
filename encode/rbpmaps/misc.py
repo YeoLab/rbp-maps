@@ -17,7 +17,7 @@ def ensembl_from_gencode(gencode_id):
 def create_bedtool(annotation):
     return bt.BedTool(annotation)
 
-def create_bed_tool_from_miso(miso_annotation):
+def create_bed_tool_from_miso_se(miso_annotation):
     """
     takes a single miso annotation in the form of:
     
@@ -28,3 +28,16 @@ def create_bed_tool_from_miso(miso_annotation):
     chrom, start, end, strand = miso_annotation.split(':')
     some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
     return some_bedtool
+
+def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt):
+    if is_alt == True:
+        # format is: chr17:80009218:80008888|80009170:-
+        chrom, start, end, strand = miso_annotation.split(':')
+        end1, end2 = end.split('|')
+        some_bedtool_splice1 = bt.create_interval_from_list([chrom,start,end1,'0','0',strand])
+        # some_bedtool_splice2 = bt.
+    else:
+        # format is: chr17:80008538:80008640:-
+        chrom, start, end, strand = miso_annotation.split(':')
+        some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
+        return some_bedtool
