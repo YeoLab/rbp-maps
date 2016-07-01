@@ -82,9 +82,9 @@ def main(argv=None): # IGNORE:C0111
             try:  
                 line = line.split('\t')
                 
-                rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/')
-                rep2 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/')
-                inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
+                rep1 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/')
+                rep2 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
+                inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/')
                 
                 if(args.flipped):
                     rep1neg = rep1.replace('.bam','.norm.pos.bw')
@@ -119,7 +119,7 @@ def main(argv=None): # IGNORE:C0111
                 """
                 for i in range(0,len(reps)):
                     if(args.kd):
-                        uid = line[0].strip() # changed
+                        uid = line[1].strip() # changed
                         filter_list = gm.generate_list_of_differentially_expressed_genes(
                             args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
                         
@@ -171,31 +171,50 @@ def main(argv=None): # IGNORE:C0111
                                                 annotation=feature,
                                                 output_file=output_file)
                     
-                    current_rbp.create_se_matrices(normalize=True,normfunc=norm.normalize_and_subtract)
-                    
-                    Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
-                                    current_rbp.matrix['five_skipped'].mean(), 
-                                    current_rbp.matrix['three_skipped'].mean(), 
-                                    current_rbp.matrix['five_downstream'].mean(), 
-                                    title=current_rbp.name,
-                                    output_file=os.path.join(outdir,reps[i])+".se.subtracted.svg")
-                    
-                    current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
-                    Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
-                                    current_rbp.matrix['five_skipped'].mean(), 
-                                    current_rbp.matrix['three_skipped'].mean(), 
-                                    current_rbp.matrix['five_downstream'].mean(), 
-                                    title=current_rbp.name,
-                                    output_file=os.path.join(outdir,reps[i])+".se.KLDivergence.svg")
-                    
-                    current_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
-                    Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
-                                    current_rbp.matrix['five_skipped'].mean(), 
-                                    current_rbp.matrix['three_skipped'].mean(), 
-                                    current_rbp.matrix['five_downstream'].mean(), 
-                                    title=current_rbp.name,
-                                    output_file=os.path.join(outdir,reps[i])+".se.subtract_by_region.svg")
-                    
+                    if args.event == 'se':
+                        current_rbp.create_se_matrices(normalize=True,normfunc=norm.normalize_and_subtract)
+                        
+                        Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
+                                        current_rbp.matrix['five_skipped'].mean(), 
+                                        current_rbp.matrix['three_skipped'].mean(), 
+                                        current_rbp.matrix['five_downstream'].mean(), 
+                                        title=current_rbp.name,
+                                        output_file=os.path.join(outdir,reps[i])+".se.subtracted.svg")
+                        
+                        current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
+                        Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
+                                        current_rbp.matrix['five_skipped'].mean(), 
+                                        current_rbp.matrix['three_skipped'].mean(), 
+                                        current_rbp.matrix['five_downstream'].mean(), 
+                                        title=current_rbp.name,
+                                        output_file=os.path.join(outdir,reps[i])+".se.KLDivergence.svg")
+                        
+                        current_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
+                        Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
+                                        current_rbp.matrix['five_skipped'].mean(), 
+                                        current_rbp.matrix['three_skipped'].mean(), 
+                                        current_rbp.matrix['five_downstream'].mean(), 
+                                        title=current_rbp.name,
+                                        output_file=os.path.join(outdir,reps[i])+".se.subtract_by_region.svg")
+                    else:
+                        current_rbp.create_matrices(normalize=True,normfunc=norm.normalize_and_subtract)
+                        
+                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
+                                                     current_rbp.matrix['feature'].sem(),
+                                        title=current_rbp.name,
+                                        output_file=os.path.join(outdir,reps[i])+".se.subtracted.svg")
+                        
+                        current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
+                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
+                                                     current_rbp.matrix['feature'].sem(),
+                                        title=current_rbp.name,
+                                        output_file=os.path.join(outdir,reps[i])+".se.KLDivergence.svg")
+                        
+                        current_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
+                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
+                                                     current_rbp.matrix['feature'].sem(),
+                                        title=current_rbp.name,
+                                        output_file=os.path.join(outdir,reps[i])+".se.subtract_by_region.svg")
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

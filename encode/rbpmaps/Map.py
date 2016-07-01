@@ -140,7 +140,7 @@ class ClipWithInput(Map):
                                                        right = self.right, 
                                                        is_scaled = self.is_scaled)
         self.input_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
-                                                          density = self.ip, 
+                                                          density = self.inp, 
                                                           left = self.left, 
                                                           right = self.right, 
                                                           is_scaled = self.is_scaled)

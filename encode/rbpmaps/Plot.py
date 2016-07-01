@@ -40,7 +40,7 @@ def single_frame_with_error(means, error, title, output_file, color='red'):
     ax.set_title(title,y=1.03)
         
     ymax = max(means) * 1.1
-    ymin = min(means) * 0.9
+    ymin = min(means) * 0.9 if min(means) > 0 else min(means)*1.1 # in case of negatives for subtraction
         
     ax.set_ylim([ymin,ymax])
     plt.savefig(output_file)
