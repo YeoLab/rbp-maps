@@ -26,7 +26,7 @@ def create_bed_tool_from_miso_se(miso_annotation):
     and returns the corresponding bedtool
     """
     chrom, start, end, strand = miso_annotation.split(':')
-    some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
+    some_bedtool = bt.create_interval_from_list([chrom,start-1,end,'0','0',strand])
     return some_bedtool
 
 def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt):
