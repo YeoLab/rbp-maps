@@ -26,6 +26,7 @@ import Plot
 import misc
 import generate_manifests as gm
 import pandas as pd
+import sys
 import normalization_functions as norm
 from Map import ClipWithInput
 
@@ -54,29 +55,35 @@ def main(argv=None): # IGNORE:C0111
     # manifest file is taken from here: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-o", "--output", dest="output",required=True)
-    parser.add_argument("-fe", "--feature", dest="feature",required=True, help="a bedfile or miso file containing a list of features to map to.")
+    parser.add_argument("-fe", "--feature", dest="feature",required=False, help="a bedfile or miso file containing a list of features to map to.")
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)")
     parser.add_argument("-m", "--manifest", dest="manifest")
-    parser.add_argument("-d", "--direction", dest="direction", help="up, down, or both", default="both")
+    parser.add_argument("-r", "--rmats", dest="rmats", help="rMATS directory (where the ___vs___.csv is)")
+    parser.add_argument("-fdr", "--fdr", dest="fdr", help="false discovery rate for rMATS inclusion/exclusion", default = 0.05, type=float)
+    parser.add_argument("-inc", "--inc_level", dest="inc_level", help="inclusion rmats levels", default = 0 )
+    parser.add_argument("-dx", "--directionx", dest="directionx", help="[included], [excluded], or [both] inclusion rmats levels", default="both")
+    parser.add_argument("-d", "--direction", dest="direction", help="[up]regulated, [down]regulated, or all differentially expressed genes [allevents]", default="allevents")
     parser.add_argument("-p", "--padj", dest="padj", help="p-adjusted value cutoff for significance", default=0.05, type=float)
     parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, cdsstart, cdsend, txstart, txend]")
+    
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
     outdir = args.output
+    manifest = args.manifest
     
     # Process significance cutoffs
     padjusted = args.padj
     log2fc = args.log2fc
     
-    if args.event == 'se':
-        df = pd.read_table(args.feature)
-        df.columns = ['miso','name']
-    else:
-        df = pd.read_table(args.feature)
-        df.columns = ['chrom','start','stop','name','score','strand']
+    # Process rmats stuff
+    fdr = args.fdr
+    rmats_dir = args.rmats
+    directionx = args.directionx
+    inc_level = args.inc_level
+    
     with open(input_file,'r') as f:
         for line in f:
             try:  
@@ -86,6 +93,7 @@ def main(argv=None): # IGNORE:C0111
                 rep2 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
                 inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/')
                 
+                assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
                 if(args.flipped):
                     rep1neg = rep1.replace('.bam','.norm.pos.bw')
                     rep1pos = rep1.replace('.bam','.norm.neg.bw')
@@ -112,16 +120,54 @@ def main(argv=None): # IGNORE:C0111
                 reppos = [rep1pos, rep2pos]
                 repneg = [rep1neg, rep2neg]
                 
-                """
                 
-                create bedfile from DESeq2 diffexpression data
                 
-                """
+                
                 for i in range(0,len(reps)):
+                    uid = line[1].strip() # changed
+                    
+                    """
+                    
+                    find or create the annotation file
+                    
+                    """
+                    if args.event == 'se':
+                        if(args.feature): # our feature is defined for us either in a miso annotation or a rmats annotation
+                            df = pd.read_table(args.feature)
+                            if len(df.columns) == 2:
+                                df.columns = ['miso','name']
+                            elif len(df.columns) == 23:
+                                df.columns = ['ID','name','symbol','chrom','strand',
+                                              'exonStart_0base','exonEnd',
+                                              'upstreamES','upstreamEE',
+                                              'downstreamES','downstreamEE',
+                                              'ID1','IJC_sample1','SJC_sample1','IJC_sample2','SJC_sample2',
+                                              'IncFormLen','SkipFormLen','Pvalue','FDR','IncLevel1','IncLevel2',
+                                              'IncLevelDifference'] # THIS MAY NOT WORK
+                        else: # we need to find it.
+                            """
+                            generate a list of exons if an alternatively spliced file isn't found.
+                            """
+                            print("attempting to generate skipped exon file from manifest")
+                            df = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, directionx)
+                            df.columns = ['miso','name']
+                    else:
+                        try:
+                            df = pd.read_table(args.feature)
+                            df.columns = ['chrom','start','stop','name','score','strand']
+                        except IOError:
+                            print("no feature defined for non-se event")
+                            sys.exit(1)
+                    """
+                
+                    create bedfile from DESeq2 diffexpression data
+                    
+                    """
                     if(args.kd):
-                        uid = line[1].strip() # changed
+                        assert(args.direction!="allevents")
+                        
                         filter_list = gm.generate_list_of_differentially_expressed_genes(
-                            args.manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
+                            manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
                         
                         if(args.event == 'se'): # this is dumb
                             filter_list = [misc.ensembl_from_gencode(f) for f in filter_list]
@@ -167,7 +213,7 @@ def main(argv=None): # IGNORE:C0111
                     output_file = os.path.join(outdir,reps[i])+".svg"
                     current_rbp = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name=reps[i],
+                                                name="{}.{}".format(reps[i],args.direction),
                                                 annotation=feature,
                                                 output_file=output_file)
                     

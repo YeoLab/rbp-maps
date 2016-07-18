@@ -6,7 +6,45 @@ Created on Jun 6, 2016
 import pandas as pd
 import os
 
-
+def rmats_to_miso(row):
+    if row['strand'] == '+':
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}'.format(
+            row['chr'],row['upstreamES'],row['upstreamEE'],row['strand'],
+            row['chr'],row['exonStart_0base'],row['exonEnd'],row['strand'],
+            row['chr'],row['downstreamES'],row['downstreamEE'],row['strand'],
+            row['GeneID']
+        )
+    else:
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}'.format(
+            row['chr'],row['downstreamES'],row['downstreamEE'],row['strand'],
+            row['chr'],row['exonStart_0base'],row['exonEnd'],row['strand'],
+            row['chr'],row['upstreamES'],row['upstreamEE'],row['strand'],
+            row['GeneID']
+        )
+        
+def generate_rmats_as_miso(manifest_file,
+                           rmats_dir,
+                           uid,
+                           fdr=0.1,
+                           inc_level,
+                           direction="both"):
+    """
+    manifest: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
+    uid: 204
+    rep: 1
+    """
+    csv_filestring = ""
+    df = pd.read_table(manifest_file,dtype={'uID':str})
+    try:
+        control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
+        rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
+        csv_filestring = os.path.join(rmats_dir,rbp+'_vs_'+control+".csv")
+        rmats = pd.read_table(csv_filestring,sep="\t")
+        rmats['miso'] = rmats.apply(rmats_to_miso, axis=1)
+        return pd.concat([rmats['miso'],rmats['GeneID']])
+    except Exception as e:
+        print("Could not find the diffexp files for uid: {}".format(uid))
+        print(e)
 def generate_list_of_differentially_expressed_genes(manifest_file, 
                                                     kd_dir, 
                                                     uid, padj=0.05, 
@@ -18,7 +56,7 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     rep: 1
     """
     csv_filestring = ""
-    df = pd.read_table(manifest_file,dtype={'uID':str,'padj':float,'log2FoldChange':float})
+    df = pd.read_table(manifest_file,dtype={'uID':str})
     try:
         control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
         rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
@@ -27,7 +65,7 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     except Exception as e:
         print("Could not find the diffexp files for uid: {}".format(uid))
         print(e)
-    diffexp = pd.read_table(csv_filestring,sep=",")
+    diffexp = pd.read_table(csv_filestring,sep=",",dtype={'padj':float,'log2FoldChange':float})
     print("for UID: {}, corresponding KD is: {}".format(uid,csv_filestring))
     if(direction=="both"):
         print("Selected direction: BOTH (UP+DOWN with respect to WT)")
