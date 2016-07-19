@@ -26,22 +26,39 @@ def generate_rmats_as_miso(manifest_file,
                            rmats_dir,
                            uid,
                            fdr=0.1,
-                           inc_level,
+                           inc_level=0,
                            direction="both"):
     """
     manifest: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
     uid: 204
     rep: 1
     """
-    csv_filestring = ""
+    directory = ""
     df = pd.read_table(manifest_file,dtype={'uID':str})
     try:
         control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
         rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
-        csv_filestring = os.path.join(rmats_dir,rbp+'_vs_'+control+".csv")
-        rmats = pd.read_table(csv_filestring,sep="\t")
+        directory = os.path.join(rmats_dir,rbp+'_vs_'+control)
+        print(directory)
+        tsv_filestring = os.path.join(directory,'MATS_output/SE.MATS.JunctionCountOnly.txt')
+        rmats = pd.read_table(tsv_filestring,sep="\t")
+        inc_level = abs(inc_level) # clear up confusion about included/excludedness
+
+        if(direction=="both"):
+            rmats = rmats[(abs(rmats['IncLevelDifference']) > inc_level) & \
+                                              (rmats['FDR'] <= fdr)]
+        elif(direction=="included"):
+            rmats = rmats[(rmats['IncLevelDifference'] > inc_level) & \
+                                              (rmats['FDR'] <= fdr)]
+        elif(direction=="excluded"):
+            rmats = rmats[(rmats['IncLevelDifference'] < -inc_level) & \
+                                              (rmats['FDR'] <= fdr)]
+        else:
+            print("Warning: direction undefined, returning all IncLevels of FDR < {}".format(fdr))
+            rmats = rmats[rmats['FDR'] <= fdr]
+            
         rmats['miso'] = rmats.apply(rmats_to_miso, axis=1)
-        return pd.concat([rmats['miso'],rmats['GeneID']])
+        return pd.concat([rmats['miso'],rmats['GeneID']],axis=1)
     except Exception as e:
         print("Could not find the diffexp files for uid: {}".format(uid))
         print(e)
