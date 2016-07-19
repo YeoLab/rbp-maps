@@ -32,12 +32,11 @@ def generate_rmats_as_miso(manifest_file,
     rep: 1
     """
     directory = ""
-    df = pd.read_table(manifest_file,dtype={'uID':str})
+    df = pd.read_table(manifest_file,dtype={'uID':str},index_col=0,header=0)
     try:
         control = list(df[df['uID']==str(uid)]['RNASEQ_ControlENC'])[0]
         rbp = list(df[df['uID']==str(uid)]['RNASEQ_ENCODEAccID'])[0]
         directory = os.path.join(rmats_dir,rbp+'_vs_'+control)
-        print(directory)
         tsv_filestring = os.path.join(directory,'MATS_output/SE.MATS.JunctionCountOnly.txt')
         rmats = pd.read_table(tsv_filestring,sep="\t",dtype={'IncLevelDifference':float,'FDR':float})
         inc_level = abs(inc_level) # clear up confusion about included/excludedness

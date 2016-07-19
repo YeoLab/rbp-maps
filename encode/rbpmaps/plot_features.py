@@ -63,7 +63,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-fdr", "--fdr", dest="fdr", help="false discovery rate for rMATS inclusion/exclusion", default = 0.05, type=float)
     parser.add_argument("-inc", "--inc_level", dest="inc_level", help="inclusion rmats levels", default = 0, type = float )
     parser.add_argument("-dx", "--directionx", dest="directionx", help="show [included], [excluded], or [allRMATS] inclusion rmats levels", default="allRMATS")
-    parser.add_argument("-s", "--showall", dest="showall", help="show all inclusion, exclusion and all events on one plot (SE ONLY, NO RNASEQ). -s and -dx are mutually exclusive", default=False)
+    parser.add_argument("-s", "--showall", dest="showall", help="show all inclusion, exclusion and all events on one plot (SE ONLY, NO RNASEQ). -s and -dx are mutually exclusive", default=False, action='store_true')
     parser.add_argument("-d", "--direction", dest="direction", help="[up]regulated, [down]regulated, or all differentially expressed genes [allRNASEQ]", default="allRNASEQ")
     parser.add_argument("-p", "--padj", dest="padj", help="p-adjusted value cutoff for significance", default=0.05, type=float)
     parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
@@ -175,12 +175,13 @@ def main(argv=None): # IGNORE:C0111
                             print("attempting to generate skipped exon file from manifest")
                             
                             if(not showall):
-                                features[directionx] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, directionx)
-                                features[directionx].columns = ['miso','name']
+                                feature = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, directionx)
+                                feature.columns = ['miso','name']
                             else:
                                 """
                                 hook for generating inclusion, exclusion, and both spliced events 
                                 """
+                                feature = None
                                 features['included'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'included')
                                 features['excluded'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'excluded')
                                 features['allRMATS'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'allRMATS')
@@ -219,10 +220,10 @@ def main(argv=None): # IGNORE:C0111
                         intermediate_output.write("# Padj: {}\n".format(padjusted))
                         intermediate_output.write("# Log2foldchange: {}\n".format(log2fc))
 
-                        
-                    feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
-                    intermediate_output.close()
-                    featurefile = temp
+                    if(feature is not None):
+                        feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
+                        intermediate_output.close()
+                        featurefile = temp
 
                     print("Processing {}".format(reps[i]))
                     print("Positive: {}, Negative: {}".format(reppos[i],repneg[i]))
@@ -255,8 +256,8 @@ def main(argv=None): # IGNORE:C0111
                                                 annotation=featurefile,
                                                 output_file=output_file)
                             current_rbp.create_se_matrices(normalize=False)
-                            for i in range(0,len(normfuncs)):
-                                current_rbp.set_matrix(normfunc=normfuncs[i],min_density_sum=0)
+                            for n in range(0,len(normfuncs)):
+                                current_rbp.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
                                 Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
                                                 current_rbp.matrix['five_skipped'].mean(), 
                                                 current_rbp.matrix['three_skipped'].mean(), 
@@ -273,38 +274,38 @@ def main(argv=None): # IGNORE:C0111
                             
                             exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name="{}.{}.{}".format(reps[i],'excluded'),
+                                                name="{}.{}".format(reps[i],'excluded'),
                                                 annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'),
                                                 output_file=output_file)
                             exclusionClip.create_se_matrices(normalize=False)
                             bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name="{}.{}".format(reps[i],'both'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('both'),
+                                                name="{}.{}".format(reps[i],'allRMATS'),
+                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'),
                                                 output_file=output_file)
                             bothClip.create_se_matrices(normalize=False)
                             
-                            for i in range(0,len(normfuncs)):
-                                inclusionClip.set_matrix(normfunc=normfuncs[i],min_density_sum=0)
-                                exclusionClip.set_matrix(normfunc=normfuncs[i],min_density_sum=0)
-                                bothClip.set_matrix(normfunc=normfuncs[i],min_density_sum=0)
+                            for n in range(0,len(normfuncs)):
+                                inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                                exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                                bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
                                 
-                                inclusion = {'region1':inclusionClip.matrix['three_upstream'],
-                                             'region2':inclusionClip.matrix['five_skipped'],
-                                             'region3':inclusionClip.matrix['three_skipped'],
-                                             'region4':inclusionClip.matrix['five_downstream']}
-                                exclusion = {'region1':exclusionClip.matrix['three_upstream'],
-                                             'region2':exclusionClip.matrix['five_skipped'],
-                                             'region3':exclusionClip.matrix['three_skipped'],
-                                             'region4':exclusionClip.matrix['five_downstream']}
-                                both = {'region1':bothClip.matrix['three_upstream'],
-                                        'region2':bothClip.matrix['five_skipped'],
-                                        'region3':bothClip.matrix['three_skipped'],
-                                        'region4':bothClip.matrix['five_downstream'] }
+                                inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
+                                       'region2':inclusionClip.matrix['five_skipped'].mean(),
+                                       'region3':inclusionClip.matrix['three_skipped'].mean(),
+                                       'region4':inclusionClip.matrix['five_downstream'].mean()}
+                                exc = {'region1':exclusionClip.matrix['three_upstream'].mean(),
+                                       'region2':exclusionClip.matrix['five_skipped'].mean(),
+                                       'region3':exclusionClip.matrix['three_skipped'].mean(),
+                                       'region4':exclusionClip.matrix['five_downstream'].mean()}
+                                bo = {'region1':bothClip.matrix['three_upstream'].mean(),
+                                      'region2':bothClip.matrix['five_skipped'].mean(),
+                                      'region3':bothClip.matrix['three_skipped'].mean(),
+                                      'region4':bothClip.matrix['five_downstream'].mean()}
                                 output_filename = os.path.join(outdir,reps[i])+".se.RMATS.{}.svg".format(normfuncnames[i])
                                 title = 'included, excluded, and all exons'
                                 
-                                Plot.four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both, title, output_filename)
+                                Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                     else:
                         current_rbp = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,

@@ -153,6 +153,8 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
     num_rows = 1
     num_cols = 4
     
+    for key, value in inclusion:
+        print(key)
     min_height = min(min(inclusion['region1']),min(exclusion['region1']),min(both['region1']),
                      min(inclusion['region2']),min(exclusion['region2']),min(both['region2']),
                      min(inclusion['region3']),min(exclusion['region3']),min(both['region3']),
@@ -165,7 +167,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
         linewidth = 2.5
-        ax = fig.add_subplot(1,5,1)
+        ax = fig.add_subplot(1,4,1)
         ax.plot(inclusion['region1'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region1'], linewidth=linewidth, alpha=.7, color = color2)
         ax.plot(both['region1'], linewidth=linewidth, alpha=.7, color = color3)
@@ -174,7 +176,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
             
-        ax = fig.add_subplot(1,5,2)
+        ax = fig.add_subplot(1,4,2)
         ax.plot(inclusion['region2'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region2'], linewidth=linewidth, alpha=.7, color = color2)
         ax.plot(both['region2'], linewidth=linewidth, alpha=.7, color = color3)
@@ -183,7 +185,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
             
-        ax = fig.add_subplot(1,5,3)
+        ax = fig.add_subplot(1,4,3)
         ax.plot(inclusion['region3'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region3'], linewidth=linewidth, alpha=.7, color = color2)
         ax.plot(both['region3'], linewidth=linewidth, alpha=.7, color = color3)
@@ -192,10 +194,10 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
             
-        ax = fig.add_subplot(1,5,4)
-        ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1)
-        ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2)
-        ax.plot(both['region4'], linewidth=linewidth, alpha=.7, color = color3)
+        ax = fig.add_subplot(1,4,4)
+        ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1, label="included")
+        ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2, label="excluded")
+        ax.plot(both['region4'], linewidth=linewidth, alpha=.7, color = color3, label="all")
             
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
