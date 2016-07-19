@@ -58,11 +58,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled)
             if not line.startswith('#'):
                 event = line.split('\t')[0]
                 upstream, se, downstream = event.split('@')
-                    
+                
                 upstream_interval = misc.create_bed_tool_from_miso_se(upstream)
                 interval = misc.create_bed_tool_from_miso_se(se)
                 downstream_interval = misc.create_bed_tool_from_miso_se(downstream)
-                    
+                
                 """three prime upstream region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         interval,

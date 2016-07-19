@@ -50,7 +50,6 @@ def three_frame(region1, region2, region3,
                title, output_file, color='red'):
     num_rows = 1
     num_cols = 4
-    color = 'blue'
     
         
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
@@ -91,7 +90,6 @@ def four_frame(region1, region2, region3, region4,
                title, output_file, color='red'):
     num_rows = 1
     num_cols = 4
-    color = 'blue'
     
         
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
@@ -136,12 +134,80 @@ def four_frame(region1, region2, region3, region4,
         ax.set_yticklabels([])
         plt.suptitle(title,y=1.03)
     ax.clear()
+
+def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
+                                               title, output_file, 
+                                               color1='red', color2='blue',
+                                               color3='black'):
+    """
+    Special plot:
+    plots a 4-region map that contains three separate plots for inclusion, 
+    exclusion, and all spliced events. 
     
+    Args:
+        inclusion: {region1, region2, region3, region4}
+        exclusion: {region1, region2, region3, region4}
+        both: {region1, region2, region3, region4}
+        
+    """
+    num_rows = 1
+    num_cols = 4
+    
+    min_height = min(min(inclusion['region1']),min(exclusion['region1']),min(both['region1']),
+                     min(inclusion['region2']),min(exclusion['region2']),min(both['region2']),
+                     min(inclusion['region3']),min(exclusion['region3']),min(both['region3']),
+                     min(inclusion['region4']),min(exclusion['region4']),min(both['region4']))
+    max_height = max(max(inclusion['region1']),max(exclusion['region1']),max(both['region1']),
+                     max(inclusion['region2']),max(exclusion['region2']),max(both['region2']),
+                     max(inclusion['region3']),max(exclusion['region3']),max(both['region3']),
+                     max(inclusion['region4']),max(exclusion['region4']),max(both['region4']))
+        
+    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+            
+        linewidth = 2.5
+        ax = fig.add_subplot(1,5,1)
+        ax.plot(inclusion['region1'], linewidth=linewidth, alpha=.7, color = color1)
+        ax.plot(exclusion['region1'], linewidth=linewidth, alpha=.7, color = color2)
+        ax.plot(both['region1'], linewidth=linewidth, alpha=.7, color = color3)
+
+        sns.despine(ax=ax)
+        ax.set_ylim(min_height, max_height)
+        ax.set_ylabel("Mean Read Density")
+            
+        ax = fig.add_subplot(1,5,2)
+        ax.plot(inclusion['region2'], linewidth=linewidth, alpha=.7, color = color1)
+        ax.plot(exclusion['region2'], linewidth=linewidth, alpha=.7, color = color2)
+        ax.plot(both['region2'], linewidth=linewidth, alpha=.7, color = color3)
+            
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+            
+        ax = fig.add_subplot(1,5,3)
+        ax.plot(inclusion['region3'], linewidth=linewidth, alpha=.7, color = color1)
+        ax.plot(exclusion['region3'], linewidth=linewidth, alpha=.7, color = color2)
+        ax.plot(both['region3'], linewidth=linewidth, alpha=.7, color = color3)
+            
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+            
+        ax = fig.add_subplot(1,5,4)
+        ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1)
+        ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2)
+        ax.plot(both['region4'], linewidth=linewidth, alpha=.7, color = color3)
+            
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        
+        plt.suptitle(title,y=1.03)
+    ax.clear()
+        
 def five_frame(region1, region2, region3, region4, region5,
                title, output_file, color='red'):
     num_rows = 1
     num_cols = 5
-    color = 'blue'
     
         
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:

@@ -8,18 +8,16 @@ import os
 
 def rmats_to_miso(row):
     if row['strand'] == '+':
-        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}'.format(
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}'.format(
             row['chr'],row['upstreamES'],row['upstreamEE'],row['strand'],
             row['chr'],row['exonStart_0base'],row['exonEnd'],row['strand'],
-            row['chr'],row['downstreamES'],row['downstreamEE'],row['strand'],
-            row['GeneID']
+            row['chr'],row['downstreamES'],row['downstreamEE'],row['strand']
         )
     else:
-        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}'.format(
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}'.format(
             row['chr'],row['downstreamES'],row['downstreamEE'],row['strand'],
             row['chr'],row['exonStart_0base'],row['exonEnd'],row['strand'],
-            row['chr'],row['upstreamES'],row['upstreamEE'],row['strand'],
-            row['GeneID']
+            row['chr'],row['upstreamES'],row['upstreamEE'],row['strand']
         )
         
 def generate_rmats_as_miso(manifest_file,
@@ -41,10 +39,10 @@ def generate_rmats_as_miso(manifest_file,
         directory = os.path.join(rmats_dir,rbp+'_vs_'+control)
         print(directory)
         tsv_filestring = os.path.join(directory,'MATS_output/SE.MATS.JunctionCountOnly.txt')
-        rmats = pd.read_table(tsv_filestring,sep="\t")
+        rmats = pd.read_table(tsv_filestring,sep="\t",dtype={'IncLevelDifference':float,'FDR':float})
         inc_level = abs(inc_level) # clear up confusion about included/excludedness
 
-        if(direction=="both"):
+        if(direction=="allRMATS"):
             rmats = rmats[(abs(rmats['IncLevelDifference']) > inc_level) & \
                                               (rmats['FDR'] <= fdr)]
         elif(direction=="included"):
@@ -60,7 +58,7 @@ def generate_rmats_as_miso(manifest_file,
         rmats['miso'] = rmats.apply(rmats_to_miso, axis=1)
         return pd.concat([rmats['miso'],rmats['GeneID']],axis=1)
     except Exception as e:
-        print("Could not find the diffexp files for uid: {}".format(uid))
+        print("Could not find the RMATS files for uid: {}".format(uid))
         print(e)
 def generate_list_of_differentially_expressed_genes(manifest_file, 
                                                     kd_dir, 
