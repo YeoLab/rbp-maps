@@ -131,12 +131,12 @@ def main(argv=None): # IGNORE:C0111
                     find or create the annotation file
                     
                     """
-                    if args.event == 'se':
-                        if(args.feature): # our feature is defined for us either in a miso annotation or a rmats annotation
-                            df = pd.read_table(args.feature)
-                            if len(df.columns) == 2:
+                    if(args.feature): # if we have an annotation file, use it!
+                        df = pd.read_table(args.feature)
+                        if args.event == 'se':
+                            if len(df.columns) == 2: # (from MISO)
                                 df.columns = ['miso','name']
-                            elif len(df.columns) == 23:
+                            elif len(df.columns) == 23: # (from rMATS)
                                 df.columns = ['ID','name','symbol','chrom','strand',
                                               'exonStart_0base','exonEnd',
                                               'upstreamES','upstreamEE',
@@ -144,23 +144,22 @@ def main(argv=None): # IGNORE:C0111
                                               'ID1','IJC_sample1','SJC_sample1','IJC_sample2','SJC_sample2',
                                               'IncFormLen','SkipFormLen','Pvalue','FDR','IncLevel1','IncLevel2',
                                               'IncLevelDifference'] # THIS MAY NOT WORK
-                        else: # we need to find it.
+                        else: # not an SE (so just a regular bedfile)
+                            df.columns = ['chrom','start','stop','name','score','strand']
+                    else: # if we don't have an annotation file, we need to specify for each RBP
+                        if args.event == 'se':
                             """
                             generate a list of exons if an alternatively spliced file isn't found.
                             """
                             print("attempting to generate skipped exon file from manifest")
                             df = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, directionx)
                             df.columns = ['miso','name']
-                    else:
-                        try:
-                            df = pd.read_table(args.feature)
-                            df.columns = ['chrom','start','stop','name','score','strand']
-                        except IOError:
-                            print("no feature defined for non-se event")
+                        else:
+                            print("no feature file assigned for a non-se event.")
                             sys.exit(1)
                     """
                 
-                    create bedfile from DESeq2 diffexpression data
+                    create subset annotation file from DESeq2 diffexpression data
                     
                     """
                     if(args.kd):
@@ -169,20 +168,18 @@ def main(argv=None): # IGNORE:C0111
                         filter_list = gm.generate_list_of_differentially_expressed_genes(
                             manifest, args.kd, uid, padj=padjusted, log2FoldChange=log2fc, direction=args.direction)
                         
-                        if(args.event == 'se'): # this is dumb
+                        if(args.event == 'se'): # this makes sure all multiply-counted genes aren't missed, as annotations are like: ENSG0001.1,ENSG0002.1,ENSG0003.1
                             filter_list = [misc.ensembl_from_gencode(f) for f in filter_list]
-                            
                             df = df.dropna() # drops NAN (unannotated events)
-                            df['gene'] = df['name'].str.split(',')
+                            df['gene'] = df['name'].str.split(',') # because miso_se_to_gene.tsv is annotated via a comma-delimited list
                             df['inlist'] = df.apply(misc.isin,args=[filter_list],axis=1)
                             feature = df[df['inlist']==True]
                             del feature['inlist']
                             del feature['gene']
-                            
                         else:
                             feature = df[df['name'].isin(filter_list)]
                         
-                        temp = os.path.join(outdir,reps[i])+".diffexp_{}_genes.bed".format(args.direction)
+                        temp = os.path.join(outdir,reps[i])+".{}_{}_genes.temp".format(args.directionx,args.direction)
                         intermediate_output = open(temp,'w')
                         
                         intermediate_output.write("# UID: {}\n".format(uid))
@@ -193,10 +190,16 @@ def main(argv=None): # IGNORE:C0111
                         feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
                         intermediate_output.close()
                         feature = temp
-                        # feature = pb.BedTool().from_dataframe(feature)
                     else:
-                        # feature = pb.BedTool().from_dataframe(df)
-                        feature = args.feature
+                        temp = os.path.join(outdir,reps[i])+".{}_all_genes.temp".format(args.directionx)
+                        intermediate_output = open(temp,'w')
+                        
+                        intermediate_output.write("# UID: {}\n".format(uid))
+                        intermediate_output.write("# Name: {}\n".format(reps[i]))
+                        
+                        feature.to_csv(intermediate_output, sep="\t", header=None, index=None)
+                        intermediate_output.close()
+                        feature = temp
 
                     print("Processing {}".format(reps[i]))
                     print("Positive: {}, Negative: {}".format(reppos[i],repneg[i]))
