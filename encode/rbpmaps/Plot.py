@@ -153,8 +153,6 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
     num_rows = 1
     num_cols = 4
     
-    for key, value in inclusion:
-        print(key)
     min_height = min(min(inclusion['region1']),min(exclusion['region1']),min(both['region1']),
                      min(inclusion['region2']),min(exclusion['region2']),min(both['region2']),
                      min(inclusion['region3']),min(exclusion['region3']),min(both['region3']),
@@ -202,7 +200,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
-        
+        ax.legend()
         plt.suptitle(title,y=1.03)
     ax.clear()
         
