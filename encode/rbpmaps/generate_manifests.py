@@ -5,6 +5,7 @@ Created on Jun 6, 2016
 '''
 import pandas as pd
 import os
+import math
 
 def rmats_to_miso(row):
     if row['strand'] == '+':
@@ -65,6 +66,9 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
                                                     log2FoldChange=1.5,
                                                     direction="both"):
     """
+    This function uses a manifest file to search a directory of deseq diffexp files for RNASEQ knockdown
+    genes given a specific RBP uID. 
+    
     manifest: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
     uid: 204
     rep: 1
@@ -96,11 +100,11 @@ def generate_list_of_differentially_expressed_genes(manifest_file,
     # print(list(diffexp['Unnamed: 0']))
     return list(diffexp['Unnamed: 0'])
     
-def parse_diffexp(deseq2_file):
-    deseq2 = pd.read_table(deseq2_file,sep='\t')
-    
 def generate_bedfile_from_ucsc_tableformat(infile,outfile,feature,filter_list):
     """
+    
+    This function generates, for a given feature, a BED6 file given a UCSC-table-like formatted file.
+    
     infile: /home/bay001/projects/maps_20160420/permanent_data/gencode.v19.chr_patch_hapl_scaff.annotation.gtf.parsed_ucsc_tableformat
     outfile: /home/bay001/projects/maps_20160420/permanent_data/cds
     feature: 'cds','tx'
@@ -161,6 +165,9 @@ def generate_bedfile_from_ucsc_tableformat(infile,outfile,feature,filter_list):
     
     
 def generate_rep_manifests_from_eric(manifest_file, rep1output, rep2output, inputoutput):
+    """
+    somewhat deprecated, this function separates rep1 and rep2 files from eric's manifest
+    """
     df = pd.read_table(manifest_file)
     
     rep1pos = pd.DataFrame(df['CLIP_rep1'].str.replace('.bam','.norm.pos.bw'))
@@ -183,10 +190,72 @@ def generate_rep_manifests_from_eric(manifest_file, rep1output, rep2output, inpu
     inputneg.columns = ['neg']
     pd.concat([inputpos,inputneg],axis=1).to_csv(inputoutput,
                                           sep='\t',index=None,header=None)
-"""ann = 'testfiles/annotations/gencode.v19.chr_patch_hapl_scaff.annotation.gtf.parsed_ucsc_tableformat'
-out = 'testfiles/annotations/tx'
-manifest_file = 'testfiles/annotations/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv'
-uid = 205
-kd_dir = 'testfiles/annotations/'
-filter_list = generate_list_of_differentially_expressed_genes(manifest_file, kd_dir, uid, padj=0.05, log2FoldChange=1.5)
-"""
+
+
+def xintao_to_miso(event):
+    """
+    takes an 'event' in the form of: 
+    
+    AGXT_ENSG00000172482.4;SE:chr2:241810866-241813395:241813479-241814526:+
+    
+    to a miso annotation: 
+    
+    chr2:1:241810866:+@chr2:241813395:241813479:+@chr2:241814526:250000000:+
+    
+    """
+    name, se = event.split(';')
+    event_name, chrom, upstream, downstream, strand = se.split(':')
+    assert event_name == 'SE'
+    upstream_es = 1
+    downstream_ee = 250000000
+    upstream_ee, skipped_es = upstream.split('-')
+    skipped_ee, downstream_es = downstream.split('-')
+    if strand == '+':
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}\n'.format(
+            chrom, upstream_es, upstream_ee, strand,
+            chrom, skipped_es, skipped_ee, strand,
+            chrom, downstream_es, downstream_ee, strand,
+        name)
+    else:
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}\n'.format(
+            chrom, downstream_es, downstream_ee, strand,
+            chrom, skipped_es, skipped_ee, strand,
+            chrom, upstream_es, upstream_ee, strand,
+        name)
+        
+def generate_xintao_as_miso(events_file, out_dir):
+    """
+    from an events file, generate individual miso annotations for differential splicing events
+    for each RBP.
+    """
+    # events_file: for now is in: /projects/ps-yeolab3/bay001/maps/8-1-2016
+    # out_dir: /projects/ps-yeolab3/bay001/maps/alt_splicing/xintao/
+    events = pd.read_table(events_file,index_col=0)
+    for column in events:
+        boolsNegative = []
+        boolsPositive = []
+        bools = []
+        for row in events[column]:
+            boolsNegative.append((math.isnan(row)==False) & (row < 0))
+            boolsPositive.append((math.isnan(row)==False) & (row > 0))
+            bools.append(math.isnan(row)==False) 
+        column = column.split('-')
+        f = open(os.path.join(out_dir,'{}-{}.miso'.format(column[0],column[2])),'w')
+        fn = open(os.path.join(out_dir,'{}-{}-positive.miso'.format(column[0],column[2])),'w')
+        fp = open(os.path.join(out_dir,'{}-{}-negative.miso'.format(column[0],column[2])),'w')
+        listOfValidIndices = events[bools].index.tolist()
+        listOfValidExcludedIndices = events[boolsNegative].index.tolist()
+        listOfValidIncludedIndices = events[boolsPositive].index.tolist()
+        
+        for ind in listOfValidExcludedIndices:
+            fn.write(xintao_to_miso(ind))
+        fn.close()
+        
+        for ind in listOfValidIncludedIndices:
+            fp.write(xintao_to_miso(ind))
+        fp.close()
+        
+        for ind in listOfValidIndices:
+            f.write(xintao_to_miso(ind))
+        f.close()
+    return 0

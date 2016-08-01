@@ -95,6 +95,9 @@ def main(argv=None): # IGNORE:C0111
             try:  
                 line = line.split('\t')
                 
+                uid = line[1].strip() # changed
+                rbp_name = line[2]
+                cell_line = line[3]
                 rep1 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/')
                 rep2 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
                 inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/')
@@ -130,7 +133,7 @@ def main(argv=None): # IGNORE:C0111
                 
                 
                 for i in range(0,len(reps)):
-                    uid = line[1].strip() # changed
+                    
                     
                     temp = os.path.join(outdir,reps[i])+".{}_{}_genes.temp".format(args.directionx,args.direction)
                     intermediate_output = open(temp,'w')
@@ -174,21 +177,14 @@ def main(argv=None): # IGNORE:C0111
                             
                             print("attempting to generate skipped exon file from manifest")
                             
-                            if(not showall):
-                                feature = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, directionx)
-                                feature.columns = ['miso','name']
-                            else:
-                                """
-                                code for generating inclusion, exclusion, and both spliced events 
-                                """
-                                feature = None
-                                features['included'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'included')
-                                features['excluded'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'excluded')
-                                features['allRMATS'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'allRMATS')
+                            feature = None
+                            features['included'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),names=final_columns)
+                            features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),names=final_columns)
+                            features['allRMATS'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
                                 
-                                features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
-                                features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
-                                features['allRMATS'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'), sep="\t", header=None, index=None)
+                            features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
+                            features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
+                            features['allRMATS'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'), sep="\t", header=None, index=None)
                         else:
                             print("no feature file assigned for a non-se event.")
                             sys.exit(1)
@@ -268,20 +264,20 @@ def main(argv=None): # IGNORE:C0111
                             inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'),
+                                                annotation=os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
                             inclusionClip.create_se_matrices(normalize=False)
                             
                             exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'),
+                                                annotation=os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
                             exclusionClip.create_se_matrices(normalize=False)
                             bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'allRMATS'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'),
+                                                annotation=os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
                             bothClip.create_se_matrices(normalize=False)
                             
