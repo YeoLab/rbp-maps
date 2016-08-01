@@ -169,7 +169,7 @@ def main(argv=None): # IGNORE:C0111
                             feature.columns = ['chrom','start','stop','name','score','strand'] # all annotation dataframes for non-SE events should be in BED6 format.
                     else: # if we don't have an annotation file, we need to specify for each RBP
                         features = {}
-                        if args.event == 'se':
+                        if args.event == 'se' or args.event =='a3ss' or args.event == 'a5ss':
                             
                             """
                             generate a list of exons if an alternatively spliced file isn't found.
@@ -186,7 +186,7 @@ def main(argv=None): # IGNORE:C0111
                             features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
                             features['allRMATS'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'), sep="\t", header=None, index=None)
                         else:
-                            print("no feature file assigned for a non-se event.")
+                            print("no feature file assigned for a non-se/a3ss/a5ss event.")
                             sys.exit(1)
                     """
                 
