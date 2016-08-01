@@ -241,92 +241,64 @@ def main(argv=None): # IGNORE:C0111
                     CRAP
                     """
                     
-                    if args.event == 'se':
-                        
-                        normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract]
-                        normfuncnames = ['subtracted','KLDivergence','subtract_by_region']
-                        if(not showall):
-                            current_rbp = ClipWithInput(ReadDensity = rbp,
-                                                InputReadDensity = inp,
-                                                name="{}.{}.{}".format(reps[i],args.directionx, args.direction),
-                                                annotation=featurefile,
-                                                output_file=output_file)
-                            current_rbp.create_se_matrices(normalize=False)
-                            for n in range(0,len(normfuncs)):
-                                current_rbp.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
-                                                current_rbp.matrix['five_skipped'].mean(), 
-                                                current_rbp.matrix['three_skipped'].mean(), 
-                                                current_rbp.matrix['five_downstream'].mean(), 
-                                                title=current_rbp.name,
-                                                output_file=os.path.join(outdir,reps[i])+".se.{}.{}.{}.svg".format(directionx,direction,normfuncnames[i]))
-                        else:
-                            inclusionClip = ClipWithInput(ReadDensity = rbp,
+                    
+                    normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract]
+                    normfuncnames = ['subtracted','KLDivergence','subtract_by_region']
+                    inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
                                                 annotation=os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
-                            inclusionClip.create_se_matrices(normalize=False)
+                    
                             
-                            exclusionClip = ClipWithInput(ReadDensity = rbp,
+                    exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
                                                 annotation=os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
-                            exclusionClip.create_se_matrices(normalize=False)
-                            bothClip = ClipWithInput(ReadDensity = rbp,
+                    
+                    bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'allRMATS'),
                                                 annotation=os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
-                            bothClip.create_se_matrices(normalize=False)
-                            
-                            for n in range(0,len(normfuncs)):
-                                inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                    
+                    
+                    if(args.event == 'a5ss'):
+                        inclusionClip.create_a5ss_matrices(normalize=False)
+                        exclusionClip.create_a5ss_matrices(normalize=False)
+                        bothClip.create_a5ss_matrices(normalize=False)
+                    elif(args.event == 'a3ss'):
+                        inclusionClip.create_a3ss_matrices(normalize=False)
+                        exclusionClip.create_a3ss_matrices(normalize=False)
+                        bothClip.create_a3ss_matrices(normalize=False)
+                    else:
+                        inclusionClip.create_se_matrices(normalize=False)
+                        exclusionClip.create_se_matrices(normalize=False)
+                        bothClip.create_se_matrices(normalize=False)
+                        
+                    for n in range(0,len(normfuncs)):
+                        inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                        exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                        bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
                                 
-                                inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
+                        inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
                                        'region2':inclusionClip.matrix['five_skipped'].mean(),
                                        'region3':inclusionClip.matrix['three_skipped'].mean(),
                                        'region4':inclusionClip.matrix['five_downstream'].mean()}
-                                exc = {'region1':exclusionClip.matrix['three_upstream'].mean(),
+                        exc = {'region1':exclusionClip.matrix['three_upstream'].mean(),
                                        'region2':exclusionClip.matrix['five_skipped'].mean(),
                                        'region3':exclusionClip.matrix['three_skipped'].mean(),
                                        'region4':exclusionClip.matrix['five_downstream'].mean()}
-                                bo = {'region1':bothClip.matrix['three_upstream'].mean(),
+                        bo = {'region1':bothClip.matrix['three_upstream'].mean(),
                                       'region2':bothClip.matrix['five_skipped'].mean(),
                                       'region3':bothClip.matrix['three_skipped'].mean(),
                                       'region4':bothClip.matrix['five_downstream'].mean()}
-                                output_filename = os.path.join(outdir,reps[i])+".se.RMATS.{}.svg".format(normfuncnames[i])
-                                title = 'included, excluded, and all exons'
+                        output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[i])
+                        title = 'included, excluded, and all exons'
                                 
-                                Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
-                    else:
-                        current_rbp = ClipWithInput(ReadDensity = rbp,
-                                                InputReadDensity = inp,
-                                                name="{}.{}.{}".format(reps[i],args.directionx, args.direction),
-                                                annotation=featurefile,
-                                                output_file=output_file)
-                        
-                        current_rbp.create_matrices(normalize=True,normfunc=norm.normalize_and_subtract)
-                        
-                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
-                                                     current_rbp.matrix['feature'].sem(),
-                                        title=current_rbp.name,
-                                        output_file=os.path.join(outdir,reps[i])+".se.subtracted.svg")
-                        
-                        current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
-                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
-                                                     current_rbp.matrix['feature'].sem(),
-                                        title=current_rbp.name,
-                                        output_file=os.path.join(outdir,reps[i])+".se.KLDivergence.svg")
-                        
-                        current_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
-                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
-                                                     current_rbp.matrix['feature'].sem(),
-                                        title=current_rbp.name,
-                                        output_file=os.path.join(outdir,reps[i])+".se.subtract_by_region.svg")
+                        Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
+                    
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))
