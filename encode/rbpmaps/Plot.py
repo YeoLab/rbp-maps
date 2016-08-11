@@ -140,7 +140,6 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
                                                color1=sns.color_palette("hls", 8)[0], 
                                                color2=sns.color_palette("hls", 8)[5],
                                                color3='white'):
-    sns.set_style({'xtick.major.size':1,'xtick.color':'.15'})
     """
     Special plot:
     plots a 4-region map that contains three separate plots for inclusion, 
@@ -165,7 +164,11 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
                      max(inclusion['region4']),max(exclusion['region4']),max(both['region4']))
         
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
-            
+        
+        sns.set_style({'xtick.major.size':5,
+                   'ytick.major.size':5,
+                   'xtick.color':'.15'})
+        
         linewidth = 2.5
         ax = fig.add_subplot(1,4,1)
         ax.plot(inclusion['region1'], linewidth=linewidth, alpha=.7, color = color1)
@@ -176,7 +179,9 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_ylabel("Mean Read Density")
         ax.set_xticklabels(range(-50,351,50),rotation=90)
         ax.axvline(x=50,linestyle=':',alpha=0.5)
-            
+        
+        sns.set_style({'ytick.major.size':0})
+        
         ax = fig.add_subplot(1,4,2)
         ax.plot(inclusion['region2'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region2'], linewidth=linewidth, alpha=.7, color = color2)

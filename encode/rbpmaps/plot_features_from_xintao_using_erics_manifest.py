@@ -100,7 +100,7 @@ def main(argv=None): # IGNORE:C0111
                 cell_line = line[3]
                 rep1 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/')
                 rep2 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
-                inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/')
+                inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/').strip()
                 
                 assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
                 if(args.flipped):
