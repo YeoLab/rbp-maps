@@ -205,7 +205,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax = fig.add_subplot(1,4,4)
         ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1, label="incl in kd")
         ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2, label="excl in kd")
-        ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="all")
+        ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
         ax.axvline(x=300,linestyle=':',alpha=0.5)
         ax.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax, left=True)
