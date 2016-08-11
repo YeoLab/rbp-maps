@@ -8,7 +8,7 @@ import matrix_functions as mtx
 import normalization_functions as norm
 import os
 import datetime
-
+import pandas as pd
 
 class Map():
         
@@ -32,9 +32,12 @@ class Map():
         
         self.matrix = {}
         
+        
     def set_matrix(self, df):
         self.matrix = df
-
+    
+    def get_matrix(self):
+        return self.matrix
 class Clip(Map):
     '''
     classdocs
@@ -93,6 +96,10 @@ class Clip(Map):
                                                                   is_scaled = self.is_scaled)
         """
         print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+    def get_raw_matrix(self):
+        return pd.DataFrame(self.raw_matrix.items())
+    def get_matrix(self):
+        return pd.DataFrame(self.raw_matrix.items())
 class ClipWithInput(Map):
     '''
     classdocs
