@@ -95,6 +95,9 @@ def main(argv=None): # IGNORE:C0111
             try:  
                 line = line.split('\t')
                 
+                uid = line[1].strip() # changed
+                rbp_name = line[2]
+                cell_line = line[3]
                 rep1 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/')
                 rep2 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
                 inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/')
@@ -130,7 +133,7 @@ def main(argv=None): # IGNORE:C0111
                 
                 
                 for i in range(0,len(reps)):
-                    uid = line[1].strip() # changed
+                    
                     
                     temp = os.path.join(outdir,reps[i])+".{}_{}_genes.temp".format(args.directionx,args.direction)
                     intermediate_output = open(temp,'w')
@@ -166,7 +169,7 @@ def main(argv=None): # IGNORE:C0111
                             feature.columns = ['chrom','start','stop','name','score','strand'] # all annotation dataframes for non-SE events should be in BED6 format.
                     else: # if we don't have an annotation file, we need to specify for each RBP
                         features = {}
-                        if args.event == 'se':
+                        if args.event == 'se' or args.event =='a3ss' or args.event == 'a5ss':
                             
                             """
                             generate a list of exons if an alternatively spliced file isn't found.
@@ -174,23 +177,16 @@ def main(argv=None): # IGNORE:C0111
                             
                             print("attempting to generate skipped exon file from manifest")
                             
-                            if(not showall):
-                                feature = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, directionx)
-                                feature.columns = ['miso','name']
-                            else:
-                                """
-                                code for generating inclusion, exclusion, and both spliced events 
-                                """
-                                feature = None
-                                features['included'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'included')
-                                features['excluded'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'excluded')
-                                features['allRMATS'] = gm.generate_rmats_as_miso(manifest, rmats_dir, uid, fdr, inc_level, 'allRMATS')
+                            feature = None
+                            features['included'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),names=final_columns)
+                            features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),names=final_columns)
+                            features['allRMATS'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
                                 
-                                features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
-                                features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
-                                features['allRMATS'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'), sep="\t", header=None, index=None)
+                            features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
+                            features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
+                            features['allRMATS'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'), sep="\t", header=None, index=None)
                         else:
-                            print("no feature file assigned for a non-se event.")
+                            print("no feature file assigned for a non-se/a3ss/a5ss event.")
                             sys.exit(1)
                     """
                 
@@ -245,92 +241,65 @@ def main(argv=None): # IGNORE:C0111
                     CRAP
                     """
                     
-                    if args.event == 'se':
-                        
-                        normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract]
-                        normfuncnames = ['subtracted','KLDivergence','subtract_by_region']
-                        if(not showall):
-                            current_rbp = ClipWithInput(ReadDensity = rbp,
-                                                InputReadDensity = inp,
-                                                name="{}.{}.{}".format(reps[i],args.directionx, args.direction),
-                                                annotation=featurefile,
-                                                output_file=output_file)
-                            current_rbp.create_se_matrices(normalize=False)
-                            for n in range(0,len(normfuncs)):
-                                current_rbp.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
-                                                current_rbp.matrix['five_skipped'].mean(), 
-                                                current_rbp.matrix['three_skipped'].mean(), 
-                                                current_rbp.matrix['five_downstream'].mean(), 
-                                                title=current_rbp.name,
-                                                output_file=os.path.join(outdir,reps[i])+".se.{}.{}.{}.svg".format(directionx,direction,normfuncnames[i]))
-                        else:
-                            inclusionClip = ClipWithInput(ReadDensity = rbp,
+                    
+                    normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract]
+                    normfuncnames = ['subtracted','KLDivergence','subtract_by_region']
+                    inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'),
+                                                annotation=os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
-                            inclusionClip.create_se_matrices(normalize=False)
+                    
                             
-                            exclusionClip = ClipWithInput(ReadDensity = rbp,
+                    exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'),
+                                                annotation=os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
-                            exclusionClip.create_se_matrices(normalize=False)
-                            bothClip = ClipWithInput(ReadDensity = rbp,
+                    
+                    bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'allRMATS'),
-                                                annotation=os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'),
+                                                annotation=os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),
                                                 output_file=output_file)
-                            bothClip.create_se_matrices(normalize=False)
-                            
-                            for n in range(0,len(normfuncs)):
-                                inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                    
+                    
+                    if(args.event == 'a5ss'):
+                        inclusionClip.create_a5ss_matrices(normalize=False)
+                        exclusionClip.create_a5ss_matrices(normalize=False)
+                        bothClip.create_a5ss_matrices(normalize=False)
+                    elif(args.event == 'a3ss'):
+                        inclusionClip.create_a3ss_matrices(normalize=False)
+                        exclusionClip.create_a3ss_matrices(normalize=False)
+                        bothClip.create_a3ss_matrices(normalize=False)
+                    else:
+                        inclusionClip.create_se_matrices(normalize=False)
+                        exclusionClip.create_se_matrices(normalize=False)
+                        bothClip.create_se_matrices(normalize=False)
+                        
+                    for n in range(0,len(normfuncs)):
+                        inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                        exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                        bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
                                 
-                                inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
+                        inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
                                        'region2':inclusionClip.matrix['five_skipped'].mean(),
                                        'region3':inclusionClip.matrix['three_skipped'].mean(),
                                        'region4':inclusionClip.matrix['five_downstream'].mean()}
-                                exc = {'region1':exclusionClip.matrix['three_upstream'].mean(),
+                        exc = {'region1':exclusionClip.matrix['three_upstream'].mean(),
                                        'region2':exclusionClip.matrix['five_skipped'].mean(),
                                        'region3':exclusionClip.matrix['three_skipped'].mean(),
                                        'region4':exclusionClip.matrix['five_downstream'].mean()}
-                                bo = {'region1':bothClip.matrix['three_upstream'].mean(),
+                        bo = {'region1':bothClip.matrix['three_upstream'].mean(),
                                       'region2':bothClip.matrix['five_skipped'].mean(),
                                       'region3':bothClip.matrix['three_skipped'].mean(),
                                       'region4':bothClip.matrix['five_downstream'].mean()}
-                                output_filename = os.path.join(outdir,reps[i])+".se.RMATS.{}.svg".format(normfuncnames[n])
-                                title = 'included, excluded, and all exons'
+                        output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[n])
+                        title = 'positive (n={}), negative (n={}) SE events'.format(len(inclusionClip.matrix['three_upstream']),
+                                                                                    len(exclusionClip.matrix['three_upstream']))
                                 
-                                Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
-                    else:
-                        current_rbp = ClipWithInput(ReadDensity = rbp,
-                                                InputReadDensity = inp,
-                                                name="{}.{}.{}".format(reps[i],args.directionx, args.direction),
-                                                annotation=featurefile,
-                                                output_file=output_file)
-                        
-                        current_rbp.create_matrices(normalize=True,normfunc=norm.normalize_and_subtract)
-                        
-                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
-                                                     current_rbp.matrix['feature'].sem(),
-                                        title=current_rbp.name,
-                                        output_file=os.path.join(outdir,reps[i])+".se.subtracted.svg")
-                        
-                        current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
-                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
-                                                     current_rbp.matrix['feature'].sem(),
-                                        title=current_rbp.name,
-                                        output_file=os.path.join(outdir,reps[i])+".se.KLDivergence.svg")
-                        
-                        current_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
-                        Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
-                                                     current_rbp.matrix['feature'].sem(),
-                                        title=current_rbp.name,
-                                        output_file=os.path.join(outdir,reps[i])+".se.subtract_by_region.svg")
+                        Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
+                    
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

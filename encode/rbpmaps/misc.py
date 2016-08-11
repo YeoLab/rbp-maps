@@ -44,6 +44,7 @@ def create_bed_tool_from_miso_a3ss(miso_annotation, is_alt = True):
         # chr1:43830128|43830131:43829995:-
         chrom, start, end, strand = miso_annotation.split(':')
         start1, start2 = start.split('|')
+        
         if(strand == '+'):
             splice1 = bt.create_interval_from_list([chrom,start1,start2,'0','0',strand])
             splice2 = bt.create_interval_from_list([chrom,start2,end,'0','0',strand])

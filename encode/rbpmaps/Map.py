@@ -175,7 +175,7 @@ class ClipWithInput(Map):
             self.set_matrix(normfunc, min_density_sum)
 
     def create_a3ss_matrices(self, normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
-        print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         
         keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
         self.ip_raw_matrix = dict(zip(keys,mtx.create_a3ss_matrix(annotation = self.annotation, 
@@ -183,14 +183,14 @@ class ClipWithInput(Map):
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled)))
-        print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix = dict(zip(keys,mtx.create_a3ss_matrix(annotation = self.annotation, 
                                                                   density = self.inp, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled)))
-        print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         for key in self.ip_raw_matrix:
             self.ip_raw_matrix[key].to_csv("{}.ip.{}.a3ss.raw_density_matrix.csv".format(self.output_base, key))
             self.input_raw_matrix[key].to_csv("{}.input.{}.a3ss.raw_density_matrix.csv".format(self.output_base, key))
