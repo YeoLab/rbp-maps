@@ -62,7 +62,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-r", "--rmats", dest="rmats", help="rMATS directory (where the ___vs___.csv is)")
     parser.add_argument("-fdr", "--fdr", dest="fdr", help="false discovery rate for rMATS inclusion/exclusion", default = 0.05, type=float)
     parser.add_argument("-inc", "--inc_level", dest="inc_level", help="inclusion rmats levels", default = 0, type = float )
-    parser.add_argument("-dx", "--directionx", dest="directionx", help="show [included], [excluded], or [allRMATS] inclusion rmats levels", default="allRMATS")
+    parser.add_argument("-dx", "--directionx", dest="directionx", help="show [included], [excluded], or [background] inclusion rmats levels", default="background")
     parser.add_argument("-s", "--showall", dest="showall", help="show all inclusion, exclusion and all events on one plot (SE ONLY, NO RNASEQ). -s and -dx are mutually exclusive", default=False, action='store_true')
     parser.add_argument("-d", "--direction", dest="direction", help="[up]regulated, [down]regulated, or all differentially expressed genes [allRNASEQ]", default="allRNASEQ")
     parser.add_argument("-p", "--padj", dest="padj", help="p-adjusted value cutoff for significance", default=0.05, type=float)
@@ -95,12 +95,12 @@ def main(argv=None): # IGNORE:C0111
             try:  
                 line = line.split('\t')
                 
-                uid = line[1].strip() # changed
-                rbp_name = line[2]
-                cell_line = line[3]
-                rep1 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/')
-                rep2 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/')
-                inp = line[6].replace('/ps-yeolab2/','/ps-yeolab3/').strip()
+                uid = line[0].strip() # changed
+                rbp_name = line[1]
+                cell_line = line[2]
+                rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
+                rep2 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
+                inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                 
                 assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
                 if(args.flipped):
@@ -180,11 +180,11 @@ def main(argv=None): # IGNORE:C0111
                             feature = None
                             features['included'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),names=final_columns)
                             features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),names=final_columns)
-                            features['allRMATS'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
+                            features['background'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
                                 
                             features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
                             features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
-                            features['allRMATS'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('allRMATS'), sep="\t", header=None, index=None)
+                            features['background'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('background'), sep="\t", header=None, index=None)
                         else:
                             print("no feature file assigned for a non-se/a3ss/a5ss event.")
                             sys.exit(1)
@@ -259,7 +259,7 @@ def main(argv=None): # IGNORE:C0111
                     
                     bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name="{}.{}".format(reps[i],'allRMATS'),
+                                                name="{}.{}".format(reps[i],'background'),
                                                 annotation=os.path.join(rmats_dir,'miso_se_to_ensembl.tsv'),
                                                 output_file=output_file)
                     

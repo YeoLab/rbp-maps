@@ -201,7 +201,6 @@ def xintao_to_miso(event):
     to a miso annotation: 
     
     chr2:1:241810866:+@chr2:241813395:241813479:+@chr2:241814526:250000000:+
-    
     """
     name, se = event.split(';')
     event_name, chrom, upstream, downstream, strand = se.split(':')
@@ -223,10 +222,18 @@ def xintao_to_miso(event):
             chrom, upstream_es, upstream_ee, strand,
         name)
         
-def generate_xintao_as_miso(events_file, out_dir):
+def generate_xintao_as_miso(events_file, out_dir, positive_threshold, negative_threshold):
     """
     from an events file, generate individual miso annotations for differential splicing events
     for each RBP.
+    
+    events_file: the junctionsOnly.txt from xintao
+    out_dir: output directory - this function produces a single MISO-style annotations for each RBP
+      in xintao's junctionsOnly.txt. The output_dir is to be used in conjunction with the -r flag 
+      in the main script, which isn't entirely accurate, but may change in the future. 
+    positive_threshold: positive deltaPsi score cutoff
+    negative_threshold: negative deltaPsi score cutoff
+    append_eric: boolean 
     """
     # events_file: for now is in: /projects/ps-yeolab3/bay001/maps/8-1-2016
     # out_dir: /projects/ps-yeolab3/bay001/maps/alt_splicing/xintao/
@@ -236,8 +243,8 @@ def generate_xintao_as_miso(events_file, out_dir):
         boolsPositive = []
         bools = []
         for row in events[column]:
-            boolsNegative.append((math.isnan(row)==False) & (row < 0))
-            boolsPositive.append((math.isnan(row)==False) & (row > 0))
+            boolsNegative.append((math.isnan(row)==False) & (row < negative_threshold))
+            boolsPositive.append((math.isnan(row)==False) & (row > positive_threshold))
             bools.append(math.isnan(row)==False) 
         column = column.split('-')
         f = open(os.path.join(out_dir,'{}-{}.miso'.format(column[0],column[2])),'w')
@@ -259,3 +266,82 @@ def generate_xintao_as_miso(events_file, out_dir):
             f.write(xintao_to_miso(ind))
         f.close()
     return 0
+
+def xintao_as_eric_to_miso(row):
+    """
+    Reformats xintao's annotations fixed by eric's script into a miso-parsable 
+    format. The reason for the fix was to add exon boundary locations 
+    upstream and downstream of the skipped event. Oh, these are for SKIPPED 
+    EXONS!!! 
+    
+    Eric format:
+    CCNL2_ENSG00000221978.7;SE:chr1:1323445-1324330:1324427-1325610:-||ENST00000469113.1:chr1:1323403-1323445:-||ENST00000482365.1:chr1:1325610-1325751:- 
+    
+    File: 
+    /home/elvannostrand/data/ENCODE/RNAseq/scripts/rmats_dPSI_HepG2.all_sigDiff.SE.MATS.JunctionCountOnly.txt.wExonAnnotations.txt
+    """
+    name, se = row.split(';')
+    xintao, ericleft, ericright = se.split('||')
+    upstream_es = 1
+    downstream_ee = 250000000
+    if("Not_found") not in ericleft:
+        upstream_es = ericleft.split(':')[2].split('-')[0]
+    if("Not_found") not in ericright:
+        downstream_ee = ericright.split(':')[2].split('-')[1]
+        
+    event, chrom, upstream, downstream, strand = xintao.split(':')
+    upstream_ee, skipped_es = upstream.split('-')
+    skipped_ee, downstream_es = downstream.split('-')
+    if strand == '+':
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}\n'.format(
+            chrom, upstream_es, upstream_ee, strand,
+            chrom, skipped_es, skipped_ee, strand,
+            chrom, downstream_es, downstream_ee, strand,
+        name)
+    else:
+        return '{}:{}:{}:{}@{}:{}:{}:{}@{}:{}:{}:{}\t{}\n'.format(
+            chrom, downstream_es, downstream_ee, strand,
+            chrom, skipped_es, skipped_ee, strand,
+            chrom, upstream_es, upstream_ee, strand,
+        name)
+
+def generate_xintao_as_eric_as_miso(events_file, out_dir, positive_threshold, negative_threshold):
+    """
+    from an events file, generate individual miso annotations for differential splicing events
+    for each RBP. 
+    
+    events_file: the junctionsOnly.txt from xintao
+    out_dir: output directory - this function produces a single MISO-style annotations for each RBP
+      in xintao's junctionsOnly.txt. The output_dir is to be used in conjunction with the -r flag 
+      in the main script, which isn't entirely accurate, but may change in the future. 
+    positive_threshold: positive deltaPsi score cutoff
+    negative_threshold: negative deltaPsi score cutoff
+    """
+    events = pd.read_table(events_file,index_col=0)
+    for column in events:
+        boolsNegative = []
+        boolsPositive = []
+        bools = []
+        for row in events[column]:
+            boolsNegative.append((math.isnan(row)==False) & (row < -0.1))
+            boolsPositive.append((math.isnan(row)==False) & (row > 0.1))
+            bools.append(math.isnan(row)==False) 
+        column = column.split('-')
+        f = open(os.path.join(out_dir,'{}-{}.miso'.format(column[0],column[2])),'w')
+        fn = open(os.path.join(out_dir,'{}-{}-positive.miso'.format(column[0],column[2])),'w')
+        fp = open(os.path.join(out_dir,'{}-{}-negative.miso'.format(column[0],column[2])),'w')
+        listOfValidIndices = events[bools].index.tolist()
+        listOfValidExcludedIndices = events[boolsNegative].index.tolist()
+        listOfValidIncludedIndices = events[boolsPositive].index.tolist()
+        
+        for ind in listOfValidExcludedIndices:
+            fn.write(xintao_as_eric_to_miso(ind))
+        fn.close()
+        
+        for ind in listOfValidIncludedIndices:
+            fp.write(xintao_as_eric_to_miso(ind))
+        fp.close()
+        
+        for ind in listOfValidIndices:
+            f.write(xintao_as_eric_to_miso(ind))
+        f.close()

@@ -8,7 +8,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from gscripts.general import dataviz
+from matplotlib import rc
+rc('text', usetex=False)
+matplotlib.rcParams['svg.fonttype'] = 'none'
 
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
 def single_frame(means, title, output_file, color='red'):
         
