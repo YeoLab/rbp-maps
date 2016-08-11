@@ -260,7 +260,7 @@ def main(argv=None): # IGNORE:C0111
                     bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'allRMATS'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),
+                                                annotation=os.path.join(rmats_dir,'miso_se_to_ensembl.tsv'),
                                                 output_file=output_file)
                     
                     

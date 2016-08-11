@@ -139,7 +139,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
                                                title, output_file, 
                                                color1=sns.color_palette("hls", 8)[0], 
                                                color2=sns.color_palette("hls", 8)[5],
-                                               color3='white'):
+                                               color3='black'):
     """
     Special plot:
     plots a 4-region map that contains three separate plots for inclusion, 
@@ -173,7 +173,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax = fig.add_subplot(1,4,1)
         ax.plot(inclusion['region1'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region1'], linewidth=linewidth, alpha=.7, color = color2)
-        #ax.plot(both['region1'], linewidth=linewidth, alpha=.7, color = color3)
+        ax.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
@@ -185,7 +185,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax = fig.add_subplot(1,4,2)
         ax.plot(inclusion['region2'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region2'], linewidth=linewidth, alpha=.7, color = color2)
-        #ax.plot(both['region2'], linewidth=linewidth, alpha=.7, color = color3)
+        ax.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
@@ -195,7 +195,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax = fig.add_subplot(1,4,3)
         ax.plot(inclusion['region3'], linewidth=linewidth, alpha=.7, color = color1)
         ax.plot(exclusion['region3'], linewidth=linewidth, alpha=.7, color = color2)
-        #ax.plot(both['region3'], linewidth=linewidth, alpha=.7, color = color3)
+        ax.plot(both['region3'], linewidth=linewidth, alpha=.3, color = color3)
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
@@ -203,9 +203,9 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_xticklabels(range(-50,351,50),rotation=90)
         
         ax = fig.add_subplot(1,4,4)
-        ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1, label="positive")
-        ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2, label="negative")
-        #ax.plot(both['region4'], linewidth=linewidth, alpha=.7, color = color3, label="all")
+        ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1, label="incl in kd")
+        ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2, label="excl in kd")
+        ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="all")
         ax.axvline(x=300,linestyle=':',alpha=0.5)
         ax.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax, left=True)
