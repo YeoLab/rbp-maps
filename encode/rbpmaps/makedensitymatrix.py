@@ -54,6 +54,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-p", "--positive", dest="positive",required=True)
     parser.add_argument("-n", "--negative", dest="negative",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
+    parser.add_argument("-s", "--scaled", dest="scaled",required=False, default=False, action='store_true')
     parser.add_argument("-fe", "--feature", dest="feature",required=False, help="a bedfile or miso file containing a list of features to map to.")
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-title", "--title", dest="title", help="title for the plot", default = "some cool rbp")
@@ -74,11 +75,10 @@ def main(argv=None): # IGNORE:C0111
     current_rbp = Clip(ReadDensity = rbp,
                        name = args.title,
                        annotation = args.feature,
-                       output_file = args.output)
+                       output_file = args.output,
+                       is_scaled = args.scaled)
     current_rbp.create_matrices()
-    current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
     
-    current_rbp.get_raw_matrix.to_csv(args.output) # rbp.raw_matrix is the raw matrix
-    # current_rbp.get_matrix.to_csv(args.output) # rbp.matrix is the normalized matrix
+    current_rbp.get_raw_matrix().to_csv(args.output) # rbp.raw_matrix is the raw matrix
 if __name__ == "__main__":
     main()
