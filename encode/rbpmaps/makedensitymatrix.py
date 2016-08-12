@@ -75,7 +75,7 @@ def main(argv=None): # IGNORE:C0111
                        name = args.title,
                        annotation = args.feature,
                        output_file = args.output)
-    current_rbp.create_se_matrices(normalize=False)
+    current_rbp.create_matrices()
     current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
     
     current_rbp.get_raw_matrix.to_csv(args.output) # rbp.raw_matrix is the raw matrix
