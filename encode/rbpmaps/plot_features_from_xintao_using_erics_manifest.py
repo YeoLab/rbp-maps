@@ -52,6 +52,8 @@ class CLIError(Exception):
 def main(argv=None): # IGNORE:C0111
     
     # Setup argument parser
+    # USAGE: 
+    # python plot_features_from_xintao_using_erics_manifest.py -o /projects/ps-yeolab3/bay001/maps/se/xintao/8-15-2016 -f -m /home/elvannostrand/data/clip/CLIPseq_analysis/ENCODEclip_20160718/ALLDATASETS_submittedonly.txt -e se -r /projects/ps-yeolab3/bay001/maps/alt_splicing/8-5-2016/xintao-as-miso -s
     # manifest file is taken from here: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-o", "--output", dest="output",required=True)
@@ -274,7 +276,7 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.create_a3ss_matrices(normalize=False)
                         bothClip.create_a3ss_matrices(normalize=False)
                     else:
-                        inclusionClip.create_se_matrices(normalize=False)
+                        inclusionClip.create_se_matrices(normalize=False,label=)
                         exclusionClip.create_se_matrices(normalize=False)
                         bothClip.create_se_matrices(normalize=False)
                         

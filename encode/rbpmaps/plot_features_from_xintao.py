@@ -273,9 +273,9 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.create_a3ss_matrices(normalize=False)
                         bothClip.create_a3ss_matrices(normalize=False)
                     else:
-                        inclusionClip.create_se_matrices(normalize=False)
-                        exclusionClip.create_se_matrices(normalize=False)
-                        bothClip.create_se_matrices(normalize=False)
+                        inclusionClip.create_se_matrices(label='included',normalize=False)
+                        exclusionClip.create_se_matrices(label='excluded',normalize=False)
+                        bothClip.create_se_matrices(label='all',normalize=False)
                         
                     for n in range(0,len(normfuncs)):
                         inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)

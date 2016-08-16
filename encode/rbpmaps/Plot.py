@@ -218,7 +218,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.legend()
         plt.suptitle(title,y=1.03)
     ax.clear()
-        
+
 def five_frame(region1, region2, region3, region4, region5,
                title, output_file, color='red'):
     num_rows = 1
