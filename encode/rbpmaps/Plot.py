@@ -11,6 +11,7 @@ from gscripts.general import dataviz
 from matplotlib import rc
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
+import numpy as np
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
@@ -218,6 +219,33 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.legend()
         plt.suptitle(title,y=1.03)
     ax.clear()
+
+def four_frame_with_inclusion_exclusion_events_from_one_region(inclusion, exclusion, both,
+                                               title, output_file, 
+                                               color1=sns.color_palette("hls", 8)[0], 
+                                               color2=sns.color_palette("hls", 8)[5],
+                                               color3='black'):
+    """
+    Special plot:
+    plots a 4-region map that contains three separate plots for inclusion, 
+    exclusion, and all spliced events. 
+    
+    Args:
+        inclusion: {region1, region2, region3, region4}
+        exclusion: {region1, region2, region3, region4}
+        both: {region1, region2, region3, region4}
+        
+    """
+    
+    i = {}
+    e = {}
+    b = {}
+    
+    i['region1'], i['region2'], i['region3'], i['region4'] = np.array_split(inclusion,4,axis=1)
+    e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion,4,axis=1)
+    b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both,4,axis=1)
+    
+    four_frame_with_inclusion_exclusion_events(i,e,b,title,output_file,color1,color2,color3)
 
 def five_frame(region1, region2, region3, region4, region5,
                title, output_file, color='red'):

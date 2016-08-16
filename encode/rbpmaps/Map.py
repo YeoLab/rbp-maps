@@ -235,7 +235,32 @@ class ClipWithInput(Map):
         
         if normalize==True:
             self.set_matrix(normfunc, min_density_sum)
-
+    def create_se_matrices_one_region(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
+        
+        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        
+        keys = ['feature']
+        self.ip_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
+                                                                  density = self.ip, 
+                                                                  exon_offset = self.exon_offset, 
+                                                                  intron_offset = self.intron_offset, 
+                                                                  is_scaled = self.is_scaled),
+                                                                  combine = True))
+        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.input_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
+                                                                  density = self.inp, 
+                                                                  exon_offset = self.exon_offset, 
+                                                                  intron_offset = self.intron_offset, 
+                                                                  is_scaled = self.is_scaled,
+                                                                  combine = True)))
+        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        for key in self.ip_raw_matrix:
+            self.ip_raw_matrix[key].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, key))
+            self.input_raw_matrix[key].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, key))
+        
+        if normalize==True:
+            self.set_matrix(normfunc, min_density_sum)
 class ClipWithTwoInputs(Map):
     '''
     classdocs

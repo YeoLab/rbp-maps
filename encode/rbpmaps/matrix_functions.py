@@ -220,7 +220,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         return three_upstream, five_skipped, three_skipped, five_downstream
                 
                 
-def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled):
+def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=False):
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
@@ -304,8 +304,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled)
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
-        
-        return three_upstream, five_skipped, three_skipped, five_downstream
+        if combine_regions == False:
+            return three_upstream, five_skipped, three_skipped, five_downstream
+        else:
+            ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
+            return ra
         """return {'three_upstream':three_upstream, 
                 'five_skipped':five_skipped, 
                 'three_skipped':three_skipped, 

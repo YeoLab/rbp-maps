@@ -276,15 +276,21 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.create_a3ss_matrices(normalize=False)
                         bothClip.create_a3ss_matrices(normalize=False)
                     else:
-                        inclusionClip.create_se_matrices(normalize=False,label=)
-                        exclusionClip.create_se_matrices(normalize=False)
-                        bothClip.create_se_matrices(normalize=False)
+                        inclusionClip.create_se_matrices(label='included',normalize=False,combine_regions=True)
+                        exclusionClip.create_se_matrices(label='excluded',normalize=False,combine_regions=True)
+                        bothClip.create_se_matrices(label='all',normalize=False,combine_regions=True)
                         
                     for n in range(0,len(normfuncs)):
+                        
+                        
                         inclusionClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
                         exclusionClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
                         bothClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
-                                
+                        
+                        inc = {'region1':inclusionClip.matrix['feature'].mean()}
+                        exc = {'region1':exclusionClip.matrix['feature'].mean()}
+                        bo = {'region1':bothClip.matrix['feature'].mean()}
+                        """ deprecated, we are only normalizing across one region now.
                         inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
                                        'region2':inclusionClip.matrix['five_skipped'].mean(),
                                        'region3':inclusionClip.matrix['three_skipped'].mean(),
@@ -296,12 +302,12 @@ def main(argv=None): # IGNORE:C0111
                         bo = {'region1':bothClip.matrix['three_upstream'].mean(),
                                       'region2':bothClip.matrix['five_skipped'].mean(),
                                       'region3':bothClip.matrix['three_skipped'].mean(),
-                                      'region4':bothClip.matrix['five_downstream'].mean()}
+                                      'region4':bothClip.matrix['five_downstream'].mean()}"""
                         output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[n])
                         title = 'positive (n={}), negative (n={}) SE events'.format(len(inclusionClip.matrix['three_upstream']),
                                                                                     len(exclusionClip.matrix['three_upstream']))
-                                
-                        Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
+                        Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc, exc, bo, title, output_filename)
+                        # Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                     
             except Exception as e:
                 print(e)
