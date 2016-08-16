@@ -242,8 +242,9 @@ def main(argv=None): # IGNORE:C0111
                     """
                     
                     
-                    normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract]
-                    normfuncnames = ['subtracted','KLDivergence','subtract_by_region']
+                    normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract,
+                                 norm.entropy_of_reads, norm.pdf_of_entropy_of_reads]
+                    normfuncnames = ['subtracted','KLDivergence','subtract_by_region','entropy_of_reads','pdf_of_entropy_of_reads']
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
@@ -278,9 +279,9 @@ def main(argv=None): # IGNORE:C0111
                         bothClip.create_se_matrices(normalize=False)
                         
                     for n in range(0,len(normfuncs)):
-                        inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                        exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                        bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                        inclusionClip.set_matrix(normfunc=normfuncs[n],normfuncnames[n],min_density_sum=0)
+                        exclusionClip.set_matrix(normfunc=normfuncs[n],normfuncnames[n],min_density_sum=0)
+                        bothClip.set_matrix(normfunc=normfuncs[n],normfuncnames[n],min_density_sum=0)
                                 
                         inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
                                        'region2':inclusionClip.matrix['five_skipped'].mean(),

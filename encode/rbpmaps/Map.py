@@ -132,12 +132,12 @@ class ClipWithInput(Map):
         self.ip.set_annotation(annotation_file)
         self.input.set_annotation(annotation_file)
         
-    def set_matrix(self, normfunc = norm.KLDivergence, min_density_sum = 0):
+    def set_matrix(self, normfunc = norm.KLDivergence, label, min_density_sum = 0):
         for key in self.ip_raw_matrix:
-            print("starting normalization for key {} {}".format(key, datetime.datetime.now().time()))
+            print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
             self.matrix[key] = normfunc(self.ip_raw_matrix[key],self.input_raw_matrix[key], min_density_sum)
-            self.matrix[key].to_csv("{}.{}.normed_matrix.csv".format(self.output_base, key))
-            print("finished normalization for key {} {}".format(key, datetime.datetime.now().time()))
+            self.matrix[key].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, key))
+            print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
     
     def create_matrices(self,prefix = 'feature', normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
 
