@@ -245,8 +245,15 @@ def main(argv=None): # IGNORE:C0111
                     
                     
                     normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract,
-                                 norm.entropy_of_reads, norm.pdf_of_entropy_of_reads]
-                    normfuncnames = ['subtracted','KLDivergence','subtract_by_region','entropy_of_reads','pdf_of_entropy_of_reads']
+                                 norm.entropy_of_reads, norm.pdf_of_entropy_of_reads, norm.get_density, norm.get_input]
+                    normfuncnames = ['subtracted',
+                                     'KLDivergence',
+                                     'subtract_by_region',
+                                     'entropy_of_reads',
+                                     'pdf_of_entropy_of_reads',
+                                     'density_baseline',
+                                     'input_baseline'
+                                     ]
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),

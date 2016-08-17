@@ -65,7 +65,17 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     en = entropy_of_reads(density, input_density, min_density_threshold)
     
     return calculate_pdf(en, min_density_threshold)
- 
+
+def get_density(density, input_density, min_density_threshold = 0):
+    df = density[density.sum(axis=1) > min_density_threshold]
+    
+    return df
+
+def get_input(density, input_density, min_density_threshold = 0):
+    df = input_density[input_density.sum(axis=1) > min_density_threshold]
+    
+    return df
+
 def calculate_pdf(density, min_density_threshold = 0):
     densities = density.replace(-1, np.nan)   
     df = densities[densities.sum(axis=1) > min_density_threshold]
