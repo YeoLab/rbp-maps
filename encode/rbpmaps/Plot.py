@@ -241,9 +241,9 @@ def four_frame_with_inclusion_exclusion_events_from_one_region(inclusion, exclus
     e = {}
     b = {}
     
-    i['region1'], i['region2'], i['region3'], i['region4'] = np.array_split(inclusion,4,axis=1)
-    e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion,4,axis=1)
-    b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both,4,axis=1)
+    i['region1'], i['region2'], i['region3'], i['region4'] = np.array_split(inclusion['region1'],4)
+    e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion['region1'],4)
+    b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both['region1'],4)
     
     four_frame_with_inclusion_exclusion_events(i,e,b,title,output_file,color1,color2,color3)
 

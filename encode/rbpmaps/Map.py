@@ -240,21 +240,20 @@ class ClipWithInput(Map):
         
         print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         
-        keys = ['feature']
-        self.ip_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
+        self.ip_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
                                                                   density = self.ip, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled),
-                                                                  combine_regions = True))
+                                                                  is_scaled = self.is_scaled,
+                                                                  combine_regions = True)
         print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
+        self.input_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
                                                                   density = self.inp, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled,
-                                                                  combine_regions = True)))
+                                                                  combine_regions = True)
         print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         for key in self.ip_raw_matrix:
             self.ip_raw_matrix[key].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, key))

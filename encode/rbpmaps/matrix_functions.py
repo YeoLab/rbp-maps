@@ -308,6 +308,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             return three_upstream, five_skipped, three_skipped, five_downstream
         else:
             ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
+            ra.columns = range(0,1400)
             return ra
         """return {'three_upstream':three_upstream, 
                 'five_skipped':five_skipped, 

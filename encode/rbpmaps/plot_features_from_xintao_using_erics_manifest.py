@@ -276,6 +276,7 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.create_a3ss_matrices(normalize=False)
                         bothClip.create_a3ss_matrices(normalize=False)
                     else:
+                        
                         inclusionClip.create_se_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_se_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_se_matrices_one_region(label='all',normalize=False)
@@ -304,8 +305,8 @@ def main(argv=None): # IGNORE:C0111
                                       'region3':bothClip.matrix['three_skipped'].mean(),
                                       'region4':bothClip.matrix['five_downstream'].mean()}"""
                         output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[n])
-                        title = 'positive (n={}), negative (n={}) SE events'.format(len(inclusionClip.matrix['three_upstream']),
-                                                                                    len(exclusionClip.matrix['three_upstream']))
+                        title = 'incl (n={}), excl (n={}) SE events'.format(len(inclusionClip.matrix['feature']),
+                                                                                    len(exclusionClip.matrix['feature']))
                         Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc, exc, bo, title, output_filename)
                         # Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                     
