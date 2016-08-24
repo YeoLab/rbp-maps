@@ -9,9 +9,7 @@ import os
 
 def KLDivergence(density, input_density, min_density_threshold = 0):
     PDF_CONST = 1.0/len(density.columns)
-    density = density[density.sum(axis=1) > min_density_threshold]
-    input_density = input_density[input_density.sum(axis=1) > min_density_threshold]
-    
+        
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
@@ -32,8 +30,11 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     do en
     plot mean
     """
-    ipdf = density[density.sum(axis=1) > min_density_threshold]
-    indf = input_density[input_density.sum(axis=1) > min_density_threshold]
+    ipdf = density.replace(-1, np.nan)
+    indf = input_density.replace(-1, np.nan)
+    
+    # ipdf = density[density.sum(axis=1) > min_density_threshold]
+    # indf = input_density[input_density.sum(axis=1) > min_density_threshold]
     
     min_ip_read_number = min([item for item in ipdf.unstack().values if item > 0])
     min_in_read_number = min([item for item in indf.unstack().values if item > 0])
@@ -42,8 +43,8 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     ipdf = ipdf + min_read_number
     indf = indf + min_read_number
     
-    ipdfdiv = ipdf.div(1000000)
-    indfdiv = indf.div(1000000)
+    ipdfdiv = ipdf # .div(1000000)
+    indfdiv = indf # .div(1000000)
     
     dft = pd.merge(ipdfdiv,indfdiv,how='left',left_index=True,right_index=True).fillna(min_read_number)
     
@@ -78,8 +79,9 @@ def get_input(density, input_density, min_density_threshold = 0):
     
     return df
 
-def calculate_pdf(df, min_density_threshold = 0):
-    df = df.replace(-1, np.nan)   
+def calculate_pdf(density, min_density_threshold = 0):
+    df = density.replace(-1, np.nan)
+    
     # df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
@@ -99,9 +101,7 @@ def baseline_rpm_mean_subtraction(density, input_density, min_density_threshold 
     pass
 
 def normalize_and_subtract(density, input_density, min_density_threshold = 0):
-    density = density[density.sum(axis=1) > min_density_threshold]
-    input_density = input_density[input_density.sum(axis=1) > min_density_threshold]
-     
+        
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
@@ -110,9 +110,7 @@ def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     return subtracted
     
 def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
-    density = density[density.sum(axis=1) > min_density_threshold]
-    input_density = input_density[input_density.sum(axis=1) > min_density_threshold]
-    
+        
     PDF_CONST = 1.0/len(density.columns)
         
     pdf = calculate_pdf(density, min_density_threshold)

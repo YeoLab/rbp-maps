@@ -61,7 +61,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-kd", "--kd", dest="kd", help="knockdown directory (where the ___vs___.csv is)", default=None)
     parser.add_argument("-m", "--manifest", dest="manifest")
-    parser.add_argument("-r", "--rmats", dest="rmats", help="rMATS directory (where the ___vs___.csv is)")
+    parser.add_argument("-M", "--miso", dest="rmats", help="MISO DIRECTORY")
     parser.add_argument("-fdr", "--fdr", dest="fdr", help="false discovery rate for rMATS inclusion/exclusion", default = 0.05, type=float)
     parser.add_argument("-inc", "--inc_level", dest="inc_level", help="inclusion rmats levels", default = 0, type = float )
     parser.add_argument("-dx", "--directionx", dest="directionx", help="show [included], [excluded], or [background] inclusion rmats levels", default="background")
@@ -101,16 +101,11 @@ def main(argv=None): # IGNORE:C0111
                 rbp_name = line[1]
                 cell_line = line[2]
                 rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
-                rep2 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
-                inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
+                inp = line[4].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                 
-                assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
                 if(args.flipped):
                     rep1neg = rep1.replace('.bam','.norm.pos.bw')
                     rep1pos = rep1.replace('.bam','.norm.neg.bw')
-                    
-                    rep2neg = rep2.replace('.bam','.norm.pos.bw')
-                    rep2pos = rep2.replace('.bam','.norm.neg.bw')
                     
                     inputneg = inp.replace('.bam','.norm.pos.bw')
                     inputpos = inp.replace('.bam','.norm.neg.bw')
@@ -118,18 +113,14 @@ def main(argv=None): # IGNORE:C0111
                     rep1neg = rep1.replace('.bam','.norm.pos.bw')
                     rep1pos = rep1.replace('.bam','.norm.neg.bw')
                     
-                    rep2neg = rep2.replace('.bam','.norm.pos.bw')
-                    rep2pos = rep2.replace('.bam','.norm.neg.bw')
-                    
                     inputneg = inp.replace('.bam','.norm.pos.bw')
                     inputpos = inp.replace('.bam','.norm.neg.bw')
                     
                 my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
-                my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')
                 
-                reps = [my_rep1_name, my_rep2_name]
-                reppos = [rep1pos, rep2pos]
-                repneg = [rep1neg, rep2neg]
+                reps = [my_rep1_name]
+                reppos = [rep1pos]
+                repneg = [rep1neg]
                 
                 
                 
@@ -180,15 +171,16 @@ def main(argv=None): # IGNORE:C0111
                             print("attempting to generate skipped exon file from manifest")
                             
                             feature = None
-                            features['included'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),names=final_columns)
-                            features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),names=final_columns)
-                            features['background'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
+                            features['included'] = pd.read_table(os.path.join(rmats_dir,'{}.negative.miso').format(rbp_name),names=final_columns)
+                            features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}.positive.miso').format(rbp_name),names=final_columns)
+                            features['background'] = pd.read_table(os.path.join(rmats_dir,'{}.miso').format(rbp_name),names=final_columns)
                                 
                             features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
                             features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
                             features['background'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('background'), sep="\t", header=None, index=None)
                         else:
                             print("no feature file assigned for a non-se/a3ss/a5ss event.")
+                            sys.exit(1)
                     """
                 
                     subset annotation file from DESeq2 diffexpression data
@@ -286,7 +278,7 @@ def main(argv=None): # IGNORE:C0111
                         inclusionClip.create_se_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_se_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_se_matrices_one_region(label='all',normalize=False)
-                        sys.exit(0)
+                        
                     for n in range(0,len(normfuncs)):
                         
                         

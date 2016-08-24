@@ -76,7 +76,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
                     three_upstream[event] = wiggle
-        
+                    print("length of 3p upstream: {}".format(len(wiggle)))
                 """five prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         upstream,
@@ -91,7 +91,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
                     five_skipped[event] = wiggle
-        
+                    print("length of 5p skipped: {}".format(len(wiggle)))
                 """three prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                          alt2,
@@ -106,6 +106,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
                     three_skipped[event] = wiggle
+                    print("length of 3p skipped: {}".format(len(wiggle)))
         
                 """five prime site of downstream region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
@@ -121,7 +122,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
                     five_downstream[event] = wiggle
-                  
+                    print("length of downstream: {}".format(len(wiggle)))
         three_upstream = pd.DataFrame(three_upstream).T
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
@@ -253,14 +254,18 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                     wiggle = np.nan_to_num(wiggle) 
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    three_upstream[event] = wiggle
-        
+                    
+                    # print("length of 3p upstream: {}".format(len(wiggle)))
+                else:
+                    wiggle = pd.Series([-1]*(intron_offset + exon_offset))
+                three_upstream[event] = wiggle
                 """five prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         upstream_interval,
                                                                         interval,
                                                                         exon_offset,
                                                                         intron_offset)
+                
                 wiggle = pd.Series(wiggle)
                 if not all(np.isnan(wiggle)):
                     wiggle = abs(wiggle) # convert all values to positive
@@ -268,8 +273,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                     wiggle = np.nan_to_num(wiggle)
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    five_skipped[event] = wiggle
-        
+                    
+                    # print("length of 5p skipped: {}".format(len(wiggle)))
+                else:
+                    wiggle = pd.Series([-1]*(intron_offset + exon_offset))
+                five_skipped[event] = wiggle
                 """three prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                          downstream_interval,
@@ -283,8 +291,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                     wiggle = np.nan_to_num(wiggle) #
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    three_skipped[event] = wiggle
-        
+                    
+                    # print("length of 3p skipped: {}".format(len(wiggle)))
+                else:
+                    wiggle = pd.Series([-1]*(intron_offset + exon_offset))
+                three_skipped[event] = wiggle
                 """five prime site of downstream region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         interval,
@@ -298,8 +309,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                     wiggle = np.nan_to_num(wiggle) # convert all nans to 0
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    five_downstream[event] = wiggle
-                  
+                    # print("length of 5p downstream: {}".format(len(wiggle)))
+                else:
+                    wiggle = pd.Series([-1]*(intron_offset + exon_offset))
+                five_downstream[event] = wiggle
+
         three_upstream = pd.DataFrame(three_upstream).T
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
