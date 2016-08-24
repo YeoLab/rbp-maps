@@ -110,27 +110,27 @@ def five_prime_site(rbp,                # type: ReadDensity
     if interval.strand == "+":
         if(trunc == True):
             if interval.start + exon_offset > interval.end:
-                middle = int((interval.end + interval.start)/2)
-                exon_offset = interval.end - middle
-                # exon_offset = interval.end - interval.start
+                # middle = int((interval.end + interval.start)/2)
+                # exon_offset = interval.end - middle
+                exon_offset = interval.end - interval.start
                 right_pad = exon - exon_offset
             if interval.start - intron_offset < upstream_interval.end:
-                # intron_offset = interval.start - upstream_interval.end
-                middle = int((interval.start + upstream_interval.end)/2)
-                intron_offset = interval.start - middle
+                intron_offset = interval.start - upstream_interval.end
+                # middle = int((interval.start + upstream_interval.end)/2)
+                # intron_offset = interval.start - middle
                 left_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, (interval.start - intron_offset), (interval.start + exon_offset), interval.strand)
     elif interval.strand == "-":
         if(trunc == True):
             if interval.end - exon_offset < interval.start:
-                middle = int((interval.start + interval.end)/2)
-                exon_offset = interval.end - middle
-                # exon_offset = interval.end - interval.start
+                # middle = int((interval.start + interval.end)/2)
+                # exon_offset = interval.end - middle
+                exon_offset = interval.end - interval.start
                 left_pad = exon - exon_offset
             if interval.end + intron_offset > upstream_interval.start:
-                # intron_offset = upstream_interval.start - interval.end
-                middle = int((upstream_interval.start + interval.end)/2)
-                intron_offset = upstream_interval.start - middle
+                intron_offset = upstream_interval.start - interval.end
+                # middle = int((upstream_interval.start + interval.end)/2)
+                # intron_offset = upstream_interval.start - middle
                 right_pad = intron - intron_offset
                 
         wiggle = rbp.values(interval.chrom, (interval.end - exon_offset), (interval.end + intron_offset), interval.strand)

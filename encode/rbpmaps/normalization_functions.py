@@ -13,14 +13,14 @@ def KLDivergence(density, input_density, min_density_threshold = 0):
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
-    pdft = pd.merge(pdf,input_pdf,how='left',left_index=True,right_index=True).fillna(PDF_CONST)
+    # pdft = pd.merge(pdf,input_pdf,how='left',left_index=True,right_index=True).fillna(PDF_CONST)
         
-    pdf = pdft.filter(regex='\d+_x')
-    pdfi = pdft.filter(regex='\d+_y')
-    pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
-    pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
+    # pdf = pdft.filter(regex='\d+_x')
+    # pdfi = pdft.filter(regex='\d+_y')
+    # pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
+    # pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
 
-    en = pdf.multiply(np.log2(pdf.div(pdfi)))
+    en = pdf.multiply(np.log2(pdf.div(input_pdf)))
         
     return en
 def entropy_of_reads(density, input_density, min_density_threshold = 0):
@@ -46,13 +46,13 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     ipdfdiv = ipdf # .div(1000000)
     indfdiv = indf # .div(1000000)
     
-    dft = pd.merge(ipdfdiv,indfdiv,how='left',left_index=True,right_index=True).fillna(min_read_number)
+    # dft = pd.merge(ipdfdiv,indfdiv,how='left',left_index=True,right_index=True).fillna(min_read_number)
     
-    ipdfdiv = dft.filter(regex='\d+_x')
-    indfdiv = dft.filter(regex='\d+_y')
+    # ipdfdiv = dft.filter(regex='\d+_x')
+    # indfdiv = dft.filter(regex='\d+_y')
     
-    ipdfdiv = ipdfdiv.rename(columns=lambda x: x.replace('_x', ''))
-    indfdiv = indfdiv.rename(columns=lambda x: x.replace('_y', ''))
+    # ipdfdiv = ipdfdiv.rename(columns=lambda x: x.replace('_x', ''))
+    # indfdiv = indfdiv.rename(columns=lambda x: x.replace('_y', ''))
     
     en = ipdfdiv.multiply(np.log2(ipdfdiv.div(indfdiv)))
     
@@ -66,18 +66,21 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     
     """
     en = entropy_of_reads(density, input_density, min_density_threshold)
+    min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
+    en = en + min_normalized_read_number
+    pdf = en.div(en.sum(axis=1), axis=0)
     
-    return calculate_pdf(en, min_density_threshold)
+    return pdf
 
 def get_density(density, input_density, min_density_threshold = 0):
-    df = density[density.sum(axis=1) > min_density_threshold]
+    # df = density[density.sum(axis=1) > min_density_threshold]
     
-    return df
+    return density
 
 def get_input(density, input_density, min_density_threshold = 0):
-    df = input_density[input_density.sum(axis=1) > min_density_threshold]
+    # df = input_density[input_density.sum(axis=1) > min_density_threshold]
     
-    return df
+    return input_density
 
 def calculate_pdf(density, min_density_threshold = 0):
     df = density.replace(-1, np.nan)
@@ -116,15 +119,15 @@ def normalize_and_per_region_subtract(density, input_density, min_density_thresh
     pdf = calculate_pdf(density, min_density_threshold)
     input_pdf = calculate_pdf(input_density, min_density_threshold)
         
-    pdft = pd.merge(pdf,input_pdf, how='left',left_index=True,right_index=True).fillna(PDF_CONST)
+    # pdft = pd.merge(pdf,input_pdf, how='left',left_index=True,right_index=True).fillna(PDF_CONST)
         
-    pdf = pdft.filter(regex='\d+_x')
-    pdfi = pdft.filter(regex='\d+_y')
+    # pdf = pdft.filter(regex='\d+_x')
+    # pdfi = pdft.filter(regex='\d+_y')
     
     
-    pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
-    pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
+    # pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
+    # pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
         
-    subtracted = pdf.sub(pdfi)
+    subtracted = pdf.sub(input_pdf)
   
     return subtracted

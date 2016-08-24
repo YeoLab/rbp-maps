@@ -286,7 +286,7 @@ def main(argv=None): # IGNORE:C0111
                         inclusionClip.create_se_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_se_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_se_matrices_one_region(label='all',normalize=False)
-                        sys.exit(0)
+                        # sys.exit(0)
                     for n in range(0,len(normfuncs)):
                         
                         
