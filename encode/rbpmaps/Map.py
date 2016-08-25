@@ -139,23 +139,20 @@ class ClipWithInput(Map):
             self.matrix[key].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, key))
             print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
     
-    def create_matrices(self,prefix = 'feature', normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
+    def create_matrices(self,prefix = 'feature', is_scaled=True):
 
         self.ip_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
                                                        density = self.ip, 
                                                        left = self.left, 
                                                        right = self.right, 
-                                                       is_scaled = self.is_scaled)
+                                                       is_scaled = is_scaled)
         self.input_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
                                                           density = self.inp, 
                                                           left = self.left, 
                                                           right = self.right, 
-                                                          is_scaled = self.is_scaled)
+                                                          is_scaled = is_scaled)
         self.input_raw_matrix[prefix].to_csv("{}.input_raw_density_matrix.csv".format(self.output_base))
         self.ip_raw_matrix[prefix].to_csv("{}.ip_raw_density_matrix.csv".format(self.output_base))
-        
-        if normalize==True:
-            self.set_matrix(normfunc, min_density_sum)
         
     def create_a5ss_matrices(self, normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))

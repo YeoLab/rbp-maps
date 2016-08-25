@@ -4,6 +4,7 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import pybedtools as bt
+import pandas as pd
 
 def isin(row,lst):
     for g in row['gene']:
@@ -15,7 +16,10 @@ def ensembl_from_gencode(gencode_id):
     return gencode_id.split('.')[0]
 
 def create_bedtool(annotation):
-    return bt.BedTool(annotation)
+    if(isinstance(annotation, pd.DataFrame)):
+        return bt.BedTool.from_dataframe(annotation)
+    else:
+        return bt.BedTool(annotation)
 
 def create_bed_tool_from_miso_se(miso_annotation):
     """

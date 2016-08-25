@@ -49,6 +49,23 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg
 
+def remove_outliers(rbpdataframe, conf = 0.95):
+    x = 0
+    means = list()
+    for key, value in rbpdataframe.iteritems():
+        df = rbpdataframe.dropna()
+        nums = len(df[key])
+        droppercent = (1-conf)/2.0
+        dropnum = int(nums*(droppercent))
+        # print(nums)
+        # print(dropnum)
+        df = df.sort(key)
+        df.drop(df.head(dropnum).index, inplace=True)
+        df.drop(df.tail(dropnum).index, inplace=True)
+        # print(df[key])
+        means.append(df[key].mean())
+    return means
+
 def main(argv=None): # IGNORE:C0111
     
     # Setup argument parser
@@ -242,17 +259,18 @@ def main(argv=None): # IGNORE:C0111
                     CRAP
                     """
                     
-                    
-                    normfuncs = [norm.normalize_and_subtract, norm.KLDivergence, norm.normalize_and_per_region_subtract,
-                                 norm.entropy_of_reads, norm.pdf_of_entropy_of_reads, norm.get_density, norm.get_input]
-                    normfuncnames = ['subtracted',
-                                     'KLDivergence',
+                    """
+                    normfuncs = [norm.KLDivergence, norm.normalize_and_per_region_subtract,
+                                 norm.entropy_of_reads, norm.get_density, norm.get_input]
+                    """
+                    normfuncs = [norm.entropy_of_reads, norm.get_density, norm.get_input]
+                    normfuncnames = ['entropy_of_reads','density_baseline','input_baseline']
+                    """normfuncnames = ['KLDivergence',
                                      'subtract_by_region',
                                      'entropy_of_reads',
-                                     'pdf_of_entropy_of_reads',
                                      'density_baseline',
                                      'input_baseline'
-                                     ]
+                                     ]"""
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
@@ -290,31 +308,27 @@ def main(argv=None): # IGNORE:C0111
                     for n in range(0,len(normfuncs)):
                         
                         
-                        inclusionClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
-                        exclusionClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
-                        bothClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
+                        inclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
+                        exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
+                        bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
                         
                         inc = {'region1':inclusionClip.matrix['feature'].mean()}
                         exc = {'region1':exclusionClip.matrix['feature'].mean()}
                         bo = {'region1':bothClip.matrix['feature'].mean()}
-                        """ deprecated, we are only normalizing across one region now.
-                        inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
-                                       'region2':inclusionClip.matrix['five_skipped'].mean(),
-                                       'region3':inclusionClip.matrix['three_skipped'].mean(),
-                                       'region4':inclusionClip.matrix['five_downstream'].mean()}
-                        exc = {'region1':exclusionClip.matrix['three_upstream'].mean(),
-                                       'region2':exclusionClip.matrix['five_skipped'].mean(),
-                                       'region3':exclusionClip.matrix['three_skipped'].mean(),
-                                       'region4':exclusionClip.matrix['five_downstream'].mean()}
-                        bo = {'region1':bothClip.matrix['three_upstream'].mean(),
-                                      'region2':bothClip.matrix['five_skipped'].mean(),
-                                      'region3':bothClip.matrix['three_skipped'].mean(),
-                                      'region4':bothClip.matrix['five_downstream'].mean()}"""
+                        
                         output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[n])
                         title = 'incl (n={}), excl (n={}) SE events'.format(len(inclusionClip.matrix['feature']),
                                                                                     len(exclusionClip.matrix['feature']))
                         Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc, exc, bo, title, output_filename)
-                        # Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
+                        
+                        confidence = 0.95
+                        inc_rmo = {'region1':remove_outliers(inclusionClip.matrix['feature'],confidence)}
+                        exc_rmo = {'region1':remove_outliers(exclusionClip.matrix['feature'],confidence)}
+                        bo_rmo = {'region1':remove_outliers(bothClip.matrix['feature'],confidence)}
+                        
+                        output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.removeoutliers.svg".format(args.event,normfuncnames[n])
+                        title = 'SE events (keep={})'.format(confidence)
+                        Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc_rmo, exc_rmo, bo_rmo, title, output_filename)
                     
             except Exception as e:
                 print(e)

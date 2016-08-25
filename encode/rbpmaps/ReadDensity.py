@@ -14,10 +14,14 @@ class ReadDensity():
         self.neg(negative *.bw file)
     """
     def __init__(self, pos, neg, name = None):
-        self.pos = pyBigWig.open(pos)
-        self.neg = pyBigWig.open(neg)
-        self.name = name if name is not None else pos.replace('pos','*').replace('neg','*')
-        
+        try:
+            self.pos = pyBigWig.open(pos)
+            self.neg = pyBigWig.open(neg)
+            self.name = name if name is not None else pos.replace('pos','*').replace('neg','*')
+        except Exception as e:
+            print("couldn't open the bigwig files!")
+            print(e)
+            return 1
     def get_name(self):
         """
         returns name
