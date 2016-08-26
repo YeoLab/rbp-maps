@@ -168,6 +168,114 @@ def four_frame(region1, region2, region3, region4,
     plt.cla()
     plt.close()
 
+def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, both,
+                                                          inclusion_err, exclusion_err,
+                                                          title, output_file, 
+                                                          color1=sns.color_palette("hls", 8)[0], 
+                                                          color2=sns.color_palette("hls", 8)[5],
+                                                          color3='black'):
+    
+    """
+    Special plot:
+    plots a 4-region map that contains three separate plots for inclusion, 
+    exclusion, and all spliced events. 
+    
+    Args:
+        inclusion: {region1, region2, region3, region4}
+        exclusion: {region1, region2, region3, region4}
+        both: {region1, region2, region3, region4}
+        
+    """
+    num_rows = 1
+    num_cols = 4
+    ax = plt.gca()
+    min_height = min(min(inclusion['region1']),min(exclusion['region1']),min(both['region1']),
+                     min(inclusion['region2']),min(exclusion['region2']),min(both['region2']),
+                     min(inclusion['region3']),min(exclusion['region3']),min(both['region3']),
+                     min(inclusion['region4']),min(exclusion['region4']),min(both['region4']))
+    max_height = max(max(inclusion['region1']),max(exclusion['region1']),max(both['region1']),
+                     max(inclusion['region2']),max(exclusion['region2']),max(both['region2']),
+                     max(inclusion['region3']),max(exclusion['region3']),max(both['region3']),
+                     max(inclusion['region4']),max(exclusion['region4']),max(both['region4']))
+        
+    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+        
+        sns.set_style({'xtick.major.size':5,
+                   'ytick.major.size':5,
+                   'xtick.color':'.15'})
+        
+        linewidth = 2
+        errorbar_linewidth = 0.7
+        
+        ax = fig.add_subplot(1,4,1)
+        ax.plot(inclusion['region1'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(exclusion['region1'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
+        
+        ax.plot((inclusion['region1']+inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((inclusion['region1']-inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((exclusion['region1']+exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((exclusion['region1']-exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax)
+        ax.set_ylim(min_height, max_height)
+        ax.set_ylabel("Mean Read Density")
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        
+        sns.set_style({'ytick.major.size':0})
+        
+        ax = fig.add_subplot(1,4,2)
+        ax.plot(inclusion['region2'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(exclusion['region2'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
+        
+        ax.plot((inclusion['region2']+inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((inclusion['region2']-inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((exclusion['region2']+exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((exclusion['region2']-exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.set_xticklabels(range(-300,51,50),rotation=90)
+        ax.axvline(x=300,linestyle=':',alpha=0.5)
+            
+        ax = fig.add_subplot(1,4,3)
+        ax.plot(inclusion['region3'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(exclusion['region3'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(both['region3'], linewidth=linewidth, alpha=.3, color = color3)
+        ax.plot((inclusion['region3']+inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((inclusion['region3']-inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((exclusion['region3']+exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((exclusion['region3']-exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        
+        ax = fig.add_subplot(1,4,4)
+        ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.8, color = color1, label="incl in kd")
+        ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.8, color = color2, label="excl in kd")
+        ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
+        ax.plot((inclusion['region4']+inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((inclusion['region4']-inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((exclusion['region4']+exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((exclusion['region4']-exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        ax.axvline(x=300,linestyle=':',alpha=0.5)
+        ax.set_xticklabels(range(-300,51,50),rotation=90)
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.legend()
+        plt.suptitle(title,y=1.03)
+    plt.clf()
+    plt.cla()
+    plt.close()
+    
 def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
                                                title, output_file, 
                                                color1=sns.color_palette("hls", 8)[0], 
@@ -210,7 +318,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
-        # ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
         ax.axvline(x=50,linestyle=':',alpha=0.5)
         
         sns.set_style({'ytick.major.size':0})
@@ -222,7 +330,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
-        # ax.set_xticklabels(range(-300,51,50),rotation=90)
+        ax.set_xticklabels(range(-300,51,50),rotation=90)
         ax.axvline(x=300,linestyle=':',alpha=0.5)
             
         ax = fig.add_subplot(1,4,3)
@@ -233,14 +341,14 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
         ax.axvline(x=50,linestyle=':',alpha=0.5)
-        # ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
         
         ax = fig.add_subplot(1,4,4)
         ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1, label="incl in kd")
         ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2, label="excl in kd")
         ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
         ax.axvline(x=300,linestyle=':',alpha=0.5)
-        # ax.set_xticklabels(range(-300,51,50),rotation=90)
+        ax.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
@@ -275,28 +383,40 @@ def four_frame_with_inclusion_exclusion_events_from_one_region(inclusion, exclus
     e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion['region1'],4)
     b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both['region1'],4)
     
-    
-    print(type(b['region1']))
-    print(b['region2'])
-    print(b['region3'])
-    print(b['region4'])
-    b['region1'].reset_index(drop=True,inplace=True)
-    b['region2'].reset_index(drop=True,inplace=True)
-    b['region3'].reset_index(drop=True,inplace=True)
-    b['region4'].reset_index(drop=True,inplace=True)
-    
-    i['region1'].reset_index(drop=True,inplace=True)
-    i['region2'].reset_index(drop=True,inplace=True)
-    i['region3'].reset_index(drop=True,inplace=True)
-    i['region4'].reset_index(drop=True,inplace=True)
-    
-    e['region1'].reset_index(drop=True,inplace=True)
-    e['region2'].reset_index(drop=True,inplace=True)
-    e['region3'].reset_index(drop=True,inplace=True)
-    e['region4'].reset_index(drop=True,inplace=True)
-    
     four_frame_with_inclusion_exclusion_events(i,e,b,title,output_file,color1,color2,color3)
 
+def four_frame_with_inclusion_exclusion_events_from_one_region_with_error(inclusion, exclusion, both,
+                                                                          inclusion_err, exclusion_err,
+                                                                          title, output_file, 
+                                                                          color1=sns.color_palette("hls", 8)[0], 
+                                                                          color2=sns.color_palette("hls", 8)[5],
+                                                                          color3='black'):
+    """
+    Special plot:
+    plots a 4-region map that contains three separate plots for inclusion, 
+    exclusion, and all spliced events. 
+    
+    Args:
+        inclusion: {region1, region2, region3, region4}
+        exclusion: {region1, region2, region3, region4}
+        both: {region1, region2, region3, region4}
+        
+    """
+    
+    i = {}
+    e = {}
+    b = {}
+    ie = {}
+    ee = {}
+    
+    i['region1'], i['region2'], i['region3'], i['region4'] = np.array_split(inclusion['region1'],4)
+    e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion['region1'],4)
+    b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both['region1'],4)
+    ie['region1'], ie['region2'], ie['region3'], ie['region4'] = np.array_split(inclusion_err['region1'],4)
+    ee['region1'], ee['region2'], ee['region3'], ee['region4'] = np.array_split(exclusion_err['region1'],4)
+    
+    four_frame_with_inclusion_exclusion_events_with_error(i,e,b,ie,ee,title,output_file,color1,color2,color3)
+    
 def five_frame(region1, region2, region3, region4, region5,
                title, output_file, color='red'):
     num_rows = 1

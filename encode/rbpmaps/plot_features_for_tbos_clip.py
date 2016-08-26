@@ -181,7 +181,7 @@ def main(argv=None): # IGNORE:C0111
                                                                         len(exclusionClip.matrix[prefix]))
                     # Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                     Plot.single_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
-                bothClip.set_annotation('testfiles/annotations/miso_se_to_ensembl.tsv')
+                bothClip.set_annotation('/home/brian/git/ENCODE/encode/rbpmaps/testfiles/annotations/miso_se_to_ensembl.tsv')
                 print("annotation set! {}".format(bothClip.annotation))
                 bothClip.reset_matrix()
                 bothClip.create_se_matrices_one_region(rbp_name,normalize=False)

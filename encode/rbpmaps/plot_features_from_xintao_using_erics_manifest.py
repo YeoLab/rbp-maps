@@ -59,7 +59,7 @@ def remove_outliers(rbpdataframe, conf = 0.95):
         dropnum = int(nums*(droppercent))
         # print(nums)
         # print(dropnum)
-        df = df.sort(key)
+        df = df.sort_values(by=key)
         df.drop(df.head(dropnum).index, inplace=True)
         df.drop(df.tail(dropnum).index, inplace=True)
         # print(df[key])
@@ -259,18 +259,18 @@ def main(argv=None): # IGNORE:C0111
                     CRAP
                     """
                     
-                    """
+                    
                     normfuncs = [norm.KLDivergence, norm.normalize_and_per_region_subtract,
                                  norm.entropy_of_reads, norm.get_density, norm.get_input]
-                    """
-                    normfuncs = [norm.entropy_of_reads, norm.get_density, norm.get_input]
-                    normfuncnames = ['entropy_of_reads','density_baseline','input_baseline']
-                    """normfuncnames = ['KLDivergence',
+                    
+                    # normfuncs = [norm.entropy_of_reads, norm.get_density, norm.get_input]
+                    # normfuncnames = ['entropy_of_reads','density_baseline','input_baseline']
+                    normfuncnames = ['KLDivergence',
                                      'subtract_by_region',
                                      'entropy_of_reads',
                                      'density_baseline',
                                      'input_baseline'
-                                     ]"""
+                                     ]
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
@@ -312,17 +312,27 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
                         bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
                         
-                        inc = {'region1':inclusionClip.matrix['feature'].mean()}
-                        exc = {'region1':exclusionClip.matrix['feature'].mean()}
-                        bo = {'region1':bothClip.matrix['feature'].mean()}
+                        inclusion_error = inclusionClip.matrix['feature'].sem(axis=0)
+                        exclusion_error = exclusionClip.matrix['feature'].sem(axis=0)
                         
+                        inc = {'region1':list(inclusionClip.matrix['feature'].mean())}
+                        exc = {'region1':list(exclusionClip.matrix['feature'].mean())}
+                        bo = {'region1':list(bothClip.matrix['feature'].mean())}
+                        inc_e = {'region1':list(inclusion_error)}
+                        exc_e = {'region1':list(exclusion_error)}
                         output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[n])
                         title = '{} ({}_0{}) incl (n={}), excl (n={}) SE events'.format(rbp_name,
                                                                                     uid,
                                                                                     i+1,
                                                                                     len(inclusionClip.matrix['feature']),
                                                                                     len(exclusionClip.matrix['feature']))
-                        Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc, exc, bo, title, output_filename)
+                        Plot.four_frame_with_inclusion_exclusion_events_from_one_region_with_error(inc, 
+                                                                                                   exc, 
+                                                                                                   bo, 
+                                                                                                   inc_e,
+                                                                                                   exc_e,
+                                                                                                   title, 
+                                                                                                   output_filename)
                         
                         confidence = 0.95
                         inc_rmo = {'region1':remove_outliers(inclusionClip.matrix['feature'],confidence)}

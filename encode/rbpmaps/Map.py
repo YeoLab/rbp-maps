@@ -80,7 +80,7 @@ class Clip(Map):
                                                     is_scaled = self.is_scaled)
     
     def create_se_matrices(self):
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         
         keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
         self.raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
@@ -95,7 +95,7 @@ class Clip(Map):
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled)
         """
-        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
     def get_raw_matrix(self):
         return pd.DataFrame(self.raw_matrix.items())
     def get_matrix(self):
@@ -138,10 +138,10 @@ class ClipWithInput(Map):
             
     def set_matrix(self, normfunc = norm.KLDivergence, min_density_sum = 0, label = ""):
         for key in self.ip_raw_matrix:
-            print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
+            # print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
             self.matrix[key] = normfunc(self.ip_raw_matrix[key],self.input_raw_matrix[key], min_density_sum)
             self.matrix[key].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, key))
-            print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
+            # print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
     
     def create_matrices(self,prefix = 'feature', is_scaled=True):
 
@@ -208,7 +208,7 @@ class ClipWithInput(Map):
     
     def create_se_matrices(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         
         keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
         self.ip_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
@@ -216,14 +216,14 @@ class ClipWithInput(Map):
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled)))
-        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
                                                                   density = self.inp, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled)))
-        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         for key in self.ip_raw_matrix:
             self.ip_raw_matrix[key].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, key))
             self.input_raw_matrix[key].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, key))
@@ -232,7 +232,7 @@ class ClipWithInput(Map):
             self.set_matrix(normfunc, min_density_sum)
     def create_se_matrices_one_region(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         # print("ANNOTATION: {}".format(self.annotation))
         self.ip_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
                                                                   density = self.ip, 
@@ -240,15 +240,15 @@ class ClipWithInput(Map):
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled,
                                                                   combine_regions = True)
-        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
                                                                   density = self.inp, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
                                                                   is_scaled = self.is_scaled,
                                                                   combine_regions = True)
-        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         

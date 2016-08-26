@@ -8,9 +8,12 @@ import numpy as np
 import os
 
 def KLDivergence(density, input_density, min_density_threshold = 0):
+    # print("TYPE OF OBJECT: {}".format(type(density)))
     print("KLDivergence (entropy of PDF)")
     PDF_CONST = 1.0/len(density.columns)
-        
+    
+    density = density.replace(-1,np.nan)
+    
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
@@ -22,7 +25,7 @@ def KLDivergence(density, input_density, min_density_threshold = 0):
     # pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
 
     en = pdf.multiply(np.log2(pdf.div(input_pdf)))
-        
+    print("TYPE AFTER ENTROPY OF READS: {}".format(type(en)))
     return en
 def entropy_of_reads(density, input_density, min_density_threshold = 0):
     """
@@ -48,16 +51,16 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     ipdfdiv = ipdf # .div(1000000)
     indfdiv = indf # .div(1000000)
     
-    # dft = pd.merge(ipdfdiv,indfdiv,how='left',left_index=True,right_index=True).fillna(min_read_number)
+    dft = pd.merge(ipdfdiv,indfdiv,how='left',left_index=True,right_index=True)
     
-    # ipdfdiv = dft.filter(regex='\d+_x')
-    # indfdiv = dft.filter(regex='\d+_y')
+    ipdfdiv = dft.filter(regex='\d+_x')
+    indfdiv = dft.filter(regex='\d+_y')
     
-    # ipdfdiv = ipdfdiv.rename(columns=lambda x: x.replace('_x', ''))
-    # indfdiv = indfdiv.rename(columns=lambda x: x.replace('_y', ''))
+    ipdfdiv = ipdfdiv.rename(columns=lambda x: x.replace('_x', ''))
+    indfdiv = indfdiv.rename(columns=lambda x: x.replace('_y', '')).fillna(min_read_number)
     
     en = ipdfdiv.multiply(np.log2(ipdfdiv.div(indfdiv)))
-    
+    # print("TYPE AFTER ENTROPY OF READS: {}".format(type(en)))
     return en
 def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     """
@@ -72,20 +75,20 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
     en = en + min_normalized_read_number
     pdf = en.div(en.sum(axis=1), axis=0)
-    
+    # print("TYPE AFTER ENTROPY OF READS: {}".format(type(pdf)))
     return pdf
 
 def get_density(density, input_density, min_density_threshold = 0):
     # df = density[density.sum(axis=1) > min_density_threshold]
-    
+    # print("TYPE AFTER DENSITY: {}".format(type(density)))
     return density
 
 def get_input(density, input_density, min_density_threshold = 0):
     # df = input_density[input_density.sum(axis=1) > min_density_threshold]
-    
+    # print("TYPE AFTER INPUT: {}".format(type(input_density)))
     return input_density
 
-def calculate_pdf(density, min_density_threshold = 0, error = False):
+def calculate_pdf(density, min_density_threshold = 0):
     print("calculate PDF")
     df = density.replace(-1, np.nan)
     
@@ -93,12 +96,7 @@ def calculate_pdf(density, min_density_threshold = 0, error = False):
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
     pdf = df.div(df.sum(axis=1), axis=0)
-    mean = 0
-    sem = 0
-    if(error == True):
-        return pdf, mean, sem
-    else:
-        return pdf # , mean, sem
+    return pdf # , mean, sem
     
 def normalize(density, input_density, min_density_threshold = 0):
     """
@@ -118,7 +116,7 @@ def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
     subtracted = pd.DataFrame(pdf.mean() - input_pdf.mean()).T
-      
+    # print("TYPE AFTER normalize_and_subtract: {}".format(type(input_density)))
     return subtracted
     
 def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
@@ -128,15 +126,15 @@ def normalize_and_per_region_subtract(density, input_density, min_density_thresh
     pdf = calculate_pdf(density, min_density_threshold)
     input_pdf = calculate_pdf(input_density, min_density_threshold)
         
-    # pdft = pd.merge(pdf,input_pdf, how='left',left_index=True,right_index=True)
+    pdft = pd.merge(pdf,input_pdf, how='left',left_index=True,right_index=True)
         
-    # pdf = pdft.filter(regex='\d+_x')
-    # pdfi = pdft.filter(regex='\d+_y')
+    pdf = pdft.filter(regex='\d+_x')
+    pdfi = pdft.filter(regex='\d+_y')
     
     
-    # pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
-    # pdfi = pdfi.rename(columns=lambda x: x.replace('_y', '')).fillna(PDF_CONST)
-        
-    subtracted = pdf.sub(input_pdf)
-  
+    pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
+    pdfi = pdfi.rename(columns=lambda x: x.replace('_y', '')).fillna(PDF_CONST)
+    
+    subtracted = pdf.sub(pdfi)
+    # print("TYPE AFTER PER REGION SUBTRACT: {}".format(type(subtracted)))
     return subtracted
