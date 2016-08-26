@@ -30,7 +30,9 @@ def single_frame(means, title, output_file, color='red'):
         
     ax.set_ylim([ymin,ymax])
     plt.savefig(output_file)
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both, 
                                                title, output_file):
@@ -42,13 +44,15 @@ def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
 
     ax.set_ylabel('Read Density')
     ax.set_title(title,y=1.03)
-    plt.xticks([0,300,400,699],['upstream (300bp)','feature (0%)','feature (100%)','downstream (300bp)'])
+    # plt.xticks([0,300,400,699],['upstream (300bp)','feature (0%)','feature (100%)','downstream (300bp)'])
     # ymax = max(means) * 1.1
     # ymin = min(means) * 0.9 if min(means) > 0 else min(means)*1.1 # in case of negatives for subtraction
         
     # ax.set_ylim([ymin,ymax])
     plt.savefig(output_file)
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
     
 def single_frame_with_error(means, error, title, output_file, color='red'):
         
@@ -67,14 +71,16 @@ def single_frame_with_error(means, error, title, output_file, color='red'):
         
     ax.set_ylim([ymin,ymax])
     plt.savefig(output_file)
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 def three_frame(region1, region2, region3, 
                title, output_file, color='red'):
     num_rows = 1
     num_cols = 4
     
-        
+    ax = plt.gca()
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3))
@@ -107,14 +113,16 @@ def three_frame(region1, region2, region3,
         # ax.set_xticklabels(np.arange(-exon_offset, intron_offset+1, 50))
         ax.set_yticklabels([])
 
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
     
 def four_frame(region1, region2, region3, region4, 
                title, output_file, color='red'):
     num_rows = 1
     num_cols = 4
     
-        
+    ax = plt.gca()
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3),min(region4))
@@ -156,7 +164,9 @@ def four_frame(region1, region2, region3, region4,
         # ax.set_xticklabels(np.arange(-intron_offset, exon_offset+1, 50))
         ax.set_yticklabels([])
         plt.suptitle(title,y=1.03)
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
                                                title, output_file, 
@@ -176,7 +186,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
     """
     num_rows = 1
     num_cols = 4
-    
+    ax = plt.gca()
     min_height = min(min(inclusion['region1']),min(exclusion['region1']),min(both['region1']),
                      min(inclusion['region2']),min(exclusion['region2']),min(both['region2']),
                      min(inclusion['region3']),min(exclusion['region3']),min(both['region3']),
@@ -200,7 +210,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
-        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        # ax.set_xticklabels(range(-50,351,50),rotation=90)
         ax.axvline(x=50,linestyle=':',alpha=0.5)
         
         sns.set_style({'ytick.major.size':0})
@@ -212,7 +222,7 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
-        ax.set_xticklabels(range(-300,51,50),rotation=90)
+        # ax.set_xticklabels(range(-300,51,50),rotation=90)
         ax.axvline(x=300,linestyle=':',alpha=0.5)
             
         ax = fig.add_subplot(1,4,3)
@@ -223,20 +233,22 @@ def four_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
         ax.axvline(x=50,linestyle=':',alpha=0.5)
-        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        # ax.set_xticklabels(range(-50,351,50),rotation=90)
         
         ax = fig.add_subplot(1,4,4)
         ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.7, color = color1, label="incl in kd")
         ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.7, color = color2, label="excl in kd")
         ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
         ax.axvline(x=300,linestyle=':',alpha=0.5)
-        ax.set_xticklabels(range(-300,51,50),rotation=90)
+        # ax.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
         ax.legend()
         plt.suptitle(title,y=1.03)
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 def four_frame_with_inclusion_exclusion_events_from_one_region(inclusion, exclusion, both,
                                                title, output_file, 
@@ -263,6 +275,26 @@ def four_frame_with_inclusion_exclusion_events_from_one_region(inclusion, exclus
     e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion['region1'],4)
     b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both['region1'],4)
     
+    
+    print(type(b['region1']))
+    print(b['region2'])
+    print(b['region3'])
+    print(b['region4'])
+    b['region1'].reset_index(drop=True,inplace=True)
+    b['region2'].reset_index(drop=True,inplace=True)
+    b['region3'].reset_index(drop=True,inplace=True)
+    b['region4'].reset_index(drop=True,inplace=True)
+    
+    i['region1'].reset_index(drop=True,inplace=True)
+    i['region2'].reset_index(drop=True,inplace=True)
+    i['region3'].reset_index(drop=True,inplace=True)
+    i['region4'].reset_index(drop=True,inplace=True)
+    
+    e['region1'].reset_index(drop=True,inplace=True)
+    e['region2'].reset_index(drop=True,inplace=True)
+    e['region3'].reset_index(drop=True,inplace=True)
+    e['region4'].reset_index(drop=True,inplace=True)
+    
     four_frame_with_inclusion_exclusion_events(i,e,b,title,output_file,color1,color2,color3)
 
 def five_frame(region1, region2, region3, region4, region5,
@@ -270,7 +302,7 @@ def five_frame(region1, region2, region3, region4, region5,
     num_rows = 1
     num_cols = 5
     
-        
+    ax = plt.gca()
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3),min(region4))
@@ -322,5 +354,7 @@ def five_frame(region1, region2, region3, region4, region5,
         ax.set_yticklabels([])
         
         plt.suptitle(title,y=1.03)
-    ax.clear()
+    plt.clf()
+    plt.cla()
+    plt.close()
     

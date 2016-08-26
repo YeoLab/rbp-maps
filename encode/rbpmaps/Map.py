@@ -129,9 +129,13 @@ class ClipWithInput(Map):
         self.matrix = {}
         
     def set_annotation(self,annotation_file):
-        self.ip.set_annotation(annotation_file)
-        self.input.set_annotation(annotation_file)
-        
+        self.annotation = annotation_file
+    
+    def reset_matrix(self):
+        self.ip_raw_matrix = {}
+        self.input_raw_matrix = {}
+        self.matrix = {}
+            
     def set_matrix(self, normfunc = norm.KLDivergence, min_density_sum = 0, label = ""):
         for key in self.ip_raw_matrix:
             print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))

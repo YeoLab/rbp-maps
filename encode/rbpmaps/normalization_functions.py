@@ -8,6 +8,7 @@ import numpy as np
 import os
 
 def KLDivergence(density, input_density, min_density_threshold = 0):
+    print("KLDivergence (entropy of PDF)")
     PDF_CONST = 1.0/len(density.columns)
         
     pdf = calculate_pdf(density,min_density_threshold)
@@ -30,6 +31,7 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     do en
     plot mean
     """
+    print('Entropy of reads')
     ipdf = density.replace(-1, np.nan)
     indf = input_density.replace(-1, np.nan)
     
@@ -65,6 +67,7 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     do pdf
     
     """
+    
     en = entropy_of_reads(density, input_density, min_density_threshold)
     min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
     en = en + min_normalized_read_number
@@ -82,20 +85,26 @@ def get_input(density, input_density, min_density_threshold = 0):
     
     return input_density
 
-def calculate_pdf(density, min_density_threshold = 0):
+def calculate_pdf(density, min_density_threshold = 0, error = False):
+    print("calculate PDF")
     df = density.replace(-1, np.nan)
     
     # df = densities[densities.sum(axis=1) > min_density_threshold]
     min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
     df = df + min_normalized_read_number
     pdf = df.div(df.sum(axis=1), axis=0)
-
-    return pdf # , mean, sem
+    mean = 0
+    sem = 0
+    if(error == True):
+        return pdf, mean, sem
+    else:
+        return pdf # , mean, sem
     
 def normalize(density, input_density, min_density_threshold = 0):
     """
     This is identical to calculate_pdf.
     """
+    print("Normalize (calculate PDF)")
     pdf = calculate_pdf(density, min_density_threshold)
 
     return pdf 
@@ -104,7 +113,7 @@ def baseline_rpm_mean_subtraction(density, input_density, min_density_threshold 
     pass
 
 def normalize_and_subtract(density, input_density, min_density_threshold = 0):
-        
+    print("normalization and subtraction")
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
@@ -113,7 +122,7 @@ def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     return subtracted
     
 def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
-        
+    print("normalization and per region subtraction")
     PDF_CONST = 1.0/len(density.columns)
         
     pdf = calculate_pdf(density, min_density_threshold)

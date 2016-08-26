@@ -49,6 +49,23 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg
 
+def remove_outliers(rbpdataframe, conf = 0.95):
+    x = 0
+    means = list()
+    for key, value in rbpdataframe.iteritems():
+        df = rbpdataframe.dropna()
+        nums = len(df[key])
+        droppercent = (1-conf)/2.0
+        dropnum = int(nums*(droppercent))
+        # print(nums)
+        # print(dropnum)
+        df = df.sort(key)
+        df.drop(df.head(dropnum).index, inplace=True)
+        df.drop(df.tail(dropnum).index, inplace=True)
+        # print(df[key])
+        means.append(df[key].mean())
+    return means
+
 def main(argv=None): # IGNORE:C0111
     
     # Setup argument parser
@@ -78,6 +95,7 @@ def main(argv=None): # IGNORE:C0111
                 rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
                 inp = line[4].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                 if(args.flipped):
+                    print("Flipped!")
                     rep1neg = rep1.replace('.bam','.norm.pos.bw')
                     rep1pos = rep1.replace('.bam','.norm.neg.bw')
                                         
@@ -143,9 +161,9 @@ def main(argv=None): # IGNORE:C0111
                 prefix = event
                 is_scaled = True
                 
-                inclusionClip.create_matrices(prefix, is_scaled) # (label='included',normalize=False)
-                exclusionClip.create_matrices(prefix, is_scaled) # 
-                bothClip.create_matrices(prefix, is_scaled) # 
+                inclusionClip.create_matrices(prefix, is_scaled=is_scaled) # (label='included',normalize=False)
+                exclusionClip.create_matrices(prefix, is_scaled=is_scaled) # 
+                bothClip.create_matrices(prefix, is_scaled=is_scaled) # 
                         # sys.exit(0)
                 for n in range(0,len(normfuncs)):
                         
@@ -164,13 +182,21 @@ def main(argv=None): # IGNORE:C0111
                     # Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                     Plot.single_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                 bothClip.set_annotation('testfiles/annotations/miso_se_to_ensembl.tsv')
-                bothClip.create_se_matrices_one_region('dazap1',normalize=False)
+                print("annotation set! {}".format(bothClip.annotation))
+                bothClip.reset_matrix()
+                bothClip.create_se_matrices_one_region(rbp_name,normalize=False)
+                print("matrix created")
                 bothClip.set_matrix(normfunc=norm.normalize_and_per_region_subtract,label="{}.{}".format('both','per-region-subtract'),min_density_sum=0)
-                bo = {'region1':bothClip.matrix['feature'].mean()}
+                print('getting features')
+                for key, value in bothClip.matrix.iteritems():
+                    print('FEATURE: {}'.format(key))
+                
+                bo2 = {'region1':bothClip.matrix['feature'].mean()}
+                print(bo2)
                 output_filename = os.path.join(outdir,name)+".{}.{}.svg".format('se','subtraction')
-                title = 'incl (n={}), excl (n={}) SE events'.format(len(inclusionClip.matrix['feature']),
-                                                                        len(exclusionClip.matrix['feature']))
-                Plot.four_frame_with_inclusion_exclusion_events(bo, bo, bo, title, output_filename)
+                title = 'incl (n={}), excl (n={}) SE events'.format(len(bothClip.matrix['feature']),
+                                                                        len(bothClip.matrix['feature']))
+                Plot.four_frame_with_inclusion_exclusion_events_from_one_region(bo2, bo2, bo2, title, output_filename)
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

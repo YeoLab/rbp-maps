@@ -317,7 +317,10 @@ def main(argv=None): # IGNORE:C0111
                         bo = {'region1':bothClip.matrix['feature'].mean()}
                         
                         output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.svg".format(args.event,normfuncnames[n])
-                        title = 'incl (n={}), excl (n={}) SE events'.format(len(inclusionClip.matrix['feature']),
+                        title = '{} ({}_0{}) incl (n={}), excl (n={}) SE events'.format(rbp_name,
+                                                                                    uid,
+                                                                                    i+1,
+                                                                                    len(inclusionClip.matrix['feature']),
                                                                                     len(exclusionClip.matrix['feature']))
                         Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc, exc, bo, title, output_filename)
                         
@@ -327,7 +330,10 @@ def main(argv=None): # IGNORE:C0111
                         bo_rmo = {'region1':remove_outliers(bothClip.matrix['feature'],confidence)}
                         
                         output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.removeoutliers.svg".format(args.event,normfuncnames[n])
-                        title = 'SE events (keep={})'.format(confidence)
+                        title = '{} ({}_0{}) SE events (keep={})'.format(rbp_name,
+                                                                     uid,
+                                                                     i+1,
+                                                                     confidence)
                         Plot.four_frame_with_inclusion_exclusion_events_from_one_region(inc_rmo, exc_rmo, bo_rmo, title, output_filename)
                     
             except Exception as e:

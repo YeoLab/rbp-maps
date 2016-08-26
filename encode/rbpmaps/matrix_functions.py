@@ -10,12 +10,12 @@ import intervals
 import misc
 
 def create_matrix(annotation, density, left = 100, right = 100, is_scaled = True):
-    print("is this going to be scaled? {}".format(is_scaled))
+    print("creating the matrix for {}".format(density.get_name()))
+    # print("is this going to be scaled? {}".format(is_scaled))
     count = 0
     densities = {}
     # if(type(annotation) == pd.DataFrame)
     if(type(annotation) != pybedtools.bedtool.BedTool):
-        print("converting to bedtool")
         bed_tool = misc.create_bedtool(annotation)
     else:
         bed_tool = annotation
@@ -81,6 +81,7 @@ def create_matrix(annotation, density, left = 100, right = 100, is_scaled = True
             
             densities[intervals.rename_index(interval)] = pd.concat([upstream_wiggle,wiggle,downstream_wiggle]).reset_index(drop=True)
             """    
+            densities[intervals.rename_index(interval)] = wiggle
     return pd.DataFrame(densities).T
 
 def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled):
@@ -269,6 +270,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                 
                 
 def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=False):
+    print("creating se matrix")
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
@@ -299,9 +301,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) 
-                if(is_scaled == True):
-                    wiggle = intervals.get_scale(wiggle)
-                    
+                
                     # print("length of 3p upstream: {}".format(len(wiggle)))
                 # else:
                 #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
@@ -318,9 +318,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle)
-                if(is_scaled == True):
-                    wiggle = intervals.get_scale(wiggle)
-                    
+                
                     # print("length of 5p skipped: {}".format(len(wiggle)))
                 # else:
                 #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
@@ -336,9 +334,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) #
-                if(is_scaled == True):
-                    wiggle = intervals.get_scale(wiggle)
-                    
+                
                     # print("length of 3p skipped: {}".format(len(wiggle)))
                 # else:
                 #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
@@ -354,8 +350,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
-                if(is_scaled == True):
-                    wiggle = intervals.get_scale(wiggle)
+                
                     # print("length of 5p downstream: {}".format(len(wiggle)))
                 # else:
                 #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
