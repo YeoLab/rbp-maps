@@ -78,3 +78,19 @@ def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt = True):
         chrom, start, end, strand = miso_annotation.split(':')
         some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
         return some_bedtool
+# returns True if key combinations exist in a dictionary, False otherwise
+def exists(dictionary, *args):
+    if args in dictionary:
+        return True
+    else:
+        return False
+# auto initializes a dictionary with key to 0 value otherwise increments
+def ini(dictionary, *args):
+    if args in dictionary:
+        # if 499 in args and 'upex' in args:
+        #    print("incrementing position by 1")
+        return dictionary[args]+1
+    else:
+        # if 499 in args and 'upex' in args:
+        #    print("initializing position")
+        return 1
