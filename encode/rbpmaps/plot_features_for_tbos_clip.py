@@ -75,6 +75,8 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-o", "--output", dest="output",required=True)
     
     parser.add_argument("-fe", "--feature", dest="feature",required=True, help="a bedfile of events")
+    parser.add_argument("-fo", "--feature_over", dest="feature_over",required=True, help="a bedfile of events")
+    parser.add_argument("-fk", "--feature_kd", dest="feature_kd",required=True, help="a bedfile of events")
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-m", "--manifest", dest="manifest")
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: ['alt_cassette','alt_end','alt_start','retained_int','complex','alt_5','alt_3','twin_cassett','mutually_exc']")
