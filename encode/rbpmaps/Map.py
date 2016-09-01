@@ -144,12 +144,12 @@ class ClipWithInput(Map):
             # print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
     
     def create_matrices(self,prefix = 'feature', is_scaled=True):
-
         self.ip_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
                                                        density = self.ip, 
                                                        left = self.left, 
                                                        right = self.right, 
                                                        is_scaled = is_scaled)
+        
         self.input_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
                                                           density = self.inp, 
                                                           left = self.left, 

@@ -74,18 +74,24 @@ def main(argv=None): # IGNORE:C0111
     parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-o", "--output", dest="output",required=True)
     
-    parser.add_argument("-fe", "--feature", dest="feature",required=True, help="a bedfile of events")
-    parser.add_argument("-fo", "--feature_over", dest="feature_over",required=True, help="a bedfile of events")
-    parser.add_argument("-fk", "--feature_kd", dest="feature_kd",required=True, help="a bedfile of events")
-    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
+    parser.add_argument("-bg", "--background", dest="background",required=True, help="a bedfile of events")
+    parser.add_argument("-inc", "--included", dest="included",required=True, help="a bedfile of events")
+    parser.add_argument("-exc", "--excluded", dest="excluded",required=True, help="a bedfile of events")
+    parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw) (Default: False)", default=False, action='store_true')
+    parser.add_argument("-s", "--scaled", dest="scaled", help="true if all events are not the same length (Default: True)", default=True, action='store_false')
     parser.add_argument("-m", "--manifest", dest="manifest")
-    parser.add_argument("-e", "--event", dest="event", help="event. Can be either: ['alt_cassette','alt_end','alt_start','retained_int','complex','alt_5','alt_3','twin_cassett','mutually_exc']")
+    parser.add_argument("-e", "--event", dest="event", help="event. For labeling purposes (Default: event", default="event")
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
     outdir = args.output
     event = args.event
+    included = args.included
+    excluded = args.excluded
+    background = args.background
     
+    is_scaled = args.scaled
+                
     with open(input_file,'r') as f:
         for line in f:
             try:  
@@ -112,11 +118,6 @@ def main(argv=None): # IGNORE:C0111
                 
                 name = os.path.basename(rep1).replace('.merged.r2.bam','')
                 
-                feature = pd.read_table(args.feature)
-                feature.columns = ['chrom','start','stop','name','score','strand'] # all annotation dataframes for non-SE events should be in BED6 format.
-                    
-                included = feature[feature['score']>0.3]
-                excluded = feature[feature['score']<0.3]
                 # print(excluded.head())
                 """
                 use the bedfile to generate the matrix_functions map
@@ -157,15 +158,14 @@ def main(argv=None): # IGNORE:C0111
                 bothClip = ClipWithInput(ReadDensity = rbp,
                                          InputReadDensity = inp,
                                          name="{}.{}".format(rep1,'background'),
-                                         annotation=feature,
+                                         annotation=background,
                                          output_file=output_file)
-                    
-                prefix = event
-                is_scaled = True
                 
-                inclusionClip.create_matrices(prefix, is_scaled=is_scaled) # (label='included',normalize=False)
-                exclusionClip.create_matrices(prefix, is_scaled=is_scaled) # 
-                bothClip.create_matrices(prefix, is_scaled=is_scaled) # 
+                
+                
+                inclusionClip.create_matrices(event, is_scaled=is_scaled) # (label='included',normalize=False)
+                exclusionClip.create_matrices(event, is_scaled=is_scaled) # 
+                bothClip.create_matrices(event, is_scaled=is_scaled) # 
                         # sys.exit(0)
                 for n in range(0,len(normfuncs)):
                         
@@ -174,15 +174,16 @@ def main(argv=None): # IGNORE:C0111
                     exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
                     bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('both',normfuncnames[n]),min_density_sum=0)
                         
-                    inc = {'region1':inclusionClip.matrix[prefix].mean()}
-                    exc = {'region1':exclusionClip.matrix[prefix].mean()}
-                    bo = {'region1':bothClip.matrix[prefix].mean()}
+                    inc = {'region1':inclusionClip.matrix[event].mean()}
+                    exc = {'region1':exclusionClip.matrix[event].mean()}
+                    bo = {'region1':bothClip.matrix[event].mean()}
                     
                     output_filename = os.path.join(outdir,name)+".{}.{}.svg".format(args.event,normfuncnames[n])
-                    title = 'incl (n={}), excl (n={}) SE events'.format(len(inclusionClip.matrix[prefix]),
-                                                                        len(exclusionClip.matrix[prefix]))
+                    title = 'incl (n={}), excl (n={}) SE events'.format(len(inclusionClip.matrix[event]),
+                                                                        len(exclusionClip.matrix[event]))
                     # Plot.four_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
                     Plot.single_frame_with_inclusion_exclusion_events(inc, exc, bo, title, output_filename)
+                """
                 bothClip.set_annotation('/home/brian/git/ENCODE/encode/rbpmaps/testfiles/annotations/miso_se_to_ensembl.tsv')
                 print("annotation set! {}".format(bothClip.annotation))
                 bothClip.reset_matrix()
@@ -199,6 +200,7 @@ def main(argv=None): # IGNORE:C0111
                 title = 'incl (n={}), excl (n={}) SE events'.format(len(bothClip.matrix['feature']),
                                                                         len(bothClip.matrix['feature']))
                 Plot.four_frame_with_inclusion_exclusion_events_from_one_region(bo2, bo2, bo2, title, output_filename)
+                """
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))
