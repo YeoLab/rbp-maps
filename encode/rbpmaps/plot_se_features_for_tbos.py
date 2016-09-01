@@ -85,7 +85,7 @@ def main(argv=None): # IGNORE:C0111
     args = parser.parse_args()
     input_file = args.manifest # changed
     outdir = args.output
-
+    over_or_kd = args.kd
     annotation_dir = args.rmats
     
     with open(input_file,'r') as f:
@@ -149,14 +149,14 @@ def main(argv=None): # IGNORE:C0111
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
-                                                annotation=os.path.join(annotation_dir,'{}-{}-pos.miso').format(rbp_name,args.over_or_kd),
+                                                annotation=os.path.join(annotation_dir,'{}-{}-pos.miso').format(rbp_name,over_or_kd),
                                                 output_file=output_file)
                     
                             
                     exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
-                                                annotation=os.path.join(annotation_dir,'{}-{}-neg.miso').format(rbp_name,args.over_or_kd),
+                                                annotation=os.path.join(annotation_dir,'{}-{}-neg.miso').format(rbp_name,over_or_kd),
                                                 output_file=output_file)
                     
                     bothClip = ClipWithInput(ReadDensity = rbp,
