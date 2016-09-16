@@ -35,7 +35,7 @@ def single_frame(means, title, output_file, color='red'):
     plt.close()
 
 def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both, 
-                                               title, output_file):
+                                                 title, output_file):
     ax = plt.gca()
     ax.plot(inclusion['region1'], color = sns.color_palette("hls", 8)[0], label = 'Inclusion')
     ax.plot(exclusion['region1'], color = sns.color_palette("hls", 8)[1], label = 'Exclusion')
@@ -54,6 +54,43 @@ def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
     plt.cla()
     plt.close()
     
+def single_frame_with_up_down_events_error(up, down, both,
+                                           uperr, downerr, 
+                                           title, output_file,
+                                           upcolor = sns.color_palette("hls", 8)[0],
+                                           downcolor = sns.color_palette("hls", 8)[1],
+                                           bgcolor = 'black',
+                                           uplab = 'Upregulated',
+                                           downlab = 'Downregulated',
+                                           bglab = 'All significant events'):
+    ax = plt.gca()
+    
+    errorbar_linewidth = 0.7
+    
+    ax.plot(up['region1'], color = upcolor, label = uplab)
+    ax.plot((up['region1']+uperr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = upcolor, linestyle = ':')
+    ax.plot((up['region1']-uperr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = upcolor, linestyle = ':')
+    
+    ax.plot(down['region1'], color = downcolor, label = downlab)
+    ax.plot((down['region1']+downerr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = downcolor, linestyle = ':')
+    ax.plot((down['region1']-downerr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = downcolor, linestyle = ':')
+    
+    ax.plot(both['region1'], color = bgcolor, label = bglab)
+    
+    ax.legend()
+
+    ax.set_ylabel('Read Density')
+    ax.set_title(title,y=1.03)
+    # plt.xticks([0,300,400,699],['upstream (300bp)','feature (0%)','feature (100%)','downstream (300bp)'])
+    # ymax = max(means) * 1.1
+    # ymin = min(means) * 0.9 if min(means) > 0 else min(means)*1.1 # in case of negatives for subtraction
+        
+    # ax.set_ylim([ymin,ymax])
+    plt.savefig(output_file)
+    plt.clf()
+    plt.cla()
+    plt.close()
+
 def single_frame_with_error(means, error, title, output_file, color='red'):
         
     ax = plt.gca()
