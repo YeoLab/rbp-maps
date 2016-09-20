@@ -261,13 +261,15 @@ def main(argv=None): # IGNORE:C0111
                     
                     
                     normfuncs = [norm.KLDivergence, norm.normalize_and_per_region_subtract,
-                                 norm.entropy_of_reads, norm.get_density, norm.get_input]
+                                 norm.entropy_of_reads, norm.pdf_of_entropy_of_reads,
+                                 norm.get_density, norm.get_input]
                     
                     # normfuncs = [norm.entropy_of_reads, norm.get_density, norm.get_input]
                     # normfuncnames = ['entropy_of_reads','density_baseline','input_baseline']
                     normfuncnames = ['KLDivergence',
                                      'subtract_by_region',
                                      'entropy_of_reads',
+                                     'pdf_entropy_of_reads',
                                      'density_baseline',
                                      'input_baseline'
                                      ]

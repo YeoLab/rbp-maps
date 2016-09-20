@@ -72,8 +72,8 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     """
     
     en = entropy_of_reads(density, input_density, min_density_threshold)
-    min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
-    en = en + min_normalized_read_number
+    # min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
+    # en = en + min_normalized_read_number
     pdf = en.div(en.sum(axis=1), axis=0)
     # print("TYPE AFTER ENTROPY OF READS: {}".format(type(pdf)))
     return pdf
