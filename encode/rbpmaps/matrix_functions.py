@@ -99,7 +99,7 @@ def create_matrix(annotation, density, left = 300, right = 300, is_scaled = True
     print("SUCCESS")
     return pd.DataFrame(densities).T
 
-def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled):
+def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True):
     # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
     # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
     # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
@@ -108,28 +108,30 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     Four regions:
     """
     # [    |    ]----|---|----[    |    [    |    ]
-    three_upstream = {}
-    five_skipped = {}
-    three_skipped = {}
+    three_alt1 = {}
+    five_alt2 = {}
+    three_alt2 = {}
     five_downstream = {}
-    
-            
+    # Annotation format:
+    # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
+    # chr2:183800103:183799993|183800021:-@chr2:183799480:183799560:-    ENSG00000061676
+    # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
     with open(annotation) as f:
         # f.next() # for title
         for line in f:
-            if not line.startswith('#'):
+            if not line.startswith('event_name'):
                 event = line.split('\t')[0]
                 region1, region2 = event.split('@')
                 
-                upstream = misc.create_bed_tool_from_miso_a5ss(region1, True)
-                alt1, alt2 = misc.create_bed_tool_from_miso_a5ss(region2, False)
                 
-                """three prime upstream region"""
+                alt1, alt2 = misc.create_bed_tool_from_miso_a5ss(region1, is_alt = True) # alt1 is the 'middle' one, alt2 is the 'downstream' one
+                downstream = misc.create_bed_tool_from_miso_a5ss(region2, is_alt = False)
+                """three prime alt1 region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         alt1,
-                                                                        upstream,
+                                                                        alt2,
                                                                         exon_offset,
-                                                                        intron_offset)
+                                                                        0)
                 wiggle = pd.Series(wiggle)
                 if not all(np.isnan(wiggle)):
                     wiggle = abs(wiggle) # convert all values to positive
@@ -138,40 +140,9 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     wiggle = np.nan_to_num(wiggle) 
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    three_upstream[event] = wiggle
-                    print("length of 3p upstream: {}".format(len(wiggle)))
-                """five prime site of skipped region"""
-                left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
-                                                                        upstream,
-                                                                        alt1,
-                                                                        exon_offset,
-                                                                        intron_offset)
-                wiggle = pd.Series(wiggle)
-                if not all(np.isnan(wiggle)):
-                    wiggle = abs(wiggle) # convert all values to positive
-                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
-                    wiggle = np.nan_to_num(wiggle)
-                    if(is_scaled == True):
-                        wiggle = intervals.get_scale(wiggle)
-                    five_skipped[event] = wiggle
-                    print("length of 5p skipped: {}".format(len(wiggle)))
-                """three prime site of skipped region"""
-                left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
-                                                                         alt2,
-                                                                         alt1,
-                                                                         exon_offset,
-                                                                         0)
-                wiggle = pd.Series(wiggle)
-                if not all(np.isnan(wiggle)):
-                    wiggle = abs(wiggle) # convert all values to positive
-                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
-                    wiggle = np.nan_to_num(wiggle) #
-                    if(is_scaled == True):
-                        wiggle = intervals.get_scale(wiggle)
-                    three_skipped[event] = wiggle
-                    print("length of 3p skipped: {}".format(len(wiggle)))
-        
-                """five prime site of downstream region"""
+                    three_alt1[event] = wiggle
+                    
+                """five prime of alt2 region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         alt1,
                                                                         alt2,
@@ -181,18 +152,53 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                 if not all(np.isnan(wiggle)):
                     wiggle = abs(wiggle) # convert all values to positive
                     wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                    wiggle = np.nan_to_num(wiggle)
+                    if(is_scaled == True):
+                        wiggle = intervals.get_scale(wiggle)
+                    five_alt2[event] = wiggle
+                """three prime site of alt2 region"""
+                left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
+                                                                         downstream,
+                                                                         alt2,
+                                                                         exon_offset,
+                                                                         intron_offset)
+                wiggle = pd.Series(wiggle)
+                if not all(np.isnan(wiggle)):
+                    wiggle = abs(wiggle) # convert all values to positive
+                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                    wiggle = np.nan_to_num(wiggle) #
+                    if(is_scaled == True):
+                        wiggle = intervals.get_scale(wiggle)
+                    three_alt2[event] = wiggle
+                    # print("length of 3p skipped: {}".format(len(wiggle)))
+        
+                """five prime site of downstream region"""
+                left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
+                                                                        alt2,
+                                                                        downstream,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                wiggle = pd.Series(wiggle)
+                if not all(np.isnan(wiggle)):
+                    wiggle = abs(wiggle) # convert all values to positive
+                    wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                     wiggle = np.nan_to_num(wiggle) # convert all nans to 0
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
                     five_downstream[event] = wiggle
-                    print("length of downstream: {}".format(len(wiggle)))
-        three_upstream = pd.DataFrame(three_upstream).T
-        five_skipped = pd.DataFrame(five_skipped).T
-        three_skipped = pd.DataFrame(three_skipped).T
+                    # print("length of downstream: {}".format(len(wiggle)))
+        three_alt1 = pd.DataFrame(three_alt1).T
+        five_alt2 = pd.DataFrame(five_alt2).T
+        three_alt2 = pd.DataFrame(three_alt2).T
         five_downstream = pd.DataFrame(five_downstream).T
         
-        return three_upstream, five_skipped, three_skipped, five_downstream
-def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled):
+        if combine_regions == False:
+            return three_alt1, five_alt2, three_alt2, five_downstream
+        else:
+            ra = pd.concat([three_alt1,five_alt2,three_alt2,five_downstream],axis=1)
+            ra.columns = range(0,ra.shape[1])
+            return ra      
+def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True):
     # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
     # chr17:62502194:62502407:-@chr17:62500960|62500998:62500795:-    ENSG00000108654
     """
@@ -200,22 +206,23 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     """
     # [    |    ]----|---|----[    |    [    |    ]
     three_upstream = {}
-    five_skipped = {}
-    three_skipped = {}
-    five_downstream = {}
+    five_alt1 = {}
+    three_alt1 = {}
+    five_alt2 = {}
     
             
     with open(annotation) as f:
         # f.next() # for title
         for line in f:
-            if not line.startswith('#'):
+            if not line.startswith('event_name'):
                 event = line.split('\t')[0]
                 region1, region2 = event.split('@')
                 
                 upstream = misc.create_bed_tool_from_miso_a3ss(region1, False)
                 alt1, alt2 = misc.create_bed_tool_from_miso_a3ss(region2, True)
                 
-                """three prime upstream region"""
+                
+                # print('three prime site upstream')
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         alt1,
                                                                         upstream,
@@ -244,8 +251,8 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     wiggle = np.nan_to_num(wiggle)
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    five_skipped[event] = wiggle
-        
+                    five_alt1[event] = wiggle
+                
                 """three prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                          alt2,
@@ -259,7 +266,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     wiggle = np.nan_to_num(wiggle) #
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    three_skipped[event] = wiggle
+                    three_alt1[event] = wiggle
         
                 """five prime site of downstream region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
@@ -274,17 +281,20 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     wiggle = np.nan_to_num(wiggle) # convert all nans to 0
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
-                    five_downstream[event] = wiggle
+                    five_alt2[event] = wiggle
                   
         three_upstream = pd.DataFrame(three_upstream).T
-        five_skipped = pd.DataFrame(five_skipped).T
-        three_skipped = pd.DataFrame(three_skipped).T
-        five_downstream = pd.DataFrame(five_downstream).T
-        
-        return three_upstream, five_skipped, three_skipped, five_downstream
-                
-                
-def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=False):
+        five_alt1 = pd.DataFrame(five_alt1).T
+        three_alt1 = pd.DataFrame(three_alt1).T
+        five_alt2 = pd.DataFrame(five_alt2).T
+        if combine_regions == False:
+            return three_upstream, five_alt1, three_alt1, five_alt2
+        else:
+            ra = pd.concat([three_upstream,five_alt1,three_alt1,five_alt2],axis=1)
+            ra.columns = range(0,ra.shape[1])
+            return ra                           
+                        
+def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True):
     print("creating se matrix for {} on {}".format(density.name,annotation))
     three_upstream = {}
     five_skipped = {}
@@ -379,7 +389,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             return three_upstream, five_skipped, three_skipped, five_downstream
         else:
             ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
-            ra.columns = range(0,1400)
+            ra.columns = range(0,ra.shape[1])
             # print("TYPE OF MATRIX: {}".format(type(ra)))
             return ra
 

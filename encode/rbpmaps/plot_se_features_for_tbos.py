@@ -175,7 +175,6 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.create_a3ss_matrices(normalize=False)
                         bothClip.create_a3ss_matrices(normalize=False)
                     else:
-                        
                         inclusionClip.create_se_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_se_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_se_matrices_one_region(label='all',normalize=False)

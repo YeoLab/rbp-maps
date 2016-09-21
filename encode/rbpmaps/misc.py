@@ -50,8 +50,8 @@ def create_bed_tool_from_miso_a3ss(miso_annotation, is_alt = True):
         start1, start2 = start.split('|')
         
         if(strand == '+'):
-            splice1 = bt.create_interval_from_list([chrom,start1,start2,'0','0',strand])
-            splice2 = bt.create_interval_from_list([chrom,start2,end,'0','0',strand])
+            splice1 = bt.create_interval_from_list([chrom,start1,start2,'0','0',strand]) # the middle one
+            splice2 = bt.create_interval_from_list([chrom,start2,end,'0','0',strand]) # the downstream one
         elif(strand == '-'):
             splice1 = bt.create_interval_from_list([chrom,start1,start2,'0','0',strand])
             splice2 = bt.create_interval_from_list([chrom,end,start1,'0','0',strand])
@@ -63,17 +63,20 @@ def create_bed_tool_from_miso_a3ss(miso_annotation, is_alt = True):
         return some_bedtool
 def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt = True):
     if is_alt == True:
-        # format is: chr17:80009218:80008888|80009170:-
+        
+        # format is: chr2:183800103:183799993|183800021:-@chr2:183799480:183799560:-
         chrom, start, end, strand = miso_annotation.split(':')
         end1, end2 = end.split('|')
         if(strand == '+'):
             splice1 = bt.create_interval_from_list([chrom,start,end1,'0','0',strand])
-            splice2 = bt.create_interval_from_list([chrom,end1,end2,'0','0',strand])
+            splice2 = bt.create_interval_from_list([chrom,end1,end2,'0','0',strand]) # middle
         else:
             splice1 = bt.create_interval_from_list([chrom,end2,start,'0','0',strand])
-            splice2 = bt.create_interval_from_list([chrom,end1,start,'0','0',strand])
+            splice2 = bt.create_interval_from_list([chrom,end1,end2,'0','0',strand]) # middle
+            
         return splice1, splice2
     else:
+        
         # format is: chr17:80008538:80008640:-
         chrom, start, end, strand = miso_annotation.split(':')
         some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])

@@ -157,35 +157,11 @@ class ClipWithInput(Map):
                                                           is_scaled = is_scaled)
         self.input_raw_matrix[prefix].to_csv("{}.input_raw_density_matrix.csv".format(self.output_base))
         self.ip_raw_matrix[prefix].to_csv("{}.ip_raw_density_matrix.csv".format(self.output_base))
-        
-    def create_a5ss_matrices(self, normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
-        print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        
-        keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
-        self.ip_raw_matrix = dict(zip(keys,mtx.create_a5ss_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
-        print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix = dict(zip(keys,mtx.create_a5ss_matrix(annotation = self.annotation, 
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
-        print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        for key in self.ip_raw_matrix:
-            self.ip_raw_matrix[key].to_csv("{}.ip.{}.a5ss.raw_density_matrix.csv".format(self.output_base, key))
-            self.input_raw_matrix[key].to_csv("{}.input.{}.a5ss.raw_density_matrix.csv".format(self.output_base, key))
-        
-        if normalize==True:
-            self.set_matrix(normfunc, min_density_sum)
 
     def create_a3ss_matrices(self, normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         
-        keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
+        keys = ['three_upstream','five_alt1','three_alt1','five_alt2']
         self.ip_raw_matrix = dict(zip(keys,mtx.create_a3ss_matrix(annotation = self.annotation, 
                                                                   density = self.ip, 
                                                                   exon_offset = self.exon_offset, 
@@ -206,6 +182,52 @@ class ClipWithInput(Map):
         if normalize==True:
             self.set_matrix(normfunc, min_density_sum)
     
+    def create_a3ss_matrices_one_region(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
+        print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        
+        self.ip_raw_matrix['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
+                                                               density = self.ip, 
+                                                               exon_offset = self.exon_offset, 
+                                                               intron_offset = self.intron_offset, 
+                                                               is_scaled = self.is_scaled,
+                                                               combine_regions = True)
+        print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.input_raw_matrix['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
+                                                                  density = self.inp, 
+                                                                  exon_offset = self.exon_offset, 
+                                                                  intron_offset = self.intron_offset, 
+                                                                  is_scaled = self.is_scaled,
+                                                                  combine_regions = True)
+        print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.a3ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.a3ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        
+        if normalize==True:
+            self.set_matrix(normfunc, min_density_sum)
+    def create_a5ss_matrices_one_region(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
+        print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        
+        self.ip_raw_matrix['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
+                                                               density = self.ip, 
+                                                               exon_offset = self.exon_offset, 
+                                                               intron_offset = self.intron_offset, 
+                                                               is_scaled = self.is_scaled,
+                                                               combine_regions = True)
+        print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.input_raw_matrix['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
+                                                                  density = self.inp, 
+                                                                  exon_offset = self.exon_offset, 
+                                                                  intron_offset = self.intron_offset, 
+                                                                  is_scaled = self.is_scaled,
+                                                                  combine_regions = True)
+        print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.a5ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.a5ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        
+        if normalize==True:
+            self.set_matrix(normfunc, min_density_sum)        
     def create_se_matrices(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         
         # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
@@ -251,106 +273,6 @@ class ClipWithInput(Map):
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-        
-        if normalize==True:
-            self.set_matrix(normfunc, min_density_sum)
-class ClipWithTwoInputs(Map):
-    '''
-    classdocs
-    '''
-
-    def __init__(self, ReadDensityRep1, ReadDensityRep2, 
-                 InputReadDensity, output_file,
-                 name, is_scaled = False, 
-                 annotation = None,
-                 left = 300, right = 300,
-                 exon_offset = 50, intron_offset = 300):
-        '''
-        Constructor
-        '''
-        
-        Map.__init__(self, output_file,
-                     name, is_scaled, 
-                     annotation,
-                     left, right,
-                     exon_offset, intron_offset)
-        
-        self.ip1 = ReadDensityRep1
-        self.ip2 = ReadDensityRep2
-        self.inp = InputReadDensity
-        
-        self.ip1_raw_matrix = {}
-        self.ip2_raw_matrix = {}
-        self.input_raw_matrix = {}
-
-        self.matrix = {}
-        
-    def set_annotation(self,annotation_file):
-        self.ip1.set_annotation(annotation_file)
-        self.ip2.set_annotation(annotation_file)
-        self.input.set_annotation(annotation_file)
-        
-    def create_matrices(self,prefix = 'feature', normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
-
-        self.ip1_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
-                                                       density = self.ip, 
-                                                       left = self.left, 
-                                                       right = self.right, 
-                                                       is_scaled = self.is_scaled)
-        
-        self.ip2_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
-                                                       density = self.ip, 
-                                                       left = self.left, 
-                                                       right = self.right, 
-                                                       is_scaled = self.is_scaled)
-        
-        self.input_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
-                                                          density = self.inp, 
-                                                          left = self.left, 
-                                                          right = self.right, 
-                                                          is_scaled = self.is_scaled)
-        
-        self.ip1_raw_matrix[prefix].to_csv("{}.ip1_raw_density_matrix.csv".format(self.output_base))
-        self.ip2_raw_matrix[prefix].to_csv("{}.ip2_raw_density_matrix.csv".format(self.output_base))
-        self.input_raw_matrix[prefix].to_csv("{}.input_raw_density_matrix.csv".format(self.output_base))
-        
-        if normalize==True:
-            self.set_matrix(normfunc, min_density_sum)
-            
-    def set_matrix(self, normfunc = norm.KLDivergence, min_density_sum = 0):
-        for key in self.ip1_raw_matrix:
-            print("starting normalization for key {} {}".format(key, datetime.datetime.now().time()))
-            self.matrix[key] = normfunc(self.ip1_raw_matrix[key],self.input_raw_matrix[key], min_density_sum)
-            self.matrix[key].to_csv("{}.{}.normed_matrix.csv".format(self.output_base, key))
-            print("finished normalization for key {} {}".format(key, datetime.datetime.now().time()))
-    
-    def create_se_matrices(self, normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
-        
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        
-        keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
-        self.ip1_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
-        print("finish create_se_matrix 1 analysis {}".format(datetime.datetime.now().time()))
-        self.ip2_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
-        print("finish create_se_matrix 2 analysis {}".format(datetime.datetime.now().time()))
-        print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
-        print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        for key in self.ip_raw_matrix:
-            self.ip_raw_matrix[key].to_csv("{}.ip.{}.raw_density_matrix.csv".format(self.output_base, key))
-            self.input_raw_matrix[key].to_csv("{}.input.{}.raw_density_matrix.csv".format(self.output_base, key))
         
         if normalize==True:
             self.set_matrix(normfunc, min_density_sum)

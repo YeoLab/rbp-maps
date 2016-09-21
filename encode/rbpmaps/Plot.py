@@ -205,6 +205,7 @@ def four_frame(region1, region2, region3, region4,
     plt.cla()
     plt.close()
 
+
 def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, both,
                                                           inclusion_err, exclusion_err,
                                                           title, output_file, 
@@ -422,14 +423,13 @@ def four_frame_with_inclusion_exclusion_events_from_one_region(inclusion, exclus
     
     four_frame_with_inclusion_exclusion_events(i,e,b,title,output_file,color1,color2,color3)
 
-def four_frame_with_inclusion_exclusion_events_from_one_region_with_error(inclusion, exclusion, both,
-                                                                          inclusion_err, exclusion_err,
-                                                                          title, output_file, 
-                                                                          color1=sns.color_palette("hls", 8)[0], 
-                                                                          color2=sns.color_palette("hls", 8)[5],
-                                                                          color3='black'):
+
+def plot_se(inclusion, exclusion, both, inclusion_err, exclusion_err, title, output_file, 
+            color1=sns.color_palette("hls", 8)[0], color2=sns.color_palette("hls", 8)[5], color3='black'):
     """
+    Formerly: four_frame_with_inclusion_exclusion_events_from_one_region_with_error
     Special plot:
+    
     plots a 4-region map that contains three separate plots for inclusion, 
     exclusion, and all spliced events. 
     
@@ -446,6 +446,9 @@ def four_frame_with_inclusion_exclusion_events_from_one_region_with_error(inclus
     ie = {}
     ee = {}
     
+    """
+    Split the single region into four. This will break if the regions are of different dimensions!!!
+    """
     i['region1'], i['region2'], i['region3'], i['region4'] = np.array_split(inclusion['region1'],4)
     e['region1'], e['region2'], e['region3'], e['region4'] = np.array_split(exclusion['region1'],4)
     b['region1'], b['region2'], b['region3'], b['region4'] = np.array_split(both['region1'],4)
@@ -453,6 +456,233 @@ def four_frame_with_inclusion_exclusion_events_from_one_region_with_error(inclus
     ee['region1'], ee['region2'], ee['region3'], ee['region4'] = np.array_split(exclusion_err['region1'],4)
     
     four_frame_with_inclusion_exclusion_events_with_error(i,e,b,ie,ee,title,output_file,color1,color2,color3)
+
+    
+def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, output_file, 
+              color1=sns.color_palette("hls", 8)[0], color2=sns.color_palette("hls", 8)[5], color3='black'):
+    
+    i = {}
+    e = {}
+    b = {}
+    ie = {}
+    ee = {}
+    print("INCLUSION TYPE: {}".format(type(inclusion['region1'])))
+    print("INCUSION: {}".format(inclusion['region1']))
+    i['three_upstream'] = np.array(inclusion['region1'][:350])
+    i['five_alt1'] = np.array(inclusion['region1'][350:700])
+    i['splicesite'] = np.array(inclusion['region1'][700:800])
+    
+    e['three_upstream'] = np.array(exclusion['region1'][:350])
+    e['five_alt1'] = np.array(exclusion['region1'][350:700])
+    e['splicesite'] = np.array(exclusion['region1'][700:800])
+    
+    b['three_upstream'] = np.array(both['region1'][:350])
+    b['five_alt1'] = np.array(both['region1'][350:700])
+    b['splicesite'] = np.array(both['region1'][700:800])
+    
+    ie['three_upstream'] = np.array(inclusion_err['region1'][:350])
+    ie['five_alt1'] = np.array(inclusion_err['region1'][350:700])
+    ie['splicesite'] = np.array(inclusion_err['region1'][700:800])
+    
+    ee['three_upstream'] = np.array(exclusion_err['region1'][:350])
+    ee['five_alt1'] = np.array(exclusion_err['region1'][350:700])
+    ee['splicesite'] = np.array(exclusion_err['region1'][700:800])
+    
+    """
+    Special plot:
+    plots a 4-region map that contains three separate plots for inclusion, 
+    exclusion, and all spliced events. 
+    
+    Args:
+        inclusion: {region1, region2, region3, region4}
+        exclusion: {region1, region2, region3, region4}
+        both: {region1, region2, region3, region4}
+        
+    """
+    num_rows = 1
+    num_cols = 3
+    ax = plt.gca()
+    min_height = min(min(i['three_upstream']),min(e['three_upstream']),min(b['three_upstream']),
+                     min(i['five_alt1']),min(e['five_alt1']),min(b['five_alt1']),
+                     min(i['splicesite']),min(e['splicesite']),min(b['splicesite']))
+    max_height = max(max(i['three_upstream']),max(e['three_upstream']),max(b['three_upstream']),
+                     max(i['five_alt1']),max(e['five_alt1']),max(b['five_alt1']),
+                     max(i['splicesite']),max(e['splicesite']),max(b['splicesite']))
+        
+    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+        
+        sns.set_style({'xtick.major.size':5,
+                   'ytick.major.size':5,
+                   'xtick.color':'.15'})
+        
+        linewidth = 2
+        errorbar_linewidth = 0.7
+        
+        ax = fig.add_subplot(1,4,1)
+        ax.plot(i['three_upstream'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(e['three_upstream'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(b['three_upstream'], linewidth=linewidth, alpha=.3, color = color3)
+        
+        ax.plot((i['three_upstream']+ie['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((i['three_upstream']-ie['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((e['three_upstream']+ee['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((e['three_upstream']-ee['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax)
+        ax.set_ylim(min_height, max_height)
+        ax.set_ylabel("Mean Read Density")
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        
+        sns.set_style({'ytick.major.size':0})
+        
+        ax = fig.add_subplot(1,4,2)
+        ax.plot(i['five_alt1'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(e['five_alt1'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(b['five_alt1'], linewidth=linewidth, alpha=.3, color = color3)
+        
+        ax.plot((i['five_alt1']+ie['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((i['five_alt1']-ie['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((e['five_alt1']+ee['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((e['five_alt1']-ee['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.set_xticklabels(range(-300,51,50),rotation=90)
+        ax.axvline(x=300,linestyle=':',alpha=0.5)
+            
+        ax = fig.add_subplot(1,4,3)
+        ax.plot(i['splicesite'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(e['splicesite'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(b['splicesite'], linewidth=linewidth, alpha=.3, color = color3)
+        ax.plot((i['splicesite']+ie['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((i['splicesite']-ie['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((e['splicesite']+ee['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((e['splicesite']-ee['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        ax.set_xticklabels(range(-50,51,50),rotation=90)
+        
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, output_file, 
+              color1=sns.color_palette("hls", 8)[0], color2=sns.color_palette("hls", 8)[5], color3='black'):
+    
+    i = {}
+    e = {}
+    b = {}
+    ie = {}
+    ee = {}
+    print("INCLUSION TYPE: {}".format(type(inclusion['region1'])))
+    print("INCUSION: {}".format(inclusion['region1']))
+    i['splicesite'] = np.array(inclusion['region1'][:100])
+    i['three_alt2'] = np.array(inclusion['region1'][100:450])
+    i['five_downstream'] = np.array(inclusion['region1'][450:800])
+    
+    e['splicesite'] = np.array(exclusion['region1'][:100])
+    e['three_alt2'] = np.array(exclusion['region1'][100:450])
+    e['five_downstream'] = np.array(exclusion['region1'][450:800])
+    
+    b['splicesite'] = np.array(both['region1'][:100])
+    b['three_alt2'] = np.array(both['region1'][100:450])
+    b['five_downstream'] = np.array(both['region1'][450:800])
+    
+    ie['splicesite'] = np.array(inclusion_err['region1'][:100])
+    ie['three_alt2'] = np.array(inclusion_err['region1'][100:450])
+    ie['five_downstream'] = np.array(inclusion_err['region1'][450:800])
+    
+    ee['splicesite'] = np.array(exclusion_err['region1'][:100])
+    ee['three_alt2'] = np.array(exclusion_err['region1'][100:450])
+    ee['five_downstream'] = np.array(exclusion_err['region1'][450:800])
+    
+    """
+    Special plot:
+    plots a 4-region map that contains three separate plots for inclusion, 
+    exclusion, and all spliced events. 
+    
+    Args:
+        inclusion: {region1, region2, region3, region4}
+        exclusion: {region1, region2, region3, region4}
+        both: {region1, region2, region3, region4}
+        
+    """
+    num_rows = 1
+    num_cols = 3
+    ax = plt.gca()
+    min_height = min(min(i['splicesite']),min(e['splicesite']),min(b['splicesite']),
+                     min(i['three_alt2']),min(e['three_alt2']),min(b['three_alt2']),
+                     min(i['five_downstream']),min(e['five_downstream']),min(b['five_downstream']))
+    max_height = max(max(i['splicesite']),max(e['splicesite']),max(b['splicesite']),
+                     max(i['three_alt2']),max(e['three_alt2']),max(b['three_alt2']),
+                     max(i['five_downstream']),max(e['five_downstream']),max(b['five_downstream']))
+        
+    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+        
+        sns.set_style({'xtick.major.size':5,
+                   'ytick.major.size':5,
+                   'xtick.color':'.15'})
+        
+        linewidth = 2
+        errorbar_linewidth = 0.7
+        
+        ax = fig.add_subplot(1,4,1)
+        ax.plot(i['splicesite'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(e['splicesite'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(b['splicesite'], linewidth=linewidth, alpha=.3, color = color3)
+        
+        ax.plot((i['splicesite']+ie['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((i['splicesite']-ie['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((e['splicesite']+ee['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((e['splicesite']-ee['splicesite']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax)
+        ax.set_ylim(min_height, max_height)
+        ax.set_ylabel("Mean Read Density")
+        ax.set_xticklabels(range(-50,51,50),rotation=90)
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        
+        sns.set_style({'ytick.major.size':0})
+        
+        ax = fig.add_subplot(1,4,2)
+        ax.plot(i['three_alt2'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(e['three_alt2'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(b['three_alt2'], linewidth=linewidth, alpha=.3, color = color3)
+        
+        ax.plot((i['three_alt2']+ie['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((i['three_alt2']-ie['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((e['three_alt2']+ee['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((e['three_alt2']-ee['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.axvline(x=300,linestyle=':',alpha=0.5)
+            
+        ax = fig.add_subplot(1,4,3)
+        ax.plot(i['five_downstream'], linewidth=linewidth, alpha=.8, color = color1)
+        ax.plot(e['five_downstream'], linewidth=linewidth, alpha=.8, color = color2)
+        ax.plot(b['five_downstream'], linewidth=linewidth, alpha=.3, color = color3)
+        ax.plot((i['five_downstream']+ie['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((i['five_downstream']-ie['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+        ax.plot((e['five_downstream']+ee['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax.plot((e['five_downstream']-ee['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        
+        sns.despine(ax=ax, left=True)
+        ax.set_ylim(min_height, max_height)
+        ax.set_yticklabels([])
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        ax.set_xticklabels(range(-350,51,50),rotation=90)
+        
+    plt.clf()
+    plt.cla()
+    plt.close()
     
 def five_frame(region1, region2, region3, region4, region5,
                title, output_file, color='red'):
