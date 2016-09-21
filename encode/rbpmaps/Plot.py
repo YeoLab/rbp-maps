@@ -567,6 +567,8 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax.axvline(x=50,linestyle=':',alpha=0.5)
         ax.set_xticklabels(range(-50,51,50),rotation=90)
         
+        ax.legend()
+        plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()
     plt.close()
@@ -644,7 +646,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
-        ax.set_xticklabels(range(-50,51,50),rotation=90)
+        # ax.set_xticklabels(range(-50,51,50),rotation=90)
         ax.axvline(x=50,linestyle=':',alpha=0.5)
         
         sns.set_style({'ytick.major.size':0})
@@ -662,7 +664,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
-        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.set_xticklabels(range(-350,51,50),rotation=90)
         ax.axvline(x=300,linestyle=':',alpha=0.5)
             
         ax = fig.add_subplot(1,4,3)
@@ -678,8 +680,10 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
         ax.axvline(x=50,linestyle=':',alpha=0.5)
-        ax.set_xticklabels(range(-350,51,50),rotation=90)
+        ax.set_xticklabels(range(-50,351,50),rotation=90)
         
+        ax.legend()
+        plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()
     plt.close()
