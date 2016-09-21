@@ -50,16 +50,16 @@ def create_bed_tool_from_miso_a3ss(miso_annotation, is_alt = True):
         start1, start2 = start.split('|')
         
         if(strand == '+'):
-            splice1 = bt.create_interval_from_list([chrom,start1,start2,'0','0',strand]) # the middle one
-            splice2 = bt.create_interval_from_list([chrom,start2,end,'0','0',strand]) # the downstream one
+            splice1 = bt.create_interval_from_list([chrom,int(start1)-1,start2,'0','0',strand]) # the middle one
+            splice2 = bt.create_interval_from_list([chrom,int(start2)-1,end,'0','0',strand]) # the downstream one
         elif(strand == '-'):
-            splice1 = bt.create_interval_from_list([chrom,start1,start2,'0','0',strand])
-            splice2 = bt.create_interval_from_list([chrom,end,start1,'0','0',strand])
+            splice1 = bt.create_interval_from_list([chrom,int(start1)-1,start2,'0','0',strand])
+            splice2 = bt.create_interval_from_list([chrom,int(end)-1,start1,'0','0',strand])
         return splice1, splice2
     else:
         # format is: chr17:80008538:80008640:-
         chrom, start, end, strand = miso_annotation.split(':')
-        some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
+        some_bedtool = bt.create_interval_from_list([chrom,int(start)-1,end,'0','0',strand])
         return some_bedtool
 def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt = True):
     if is_alt == True:
@@ -68,18 +68,18 @@ def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt = True):
         chrom, start, end, strand = miso_annotation.split(':')
         end1, end2 = end.split('|')
         if(strand == '+'):
-            splice1 = bt.create_interval_from_list([chrom,start,end1,'0','0',strand])
-            splice2 = bt.create_interval_from_list([chrom,end1,end2,'0','0',strand]) # middle
+            splice1 = bt.create_interval_from_list([chrom,int(start)-1,end1,'0','0',strand])
+            splice2 = bt.create_interval_from_list([chrom,int(end1)-1,end2,'0','0',strand]) # middle
         else:
-            splice1 = bt.create_interval_from_list([chrom,end2,start,'0','0',strand])
-            splice2 = bt.create_interval_from_list([chrom,end1,end2,'0','0',strand]) # middle
+            splice1 = bt.create_interval_from_list([chrom,int(end2)-1,start,'0','0',strand])
+            splice2 = bt.create_interval_from_list([chrom,int(end1)-1,end2,'0','0',strand]) # middle
             
         return splice1, splice2
     else:
         
         # format is: chr17:80008538:80008640:-
         chrom, start, end, strand = miso_annotation.split(':')
-        some_bedtool = bt.create_interval_from_list([chrom,start,end,'0','0',strand])
+        some_bedtool = bt.create_interval_from_list([chrom,int(start)-1,end,'0','0',strand])
         return some_bedtool
 # returns True if key combinations exist in a dictionary, False otherwise
 def exists(dictionary, *args):

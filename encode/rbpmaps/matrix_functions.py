@@ -8,6 +8,7 @@ import numpy as np
 import pybedtools
 import intervals
 import misc
+import Feature
 
 def create_matrix(annotation, density, left = 300, right = 300, is_scaled = True):
     print("creating the matrix for {}".format(density.get_name()))
@@ -121,11 +122,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         for line in f:
             if not line.startswith('event_name'):
                 event = line.split('\t')[0]
-                region1, region2 = event.split('@')
-                
-                
-                alt1, alt2 = misc.create_bed_tool_from_miso_a5ss(region1, is_alt = True) # alt1 is the 'middle' one, alt2 is the 'downstream' one
-                downstream = misc.create_bed_tool_from_miso_a5ss(region2, is_alt = False)
+                alt1, alt2, downstream = Feature.A5ssFeature(event,'miso').get_bedtools()
                 """three prime alt1 region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         alt1,
@@ -210,18 +207,20 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     three_alt1 = {}
     five_alt2 = {}
     
-            
+    
     with open(annotation) as f:
         # f.next() # for title
         for line in f:
             if not line.startswith('event_name'):
                 event = line.split('\t')[0]
+                """ Deprecated 
+                
                 region1, region2 = event.split('@')
                 
                 upstream = misc.create_bed_tool_from_miso_a3ss(region1, False)
                 alt1, alt2 = misc.create_bed_tool_from_miso_a3ss(region2, True)
-                
-                
+                """
+                upstream, alt1, alt2 = Feature.A3ssFeature(event,'miso').get_bedtools()
                 # print('three prime site upstream')
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         alt1,
@@ -307,12 +306,15 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         for line in f:
             if not line.startswith('#'):
                 event = line.split('\t')[0]
+                upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,'miso').get_bedtools()
+                
+                """ Deprecated
                 upstream, se, downstream = event.split('@')
                 
                 upstream_interval = misc.create_bed_tool_from_miso_se(upstream)
                 interval = misc.create_bed_tool_from_miso_se(se)
                 downstream_interval = misc.create_bed_tool_from_miso_se(downstream)
-                
+                """
                 """three prime upstream region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         interval,

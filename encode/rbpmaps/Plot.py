@@ -565,6 +565,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
         ax.axvline(x=50,linestyle=':',alpha=0.5)
+        ax.set_xticks([0,50,100])
         ax.set_xticklabels(range(-50,51,50),rotation=90)
         
         ax.legend()
@@ -581,8 +582,6 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     b = {}
     ie = {}
     ee = {}
-    print("INCLUSION TYPE: {}".format(type(inclusion['region1'])))
-    print("INCUSION: {}".format(inclusion['region1']))
     i['splicesite'] = np.array(inclusion['region1'][:100])
     i['three_alt2'] = np.array(inclusion['region1'][100:450])
     i['five_downstream'] = np.array(inclusion['region1'][450:800])
@@ -646,7 +645,8 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
-        # ax.set_xticklabels(range(-50,51,50),rotation=90)
+        ax.set_xticks([0,50,100])
+        ax.set_xticklabels(range(-50,51,50),rotation=90)
         ax.axvline(x=50,linestyle=':',alpha=0.5)
         
         sns.set_style({'ytick.major.size':0})
