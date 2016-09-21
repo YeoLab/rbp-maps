@@ -112,7 +112,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     five_alt2 = {}
     three_alt2 = {}
     five_downstream = {}
-    # Annotation format:
+    # Feature format:
     # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
     # chr2:183800103:183799993|183800021:-@chr2:183799480:183799560:-    ENSG00000061676
     # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
