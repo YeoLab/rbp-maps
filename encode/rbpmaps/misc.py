@@ -34,12 +34,17 @@ def create_bed_tool_from_miso_se(miso_annotation):
     return some_bedtool
 
 def create_bed_tool_from_miso(miso_annotation):
+    """
+    Deprecated function
+    """
     chrom, start, end, strand = miso_annotation.split(':')
     some_bedtool = bt.create_interval_from_list([chrom,int(start)-1,end,'0','0',strand])
     return some_bedtool
 
 def create_bed_tool_from_miso_a3ss(miso_annotation, is_alt = True):
-    
+    """
+    Deprecated function
+    """
     if is_alt == True:
         # format is: 
         # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
@@ -62,6 +67,9 @@ def create_bed_tool_from_miso_a3ss(miso_annotation, is_alt = True):
         some_bedtool = bt.create_interval_from_list([chrom,int(start)-1,end,'0','0',strand])
         return some_bedtool
 def create_bed_tool_from_miso_a5ss(miso_annotation, is_alt = True):
+    """
+    Deprecated function
+    """
     if is_alt == True:
         
         # format is: chr2:183800103:183799993|183800021:-@chr2:183799480:183799560:-

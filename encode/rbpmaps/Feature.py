@@ -15,7 +15,7 @@ class Feature():
         '''
         Constructor
         '''
-        self.line = line
+        self.line = line.rstrip()
         self.source = source
 
     def get_bedtool(self):
@@ -33,7 +33,7 @@ class Feature():
 class SkippedExonFeature():
     def __init__(self, line, source):
         self.source = source
-        self.line = line
+        self.line = line.rstrip()
     def get_bedtools(self):
         if(self.source == 'miso'):
             up, se, down = self.line.split('@')
@@ -46,13 +46,35 @@ class SkippedExonFeature():
             
             chrom, start, stop, strand = down.split(':')
             down = bt.create_interval_from_list([chrom, int(start)-1, stop, '0', '0', strand])
+        elif(self.source == 'xintao'):
+            pass
+        elif(self.source == 'eric'):
+            name, se = self.line.split(';')
+            xintao, ericleft, ericright = se.split('||')
+            upstream_es = 1
+            downstream_es = 250000000
+            if("Not_found") not in ericleft:
+                upstream_es = ericleft.split(':')[2].split('-')[0]
+            if("Not_found") not in ericright:
+                downstream_ee = ericright.split(':')[2].split('-')[1]
             
+            event, chrom, upstream, downstream, strand = xintao.split(':')
+            upstream_ee, skipped_es = upstream.split('-')
+            skipped_ee, downstream_es = downstream.split('-')
+            
+            se = bt.create_interval_from_list([chrom, skipped_es, skipped_ee, '0', '0', strand])
+            if(strand == '+'):
+                up = bt.create_interval_from_list([chrom, upstream_es, upstream_ee, '0', '0', strand])
+                down = bt.create_interval_from_list([chrom, downstream_es, downstream_ee, '0', '0', strand])
+            elif(strand == '-'):
+                up = bt.create_interval_from_list([chrom, downstream_es, downstream_ee, '0', '0', strand])
+                down = bt.create_interval_from_list([chrom, upstream_es, upstream_ee, '0', '0', strand])
         return up, se, down
 
 class A5ssFeature():
     def __init__(self, line, source):
         self.source = source
-        self.line = line
+        self.line = line.rstrip()
     def get_bedtools(self):
         if(self.source == 'miso'):
             alt, downstream = self.line.split('@')
@@ -71,7 +93,7 @@ class A5ssFeature():
 class A3ssFeature():
     def __init__(self, line, source):
         self.source = source
-        self.line = line
+        self.line = line.rstrip()
     def get_bedtools(self):
         if(self.source == 'miso'):
             upstream, alt = self.line.split('@')
@@ -92,14 +114,15 @@ class A3ssFeature():
 class RIFeature():
     def __init__(self, line, source):
         self.source = source
-        self.line = line
+        self.line = line.rstrip()
     def get_bedtools(self):
-        """
-        CCT8_ENSG00000156261.8;RI:chr21:30434649:30434736-30434811:30434896:-
-        EXOSC8_ENSG00000120699.8;RI:chr13:37577071:37577144-37578614:37578698:+
-        """
+        
         if(self.source == 'xintao'):
-            annotation, chrom, region1, region2, region3, strand = self.line.split(':')
+            """
+            CCT8_ENSG00000156261.8;RI:chr21:30434649:30434736-30434811:30434896:-
+            EXOSC8_ENSG00000120699.8;RI:chr13:37577071:37577144-37578614:37578698:+
+            """
+            annotation, chrom, region1, region2, region3, strand = self.line.rstrip().split(':')
             if(strand == '+'):
                 upstream_start = region1
                 upstream_end, downstream_start = region2.split('-')
@@ -108,9 +131,13 @@ class RIFeature():
                 downstream_start = region1
                 downstream_end, upstream_start = region2.split('-')
                 upstream_end = region3
+            else:
+                print("invalid strand information, defaulting to +")
+                upstream_start = region1
+                upstream_end, downstream_start = region2.split('-')
+                downstream_end = region3
             upstream = bt.create_interval_from_list([chrom,upstream_start,upstream_end,'0','0',strand])
             downstream = bt.create_interval_from_list([chrom,downstream_start,downstream_end,'0','0',strand]) 
-            
         return upstream, downstream
         
 """line = 'chr3:53274267:53274364:-@chr3:53271813:53271836:-@chr3:53268999:53269190:-'
@@ -121,7 +148,7 @@ print(up)
 print(se)
 print(down)
 
-line = 'chr2:183800103:183799993|183800021:-@chr2:183799480:183799560:-'
+line = 'chr10:102743831:102743705|102743791:-@chr10:102743512:102743574:-'
 F = A5ssFeature(line,'miso')
 splice1, splice2, downstream = F.get_bedtools()
 print(splice1)
@@ -140,3 +167,4 @@ F = RIFeature(line,'xintao')
 upstream, downstream = F.get_bedtools()
 print(upstream)
 print(downstream)"""
+

@@ -7,9 +7,26 @@ import pandas as pd
 import numpy as np
 import os
 
+def remove_outliers(rbpdataframe, conf = 0.95):
+    means = list()
+    sems = list()
+    for key, value in rbpdataframe.iteritems():
+        df = rbpdataframe[key].dropna()
+        
+        nums = len(df)
+        droppercent = (1-conf)/2.0
+        dropnum = int(nums*(droppercent))
+        df = df.sort_values()
+        if(dropnum>0):
+            df = df[dropnum:-dropnum]
+        
+        means.append(df.mean())
+        sems.append(df.sem())
+    return means, sems
+
 def KLDivergence(density, input_density, min_density_threshold = 0):
     # print("TYPE OF OBJECT: {}".format(type(density)))
-    print("KLDivergence (entropy of PDF)")
+    # print("KLDivergence (entropy of PDF)")
     PDF_CONST = 1.0/len(density.columns)
     
     density = density.replace(-1,np.nan)
@@ -25,7 +42,7 @@ def KLDivergence(density, input_density, min_density_threshold = 0):
     # pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
 
     en = pdf.multiply(np.log2(pdf.div(input_pdf)))
-    print("TYPE AFTER ENTROPY OF READS: {}".format(type(en)))
+    # print("TYPE AFTER ENTROPY OF READS: {}".format(type(en)))
     return en
 def entropy_of_reads(density, input_density, min_density_threshold = 0):
     """
@@ -34,7 +51,7 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     do en
     plot mean
     """
-    print('Entropy of reads')
+    # print('Entropy of reads')
     ipdf = density.replace(-1, np.nan)
     indf = input_density.replace(-1, np.nan)
     
@@ -89,7 +106,7 @@ def get_input(density, input_density, min_density_threshold = 0):
     return input_density
 
 def calculate_pdf(density, min_density_threshold = 0):
-    print("calculate PDF")
+    # print("calculate PDF")
     df = density.replace(-1, np.nan)
     
     # df = densities[densities.sum(axis=1) > min_density_threshold]
@@ -102,7 +119,7 @@ def normalize(density, input_density, min_density_threshold = 0):
     """
     This is identical to calculate_pdf.
     """
-    print("Normalize (calculate PDF)")
+    # print("Normalize (calculate PDF)")
     pdf = calculate_pdf(density, min_density_threshold)
 
     return pdf 
@@ -111,7 +128,7 @@ def baseline_rpm_mean_subtraction(density, input_density, min_density_threshold 
     pass
 
 def normalize_and_subtract(density, input_density, min_density_threshold = 0):
-    print("normalization and subtraction")
+    # print("normalization and subtraction")
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
@@ -120,7 +137,7 @@ def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     return subtracted
     
 def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
-    print("normalization and per region subtraction")
+    # print("normalization and per region subtraction")
     PDF_CONST = 1.0/len(density.columns)
         
     pdf = calculate_pdf(density, min_density_threshold)

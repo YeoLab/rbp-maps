@@ -49,11 +49,10 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg
 
-def remove_outliers(rbpdataframe, conf = 0.95):
+def remove_outliers(df, conf = 0.95):
     x = 0
     means = list()
-    for key, value in rbpdataframe.iteritems():
-        df = rbpdataframe.dropna()
+    for key, value in df.iteritems():
         nums = len(df[key])
         droppercent = (1-conf)/2.0
         dropnum = int(nums*(droppercent))

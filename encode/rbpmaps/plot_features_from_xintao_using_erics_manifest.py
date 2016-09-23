@@ -49,22 +49,7 @@ class CLIError(Exception):
     def __unicode__(self):
         return self.msg
 
-def remove_outliers(rbpdataframe, conf = 0.95):
-    x = 0
-    means = list()
-    sems = list()
-    for key, value in rbpdataframe.iteritems():
-        df = rbpdataframe.dropna()
-        
-        nums = len(df[key])
-        droppercent = (1-conf)/2.0
-        dropnum = int(nums*(droppercent))
-        df = df.sort_values(by=key)
-        df.drop(df.head(dropnum).index, inplace=True)
-        df.drop(df.tail(dropnum).index, inplace=True)
-        means.append(df[key].mean())
-        sems.append(df[key].sem())
-    return means, sems
+
 
 def main(argv=None): # IGNORE:C0111
     
@@ -192,26 +177,17 @@ def main(argv=None): # IGNORE:C0111
                             feature.columns = ['chrom','start','stop','name','score','strand'] # all annotation dataframes for non-SE events should be in BED6 format.
                     else: # if we don't have an annotation file, we need to specify for each RBP
                         features = {}
-                        if args.event == 'se' or args.event =='a3ss' or args.event == 'a5ss':
-                            
-                            """
-                            generate a list of exons if an alternatively spliced file isn't found.
-                            """
-                            
-                            print("attempting to generate skipped exon file from manifest")
-                            
-                            feature = None
-                            features['included'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),names=final_columns)
-                            features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),names=final_columns)
-                            features['background'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
+                        feature = None
+                        """
+                        features['included'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),names=final_columns)
+                        features['excluded'] = pd.read_table(os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),names=final_columns)
+                        features['background'] = pd.read_table(os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),names=final_columns)
                                 
-                            features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
-                            features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
-                            features['background'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('background'), sep="\t", header=None, index=None)
-                        else:
-                            print("no feature file assigned for a non-se/a3ss/a5ss event.")
+                        features['included'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('included'), sep="\t", header=None, index=None)
+                        features['excluded'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('excluded'), sep="\t", header=None, index=None)
+                        features['background'].to_csv(os.path.join(outdir,reps[i])+".{}_genes.temp".format('background'), sep="\t", header=None, index=None)
+                        """
                     """
-                
                     subset annotation file from DESeq2 diffexpression data
                     
                     * This does not work with showall options yet *
@@ -280,20 +256,20 @@ def main(argv=None): # IGNORE:C0111
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}-positive.miso').format(rbp_name,cell_line),
+                                                annotation=os.path.join(rmats_dir,'{}-{}-positive.txt').format(rbp_name,cell_line),
                                                 output_file=output_file)
                     
                             
                     exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}-negative.miso').format(rbp_name,cell_line),
+                                                annotation=os.path.join(rmats_dir,'{}-{}-negative.txt').format(rbp_name,cell_line),
                                                 output_file=output_file)
                     
                     bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'background'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}.miso').format(rbp_name,cell_line),
+                                                annotation=os.path.join(rmats_dir,'{}-{}.txt').format(rbp_name,cell_line),
                                                 output_file=output_file)
                     
                     
@@ -305,11 +281,17 @@ def main(argv=None): # IGNORE:C0111
                         inclusionClip.create_a5ss_matrices_one_region(label='included', normalize=False)
                         exclusionClip.create_a5ss_matrices_one_region(label='excluded', normalize=False)
                         bothClip.create_a5ss_matrices_one_region(label='all', normalize=False)
-                    else:
+                    elif(event == 'se'):
                         inclusionClip.create_se_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_se_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_se_matrices_one_region(label='all',normalize=False)
-                        # sys.exit(0)
+                    elif(event == 'ri'):
+                        inclusionClip.create_ri_matrices_one_region(label='included',normalize=False)
+                        exclusionClip.create_ri_matrices_one_region(label='excluded',normalize=False)
+                        bothClip.create_ri_matrices_one_region(label='all',normalize=False)
+                    else:
+                        print('invalid event (choose a3ss, a5ss, se, ri)')
+                        sys.exit(1)
                     for n in range(0,len(normfuncs)):
                         
                         
@@ -334,18 +316,26 @@ def main(argv=None): # IGNORE:C0111
                                                                                     len(exclusionClip.matrix['feature']))
                         Plot.plot_se(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         """
-                        
-                        inc, inc_e = remove_outliers(inclusionClip.matrix['feature'],confidence)
-                        exc, exc_e = remove_outliers(exclusionClip.matrix['feature'],confidence)
-                        bo, bo_e = remove_outliers(bothClip.matrix['feature'],confidence)
+                        inc, inc_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
+                        exc, exc_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
+                        bo, bo_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
                         inc_rmo = {'region1':inc}
                         exc_rmo = {'region1':exc}
                         bo_rmo = {'region1':bo}
                         inc_e_rmo = {'region1':inc_e}
                         exc_e_rmo = {'region1':exc_e}
                         
+                        output_filename = os.path.join(outdir,reps[i])+".{}.{}.removeoutliers.svg".format(args.event,normfuncnames[n])
                         
-                        output_filename = os.path.join(outdir,reps[i])+".{}.RMATS.{}.removeoutliers.svg".format(args.event,normfuncnames[n])
+                        """
+                        This is what is ultimately going to be plotted:
+                        """
+                        pd.Series(inc).to_csv(output_filename.replace('.svg','.included.txt'))
+                        pd.Series(exc).to_csv(output_filename.replace('.svg','.excluded.txt'))
+                        pd.Series(bo).to_csv(output_filename.replace('.svg','.both.txt'))
+                        pd.Series(inc_e).to_csv(output_filename.replace('.svg','.included-err.txt'))
+                        pd.Series(exc_e).to_csv(output_filename.replace('.svg','.excluded-err.txt'))
+                        
                         title = '{} ({}_0{}) {} events (keep={})\nincl (n={}), excl (n={})'.format(rbp_name,
                                                                                                    uid,
                                                                                                    i+1,
@@ -357,9 +347,12 @@ def main(argv=None): # IGNORE:C0111
                             Plot.plot_a3ss(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         elif(event == 'a5ss'):
                             Plot.plot_a5ss(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
-                        else:
+                        elif(event == 'se'):
                             Plot.plot_se(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
-                    
+                        elif(event == 'ri'):
+                            Plot.plot_ri(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                        else:
+                            print("invalid event (choose a3ss, a5ss, se, ri)")
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

@@ -276,3 +276,27 @@ class ClipWithInput(Map):
         
         if normalize==True:
             self.set_matrix(normfunc, min_density_sum)
+    def create_ri_matrices_one_region(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
+        
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("ANNOTATION: {}".format(self.annotation))
+        self.ip_raw_matrix['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
+                                                                  density = self.ip, 
+                                                                  exon_offset = self.exon_offset, 
+                                                                  intron_offset = self.intron_offset, 
+                                                                  is_scaled = self.is_scaled,
+                                                                  combine_regions = True)
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.input_raw_matrix['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
+                                                                  density = self.inp, 
+                                                                  exon_offset = self.exon_offset, 
+                                                                  intron_offset = self.intron_offset, 
+                                                                  is_scaled = self.is_scaled,
+                                                                  combine_regions = True)
+        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
+        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        
+        if normalize==True:
+            self.set_matrix(normfunc, min_density_sum)
