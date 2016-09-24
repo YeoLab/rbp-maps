@@ -73,6 +73,8 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, cdsstart, cdsend, txstart, txend]")
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
+    parser.add_argument("-t", "--test", dest="test", help="for testing purposes...")
+    parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao)", default='miso')
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
@@ -97,6 +99,10 @@ def main(argv=None): # IGNORE:C0111
     
     # Process outlier removal
     confidence = args.confidence
+    
+    # Process testing and some other stuff
+    annotation_type = args.annotation_type
+    test = args.test
     
     with open(input_file,'r') as f:
         for line in f:
@@ -136,9 +142,6 @@ def main(argv=None): # IGNORE:C0111
                 reps = [my_rep1_name, my_rep2_name]
                 reppos = [rep1pos, rep2pos]
                 repneg = [rep1neg, rep2neg]
-                
-                
-                
                 
                 for i in range(0,len(reps)):
                     
@@ -236,7 +239,7 @@ def main(argv=None): # IGNORE:C0111
                     
                     
                     """
-                    CRAP
+                    CRAP STUFF
                     """
                     
                     
@@ -253,23 +256,35 @@ def main(argv=None): # IGNORE:C0111
                                      'density_baseline',
                                      'input_baseline'
                                      ]
+                    if not test:
+                        positive_annotation = os.path.join(rmats_dir,'{}-{}-positive.txt').format(rbp_name,cell_line)
+                        negative_annotation = os.path.join(rmats_dir,'{}-{}-negative.txt').format(rbp_name,cell_line)
+                        bg_annotation = os.path.join(rmats_dir,'{}-{}.txt').format(rbp_name,cell_line)
+                    else:
+                        positive_annotation = os.path.join(rmats_dir,'{}_{}.tsv').format(annotation_type,event)
+                        negative_annotation = os.path.join(rmats_dir,'{}_{}.tsv').format(annotation_type,event)
+                        bg_annotation = os.path.join(rmats_dir,'{}_{}.tsv').format(annotation_type,event)
+                    
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'included'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}-positive.txt').format(rbp_name,cell_line),
+                                                annotation=positive_annotation,
+                                                annotation_type=annotation_type,
                                                 output_file=output_file)
                     
                             
                     exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}-negative.txt').format(rbp_name,cell_line),
+                                                annotation=negative_annotation,
+                                                annotation_type=annotation_type,
                                                 output_file=output_file)
                     
                     bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'background'),
-                                                annotation=os.path.join(rmats_dir,'{}-{}.txt').format(rbp_name,cell_line),
+                                                annotation=bg_annotation,
+                                                annotation_type=annotation_type,
                                                 output_file=output_file)
                     
                     
@@ -299,7 +314,7 @@ def main(argv=None): # IGNORE:C0111
                         exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
                         bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
                         
-                        """ # Plotting all is a waste of time, just plot the outlier-removed versions below.
+                        """ # Plotting all is a waste of time, just plot the outlier-removed versions.
                         inclusion_error = inclusionClip.matrix['feature'].sem(axis=0)
                         exclusion_error = exclusionClip.matrix['feature'].sem(axis=0)
                         

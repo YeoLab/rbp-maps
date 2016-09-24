@@ -15,6 +15,7 @@ class Map():
     def __init__(self, output_file,
                  name, is_scaled = False, 
                  annotation = None,
+                 annotation_type = "miso",
                  left = 300, right = 300,
                  exon_offset = 50, intron_offset = 300):
         '''
@@ -25,6 +26,7 @@ class Map():
         self.name = name
         self.is_scaled = is_scaled
         self.annotation = annotation
+        self.annotation_type = annotation_type
         self.left = left
         self.right = right
         self.exon_offset = exon_offset
@@ -46,6 +48,7 @@ class Clip(Map):
     def __init__(self, ReadDensity, output_file,
                  name, 
                  annotation,
+                 annotation_type = "miso",
                  is_scaled = False,
                  left = 300, right = 300,
                  exon_offset = 50, intron_offset = 300):
@@ -56,6 +59,7 @@ class Clip(Map):
         Map.__init__(self, output_file,
                      name, is_scaled, 
                      annotation,
+                     annotation_type,
                      left, right,
                      exon_offset, intron_offset)
         self.ip = ReadDensity
@@ -108,6 +112,7 @@ class ClipWithInput(Map):
     def __init__(self, ReadDensity, InputReadDensity, output_file,
                  name, is_scaled = False, 
                  annotation = None,
+                 annotation_type = "miso",
                  left = 300, right = 300,
                  exon_offset = 50, intron_offset = 300):
         '''
@@ -117,6 +122,7 @@ class ClipWithInput(Map):
         Map.__init__(self, output_file,
                      name, is_scaled, 
                      annotation,
+                     annotation_type,
                      left, right,
                      exon_offset, intron_offset)
         

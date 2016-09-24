@@ -100,7 +100,7 @@ def create_matrix(annotation, density, left = 300, right = 300, is_scaled = True
     print("SUCCESS")
     return pd.DataFrame(densities).T
 
-def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True):
+def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="xintao"):
     three_upstream = {}
     five_downstream = {}
             
@@ -109,7 +109,7 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         for line in f:
             if not line.startswith('#'):
                 event = line.split('\t')[0]
-                upstream_interval, downstream_interval = Feature.RIFeature(event,'xintao').get_bedtools()
+                upstream_interval, downstream_interval = Feature.RIFeature(event,annotation_type).get_bedtools()
                 
                 """ Deprecated
                 upstream, se, downstream = event.split('@')
@@ -165,7 +165,7 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             # print("TYPE OF MATRIX: {}".format(type(ra)))
             return ra
     
-def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True):
+def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type = "miso"):
     # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
     # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
     # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
@@ -186,8 +186,8 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         for line in f:
             if not line.startswith('event_name'):
                 event = line.split('\t')[0]
-                alt1, alt2, downstream = Feature.A5ssFeature(event,'miso').get_bedtools()
-                """three prime alt1 region"""
+                alt1, alt2, downstream = Feature.A5ssFeature(event,annotation_type).get_bedtools()
+                """three prime alt1  (shorter) region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         downstream,
                                                                         alt1,
@@ -203,7 +203,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                         wiggle = intervals.get_scale(wiggle)
                     three_alt1[event] = wiggle
                     
-                """three prime site of alt2 region"""
+                """three prime site of alt2 (longer) region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                          downstream,
                                                                          alt2,
@@ -244,11 +244,9 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             ra = pd.concat([three_alt1,three_alt2,five_downstream],axis=1)
             ra.columns = range(0,ra.shape[1])
             return ra      
-def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True):
-    # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
-    # chr17:62502194:62502407:-@chr17:62500960|62500998:62500795:-    ENSG00000108654
+def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="miso"):
     """
-    Four regions:
+    Three regions:
     """
     # [    |    ]----|---|----[    |    [    |    ]
     three_upstream = {}
@@ -262,8 +260,9 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             if not line.startswith('event_name'):
                 event = line.split('\t')[0]
                 
-                upstream, alt1, alt2 = Feature.A3ssFeature(event,'miso').get_bedtools()
+                upstream, alt1, alt2 = Feature.A3ssFeature(event,annotation_type).get_bedtools()
                 # print('three prime site upstream')
+                
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         alt1,
                                                                         upstream,
@@ -279,7 +278,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                         wiggle = intervals.get_scale(wiggle)
                     three_upstream[event] = wiggle
         
-                """five prime site of alt1 (middle)"""
+                """five prime site of alt1 (longer exon)"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         upstream,
                                                                         alt1,
@@ -295,7 +294,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
                     five_alt1[event] = wiggle
                 
         
-                """five prime site of alt2 (right) """
+                """five prime site of alt2 (shorter exon) """
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         upstream,
                                                                         alt2,
@@ -320,8 +319,8 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             ra.columns = range(0,ra.shape[1])
             return ra                           
                         
-def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True):
-    print("creating se matrix for {} on {}".format(density.name,annotation))
+def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="miso"):
+    # print("creating se matrix for {} on {}".format(density.name,annotation))
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
@@ -333,7 +332,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         for line in f:
             if not line.startswith('#'):
                 event = line.split('\t')[0]
-                upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,'miso').get_bedtools()
+                upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,annotation_type).get_bedtools()
                 
                 """ Deprecated
                 upstream, se, downstream = event.split('@')
