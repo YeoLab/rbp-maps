@@ -108,7 +108,7 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         # f.next() # for title
         for line in f:
             if not line.startswith('#'):
-                event = line.split('\t')[0]
+                event = line.rstrip().split('\t')[0]
                 upstream_interval, downstream_interval = Feature.RIFeature(event,annotation_type).get_bedtools()
                 
                 """ Deprecated
@@ -185,7 +185,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         # f.next() # for title
         for line in f:
             if not line.startswith('event_name'):
-                event = line.split('\t')[0]
+                event = line.rstrip().split('\t')[0]
                 alt1, alt2, downstream = Feature.A5ssFeature(event,annotation_type).get_bedtools()
                 """three prime alt1  (shorter) region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
@@ -258,7 +258,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         # f.next() # for title
         for line in f:
             if not line.startswith('event_name'):
-                event = line.split('\t')[0]
+                event = line.rstrip().split('\t')[0]
                 
                 upstream, alt1, alt2 = Feature.A3ssFeature(event,annotation_type).get_bedtools()
                 # print('three prime site upstream')
@@ -331,7 +331,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         # f.next() # for title
         for line in f:
             if not line.startswith('#'):
-                event = line.split('\t')[0]
+                event = line.rstrip().split('\t')[0]
                 upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,annotation_type).get_bedtools()
                 
                 """ Deprecated

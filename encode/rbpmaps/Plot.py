@@ -130,6 +130,7 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         both: {region1, region2, region3, region4}
         
     """
+
     num_rows = 1
     num_cols = 2
     ax = plt.gca()

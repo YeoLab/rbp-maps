@@ -73,8 +73,11 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-l", "--log2fc", dest="log2fc", help="log2 fold change cutoff", default=1.5, type=float)
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, cdsstart, cdsend, txstart, txend]")
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
-    parser.add_argument("-t", "--test", dest="test", help="for testing purposes...")
+    parser.add_argument("-t", "--test", dest="test", help="for testing purposes...", default=False, action='store_true')
     parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao)", default='miso')
+    parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
+    parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
+    
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
@@ -103,6 +106,10 @@ def main(argv=None): # IGNORE:C0111
     # Process testing and some other stuff
     annotation_type = args.annotation_type
     test = args.test
+    
+    # Process mapping options
+    exon_offset = args.exon_offset
+    intron_offset = args.intron_offset
     
     with open(input_file,'r') as f:
         for line in f:
@@ -270,7 +277,9 @@ def main(argv=None): # IGNORE:C0111
                                                 name="{}.{}".format(reps[i],'included'),
                                                 annotation=positive_annotation,
                                                 annotation_type=annotation_type,
-                                                output_file=output_file)
+                                                output_file=output_file,
+                                                exon_offset = exon_offset,
+                                                intron_offset = intron_offset)
                     
                             
                     exclusionClip = ClipWithInput(ReadDensity = rbp,
@@ -278,14 +287,18 @@ def main(argv=None): # IGNORE:C0111
                                                 name="{}.{}".format(reps[i],'excluded'),
                                                 annotation=negative_annotation,
                                                 annotation_type=annotation_type,
-                                                output_file=output_file)
+                                                output_file=output_file,
+                                                exon_offset = exon_offset,
+                                                intron_offset = intron_offset)
                     
                     bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'background'),
                                                 annotation=bg_annotation,
                                                 annotation_type=annotation_type,
-                                                output_file=output_file)
+                                                output_file=output_file,
+                                                exon_offset = exon_offset,
+                                                intron_offset = intron_offset)
                     
                     
                     if(event == 'a3ss'):
@@ -332,8 +345,8 @@ def main(argv=None): # IGNORE:C0111
                         Plot.plot_se(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         """
                         inc, inc_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
-                        exc, exc_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
-                        bo, bo_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
+                        exc, exc_e = norm.remove_outliers(exclusionClip.matrix['feature'],confidence)
+                        bo, bo_e = norm.remove_outliers(bothClip.matrix['feature'],confidence)
                         inc_rmo = {'region1':inc}
                         exc_rmo = {'region1':exc}
                         bo_rmo = {'region1':bo}
