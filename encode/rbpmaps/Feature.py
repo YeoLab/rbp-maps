@@ -46,6 +46,8 @@ class SkippedExonFeature():
             
             chrom, start, stop, strand = down.split(':')
             down = bt.create_interval_from_list([chrom, int(start)-1, stop, '0', '0', strand])
+        elif(self.source == 'hta2_0'):
+            pass
         elif(self.source == 'xintao'):
             pass
         elif(self.source == 'eric'):
@@ -182,7 +184,7 @@ upstream, splice1, splice2 = F.get_bedtools()
 print(upstream)
 print(splice1)
 print(splice2)
-"""
+
 annotation = 'CCT8_ENSG00000156261.8;RI:chr21:30434649:30434736-30434811:30434896:-'
 print(annotation)
 F = RIFeature(annotation,'xintao')
@@ -195,3 +197,4 @@ F = RIFeature(annotation,'xintao')
 upstream, downstream = F.get_bedtools()
 print(upstream)
 print(downstream)
+"""

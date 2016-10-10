@@ -53,7 +53,24 @@ def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both,
     plt.clf()
     plt.cla()
     plt.close()
+
+def plot_bed(up, down, both, 
+             uperr, downerr,
+             title, output_file):
+    up_a = {}
+    down_a = {}
+    both_a = {}
+    uperr_a = {}
+    downerr_a = {}
     
+    up_a['region1'] = np.asarray(up['region1'])
+    down_a['region1'] = np.asarray(down['region1'])
+    both_a['region1'] = np.asarray(both['region1'])
+    uperr_a['region1'] = np.asarray(uperr['region1'])
+    downerr_a['region1'] = np.asarray(downerr['region1'])
+    
+    single_frame_with_up_down_events_error(up_a, down_a, both_a, 
+                                           uperr_a, downerr_a, title, output_file)
 def single_frame_with_up_down_events_error(up, down, both,
                                            uperr, downerr, 
                                            title, output_file,
@@ -161,7 +178,7 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel("Mean Read Density")
-        ax.set_xticklabels(range(-50,351,50),rotation=90)
+        ax.set_xticklabels(range(-50,51,50),rotation=90)
         ax.axvline(x=50,linestyle=':',alpha=0.5)
         
         sns.set_style({'ytick.major.size':0})
@@ -179,8 +196,8 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
-        ax.set_xticklabels(range(-300,51,50),rotation=90)
-        ax.axvline(x=300,linestyle=':',alpha=0.5)
+        ax.set_xticklabels(range(-50,51,50),rotation=90)
+        ax.axvline(x=50,linestyle=':',alpha=0.5)
 
         ax.legend()
         plt.suptitle(title,y=1.03)
@@ -573,6 +590,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     b = {}
     ie = {}
     ee = {}
+    
     i['three_upstream'] = np.array(inclusion['region1'][:350])
     i['five_alt1'] = np.array(inclusion['region1'][350:700])
     i['five_alt2'] = np.array(inclusion['region1'][700:])

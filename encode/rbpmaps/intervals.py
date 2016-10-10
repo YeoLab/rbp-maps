@@ -91,23 +91,23 @@ def five_prime_site(rbp,                # type: ReadDensity
         trunc: if trunc is True, then consider instances where 
             exon_offset > length of the exon.
     Returns: 
-        left_pad: if the desired wiggle length is X but the returned wiggle 
+        fivep_pad: if the desired wiggle length is X but the returned wiggle 
             does not span the entire length, return N where N is the number
             of upstream positions that will need to be filled for len(wiggle)=X.
             E.G. exon_offset+intron_offset = 10.
-                left_pad = 3: NNN1111111
+                fivep_pad = 3: NNN1111111
         wiggle: list of densities given a region.
-        right_pad: if the desired wiggle length is X but the returned wiggle 
+        threep_pad: if the desired wiggle length is X but the returned wiggle 
             does not span the entire length, return N where N is the number
             of downstream positions that will need to be filled for len(wiggle)=X.
             E.G. exon_offset+intron_offset = 10.
-                right_pad = 3: 1111111NNN
+                threep_pad = 3: 1111111NNN
     '''
     exon = exon_offset
     intron = intron_offset
     
-    left_pad = 0
-    right_pad = 0
+    fivep_pad = 0
+    threep_pad = 0
     # [    ]-----|-----[2  |  |  8]-----|----[10   15]
     if interval.strand == "+":
         if(trunc == True):
@@ -115,12 +115,12 @@ def five_prime_site(rbp,                # type: ReadDensity
                 # middle = int((interval.end + interval.start)/2)
                 # exon_offset = interval.end - middle
                 exon_offset = interval.end - interval.start
-                right_pad = exon - exon_offset
+                threep_pad = exon - exon_offset
             if interval.start - intron_offset < upstream_interval.end:
                 intron_offset = interval.start - upstream_interval.end
                 # middle = int((interval.start + upstream_interval.end)/2)
                 # intron_offset = interval.start - middle
-                left_pad = intron - intron_offset
+                fivep_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, (interval.start - intron_offset), (interval.start + exon_offset), interval.strand)
     elif interval.strand == "-":
         if(trunc == True):
@@ -128,15 +128,15 @@ def five_prime_site(rbp,                # type: ReadDensity
                 # middle = int((interval.start + interval.end)/2)
                 # exon_offset = interval.end - middle
                 exon_offset = interval.end - interval.start
-                left_pad = exon - exon_offset
+                threep_pad = exon - exon_offset
             if interval.end + intron_offset > upstream_interval.start:
                 intron_offset = upstream_interval.start - interval.end
                 # middle = int((upstream_interval.start + interval.end)/2)
                 # intron_offset = upstream_interval.start - middle
-                right_pad = intron - intron_offset
+                fivep_pad = intron - intron_offset
                 
         wiggle = rbp.values(interval.chrom, (interval.end - exon_offset), (interval.end + intron_offset), interval.strand)
-    return left_pad, wiggle, right_pad
+    return fivep_pad, wiggle, threep_pad
 
 def three_prime_site(rbp,                   # type: ReadDensity
                      downstream_interval,   # type: BedTools.Interval
@@ -163,36 +163,36 @@ def three_prime_site(rbp,                   # type: ReadDensity
         trunc: if trunc is True, then consider instances where 
             exon_offset > length of the exon.
     Returns: 
-        left_pad: if the desired wiggle length is X but the returned wiggle 
+        fivep_pad: if the desired wiggle length is X but the returned wiggle 
             does not span the entire length, return N where N is the number
             of upstream positions that will need to be filled for len(wiggle)=X.
             E.G. exon_offset+intron_offset = 10.
-                left_pad = 3: NNN1111111
+                fivep_pad = 3: NNN1111111
         wiggle: list of densities given a region.
-        right_pad: if the desired wiggle length is X but the returned wiggle 
+        threep_pad: if the desired wiggle length is X but the returned wiggle 
             does not span the entire length, return N where N is the number
             of downstream positions that will need to be filled for len(wiggle)=X.
             E.G. exon_offset+intron_offset = 10.
-                right_pad = 3: 1111111NNN
+                threep_pad = 3: 1111111NNN
     '''
     exon = exon_offset
     intron = intron_offset
     
-    left_pad = 0
-    right_pad = 0
+    fivep_pad = 0
+    threep_pad = 0
     
     if interval.strand == "+":
         if(trunc == True):
-            if interval.end + intron_offset > downstream_interval.start:
-                # middle = int((interval.end + downstream_interval.start)/2)
-                # intron_offset = downstream_interval.start - middle
-                intron_offset = downstream_interval.start - interval.end
-                right_pad = intron - intron_offset
             if interval.end - exon_offset < interval.start:
                 # middle = int((interval.start + interval.end)/2)
                 # exon_offset = interval.end - middle
                 exon_offset = interval.end - interval.start
-                left_pad = exon - exon_offset
+                fivep_pad = exon - exon_offset
+            if interval.end + intron_offset > downstream_interval.start:
+                # middle = int((interval.end + downstream_interval.start)/2)
+                # intron_offset = downstream_interval.start - middle
+                intron_offset = downstream_interval.start - interval.end
+                threep_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, interval.end - exon_offset, interval.end + intron_offset, interval.strand)
     elif interval.strand == "-":
         if(trunc == True):
@@ -200,12 +200,11 @@ def three_prime_site(rbp,                   # type: ReadDensity
                 # middle = int((interval.start + interval.end)/2)
                 # exon_offset = interval.end - middle
                 exon_offset = interval.end - interval.start
-                right_pad = exon - exon_offset
-                
+                fivep_pad = exon - exon_offset
             if interval.start - intron_offset < downstream_interval.end:
                 # middle = int((interval.start + downstream_interval.end)/2)
                 # intron_offset = interval.start - middle
                 intron_offset = interval.start - downstream_interval.end
-                left_pad = intron - intron_offset
+                threep_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, interval.start - intron_offset, interval.start + exon_offset, interval.strand)
-    return left_pad, wiggle, right_pad
+    return fivep_pad, wiggle, threep_pad

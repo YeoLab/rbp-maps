@@ -74,7 +74,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, cdsstart, cdsend, txstart, txend]")
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
     parser.add_argument("-t", "--test", dest="test", help="for testing purposes...", default=False, action='store_true')
-    parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao)", default='miso')
+    parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao, bed)", default='miso')
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     
@@ -114,42 +114,72 @@ def main(argv=None): # IGNORE:C0111
     with open(input_file,'r') as f:
         for line in f:
             try:  
+                reps = []
+                reppos = []
+                repneg = []
                 line = line.split('\t')
-                
-                uid = line[0].strip() # changed
-                rbp_name = line[1]
-                cell_line = line[2]
-                rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
-                rep2 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
-                inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
-                
-                assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
-                if(args.flipped):
-                    rep1neg = rep1.replace('.bam','.norm.pos.bw')
-                    rep1pos = rep1.replace('.bam','.norm.neg.bw')
+                if(len(line) == 6):
+                    uid = line[0].strip() # changed
+                    rbp_name = line[1]
+                    cell_line = line[2]
+                    rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
+                    rep2 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
+                    inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                     
-                    rep2neg = rep2.replace('.bam','.norm.pos.bw')
-                    rep2pos = rep2.replace('.bam','.norm.neg.bw')
+                    assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
+                    if(args.flipped):
+                        rep1neg = rep1.replace('.bam','.norm.pos.bw')
+                        rep1pos = rep1.replace('.bam','.norm.neg.bw')
+                        
+                        rep2neg = rep2.replace('.bam','.norm.pos.bw')
+                        rep2pos = rep2.replace('.bam','.norm.neg.bw')
+                        
+                        inputneg = inp.replace('.bam','.norm.pos.bw')
+                        inputpos = inp.replace('.bam','.norm.neg.bw')
+                    else:
+                        rep1neg = rep1.replace('.bam','.norm.pos.bw')
+                        rep1pos = rep1.replace('.bam','.norm.neg.bw')
+                        
+                        rep2neg = rep2.replace('.bam','.norm.pos.bw')
+                        rep2pos = rep2.replace('.bam','.norm.neg.bw')
+                        
+                        inputneg = inp.replace('.bam','.norm.pos.bw')
+                        inputpos = inp.replace('.bam','.norm.neg.bw')
+                        
+                    my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
+                    my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')
                     
-                    inputneg = inp.replace('.bam','.norm.pos.bw')
-                    inputpos = inp.replace('.bam','.norm.neg.bw')
+                    reps = [my_rep1_name, my_rep2_name]
+                    reppos = [rep1pos, rep2pos]
+                    repneg = [rep1neg, rep2neg]
+                elif(len(line) == 5):
+                    uid = line[0].strip() # changed
+                    rbp_name = line[1]
+                    cell_line = line[2]
+                    rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
+                    inp = line[4].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
+                    
+                    if(args.flipped):
+                        rep1neg = rep1.replace('.bam','.norm.pos.bw')
+                        rep1pos = rep1.replace('.bam','.norm.neg.bw')
+
+                        inputneg = inp.replace('.bam','.norm.pos.bw')
+                        inputpos = inp.replace('.bam','.norm.neg.bw')
+                    else:
+                        rep1neg = rep1.replace('.bam','.norm.neg.bw')
+                        rep1pos = rep1.replace('.bam','.norm.pos.bw')
+
+                        inputneg = inp.replace('.bam','.norm.neg.bw')
+                        inputpos = inp.replace('.bam','.norm.pos.bw')
+                        
+                    my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
+                    
+                    reps = [my_rep1_name]
+                    reppos = [rep1pos]
+                    repneg = [rep1neg]
                 else:
-                    rep1neg = rep1.replace('.bam','.norm.pos.bw')
-                    rep1pos = rep1.replace('.bam','.norm.neg.bw')
-                    
-                    rep2neg = rep2.replace('.bam','.norm.pos.bw')
-                    rep2pos = rep2.replace('.bam','.norm.neg.bw')
-                    
-                    inputneg = inp.replace('.bam','.norm.pos.bw')
-                    inputpos = inp.replace('.bam','.norm.neg.bw')
-                    
-                my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
-                my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')
-                
-                reps = [my_rep1_name, my_rep2_name]
-                reppos = [rep1pos, rep2pos]
-                repneg = [rep1neg, rep2neg]
-                
+                    print("malformed manifest line. at: {}".format(line[0]))
+                    sys.exit(1)
                 for i in range(0,len(reps)):
                     
                     
@@ -317,12 +347,15 @@ def main(argv=None): # IGNORE:C0111
                         inclusionClip.create_ri_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_ri_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_ri_matrices_one_region(label='all',normalize=False)
+                    elif(event == 'bed'):
+                        inclusionClip.create_matrices(label='included', is_scaled = False)
+                        exclusionClip.create_matrices(label='excluded', is_scaled = False)
+                        bothClip.create_matrices(label='all', is_scaled = False)
                     else:
                         print('invalid event (choose a3ss, a5ss, se, ri)')
                         sys.exit(1)
                     for n in range(0,len(normfuncs)):
-                        
-                        
+
                         inclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
                         exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
                         bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
@@ -379,8 +412,11 @@ def main(argv=None): # IGNORE:C0111
                             Plot.plot_se(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         elif(event == 'ri'):
                             Plot.plot_ri(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                        elif(event == 'bed'):
+                            print("starting to plot...")
+                            Plot.plot_bed(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         else:
-                            print("invalid event (choose a3ss, a5ss, se, ri)")
+                            print("invalid event (choose a3ss, a5ss, se, ri, bed)")
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

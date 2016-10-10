@@ -12,8 +12,6 @@ import Feature
 
 def create_matrix(annotation, density, left = 300, right = 300, is_scaled = True):
     print("creating the matrix for {}".format(density.get_name()))
-    print(left)
-    print(right)
     # print("is this going to be scaled? {}".format(is_scaled))
     count = 0
     densities = {}
@@ -347,8 +345,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                         upstream_interval,
                                                                         exon_offset,
                                                                         intron_offset)
-                    
                 wiggle = pd.Series(wiggle)
+                # print("downstream interval = ",interval)
+                # print(" interval = ", upstream_interval)
+                
+                # print(event, wiggle)
                 # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
         

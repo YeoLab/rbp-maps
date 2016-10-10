@@ -16,7 +16,7 @@ class Map():
                  name, is_scaled = False, 
                  annotation = None,
                  annotation_type = "miso",
-                 left = 300, right = 300,
+                 left = 0, right = 0,
                  exon_offset = 50, intron_offset = 300):
         '''
         Constructor
@@ -50,7 +50,7 @@ class Clip(Map):
                  annotation,
                  annotation_type = "miso",
                  is_scaled = False,
-                 left = 300, right = 300,
+                 left = 0, right = 0,
                  exon_offset = 50, intron_offset = 300):
         '''
         Constructor
@@ -113,7 +113,7 @@ class ClipWithInput(Map):
                  name, is_scaled = False, 
                  annotation = None,
                  annotation_type = "miso",
-                 left = 300, right = 300,
+                 left = 0, right = 0,
                  exon_offset = 50, intron_offset = 300):
         '''
         Constructor
@@ -144,26 +144,26 @@ class ClipWithInput(Map):
             
     def set_matrix(self, normfunc = norm.KLDivergence, min_density_sum = 0, label = ""):
         for key in self.ip_raw_matrix:
-            # print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
+            print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
             self.matrix[key] = normfunc(self.ip_raw_matrix[key],self.input_raw_matrix[key], min_density_sum)
             self.matrix[key].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, key))
-            # print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
-    
-    def create_matrices(self,prefix = 'feature', is_scaled=True):
-        self.ip_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
+            print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
+            
+    def create_matrices(self, label='', is_scaled=True):
+        self.ip_raw_matrix['feature'] = mtx.create_matrix(annotation = self.annotation, 
                                                        density = self.ip, 
                                                        left = self.left, 
                                                        right = self.right, 
                                                        is_scaled = is_scaled)
         
-        self.input_raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
+        self.input_raw_matrix['feature'] = mtx.create_matrix(annotation = self.annotation, 
                                                           density = self.inp, 
                                                           left = self.left, 
                                                           right = self.right, 
                                                           is_scaled = is_scaled)
-        self.input_raw_matrix[prefix].to_csv("{}.input_raw_density_matrix.csv".format(self.output_base))
-        self.ip_raw_matrix[prefix].to_csv("{}.ip_raw_density_matrix.csv".format(self.output_base))
-
+        self.input_raw_matrix['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
+        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}_raw_density_matrix.csv".format(self.output_base,label))
+        print('FINISH CREATE MATRIX')
     def create_a3ss_matrices(self, normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         
