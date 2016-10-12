@@ -327,7 +327,15 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
                      max(inclusion['region2']),max(exclusion['region2']),max(both['region2']),
                      max(inclusion['region3']),max(exclusion['region3']),max(both['region3']),
                      max(inclusion['region4']),max(exclusion['region4']),max(both['region4']))
-        
+    
+    min_height = min(min(inclusion['region1']),min(exclusion['region1']),
+                     min(inclusion['region2']),min(exclusion['region2']),
+                     min(inclusion['region3']),min(exclusion['region3']),
+                     min(inclusion['region4']),min(exclusion['region4']))
+    max_height = max(max(inclusion['region1']),max(exclusion['region1']),
+                     max(inclusion['region2']),max(exclusion['region2']),
+                     max(inclusion['region3']),max(exclusion['region3']),
+                     max(inclusion['region4']),max(exclusion['region4']))
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
         
         sns.set_style({'xtick.major.size':5,
@@ -340,7 +348,7 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
         ax = fig.add_subplot(1,4,1)
         ax.plot(inclusion['region1'], linewidth=linewidth, alpha=.8, color = color1)
         ax.plot(exclusion['region1'], linewidth=linewidth, alpha=.8, color = color2)
-        ax.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
+        # ax.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
         
         ax.plot((inclusion['region1']+inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
         ax.plot((inclusion['region1']-inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
@@ -358,7 +366,7 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
         ax = fig.add_subplot(1,4,2)
         ax.plot(inclusion['region2'], linewidth=linewidth, alpha=.8, color = color1)
         ax.plot(exclusion['region2'], linewidth=linewidth, alpha=.8, color = color2)
-        ax.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
+        # ax.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
         
         ax.plot((inclusion['region2']+inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
         ax.plot((inclusion['region2']-inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
@@ -374,7 +382,8 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
         ax = fig.add_subplot(1,4,3)
         ax.plot(inclusion['region3'], linewidth=linewidth, alpha=.8, color = color1)
         ax.plot(exclusion['region3'], linewidth=linewidth, alpha=.8, color = color2)
-        ax.plot(both['region3'], linewidth=linewidth, alpha=.3, color = color3)
+        # ax.plot(both['region3'], linewidth=linewidth, alpha=.3, color = color3)
+        
         ax.plot((inclusion['region3']+inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
         ax.plot((inclusion['region3']-inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
         ax.plot((exclusion['region3']+exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
@@ -389,7 +398,8 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
         ax = fig.add_subplot(1,4,4)
         ax.plot(inclusion['region4'], linewidth=linewidth, alpha=.8, color = color1, label="incl in kd")
         ax.plot(exclusion['region4'], linewidth=linewidth, alpha=.8, color = color2, label="excl in kd")
-        ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
+        # ax.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
+        
         ax.plot((inclusion['region4']+inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
         ax.plot((inclusion['region4']-inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
         ax.plot((exclusion['region4']+exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
