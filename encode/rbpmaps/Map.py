@@ -169,6 +169,7 @@ class ClipWithInput(Map):
         
         keys = ['three_upstream','five_alt1','three_alt1','five_alt2']
         self.ip_raw_matrix = dict(zip(keys,mtx.create_a3ss_matrix(annotation = self.annotation, 
+                                                                  annotation_type = self.annotation_type,
                                                                   density = self.ip, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
@@ -176,10 +177,11 @@ class ClipWithInput(Map):
         print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix = dict(zip(keys,mtx.create_a3ss_matrix(annotation = self.annotation, 
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
+                                                                     annotation_type = self.annotation_type,
+                                                                     density = self.inp, 
+                                                                     exon_offset = self.exon_offset, 
+                                                                     intron_offset = self.intron_offset, 
+                                                                     is_scaled = self.is_scaled)))
         print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         for key in self.ip_raw_matrix:
             self.ip_raw_matrix[key].to_csv("{}.ip.{}.a3ss.raw_density_matrix.csv".format(self.output_base, key))
@@ -192,6 +194,7 @@ class ClipWithInput(Map):
         print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         
         self.ip_raw_matrix['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
+                                                               annotation_type = self.annotation_type,
                                                                density = self.ip, 
                                                                exon_offset = self.exon_offset, 
                                                                intron_offset = self.intron_offset, 
@@ -200,6 +203,7 @@ class ClipWithInput(Map):
         print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
+                                                                  annotation_type = self.annotation_type,
                                                                   density = self.inp, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
@@ -215,6 +219,7 @@ class ClipWithInput(Map):
         print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
         
         self.ip_raw_matrix['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
+                                                               annotation_type = self.annotation_type,
                                                                density = self.ip, 
                                                                exon_offset = self.exon_offset, 
                                                                intron_offset = self.intron_offset, 
@@ -223,6 +228,7 @@ class ClipWithInput(Map):
         print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
         print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
+                                                                  annotation_type = self.annotation_type,
                                                                   density = self.inp, 
                                                                   exon_offset = self.exon_offset, 
                                                                   intron_offset = self.intron_offset, 
@@ -240,17 +246,19 @@ class ClipWithInput(Map):
         
         keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
         self.ip_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
+                                                                annotation_type = self.annotation_type,
+                                                                density = self.ip, 
+                                                                exon_offset = self.exon_offset, 
+                                                                intron_offset = self.intron_offset, 
+                                                                is_scaled = self.is_scaled)))
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))
+                                                                   annotation_type = self.annotation_type,
+                                                                   density = self.inp, 
+                                                                   exon_offset = self.exon_offset, 
+                                                                   intron_offset = self.intron_offset, 
+                                                                   is_scaled = self.is_scaled)))
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         for key in self.ip_raw_matrix:
             self.ip_raw_matrix[key].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, key))
@@ -263,19 +271,21 @@ class ClipWithInput(Map):
         # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         # print("ANNOTATION: {}".format(self.annotation))
         self.ip_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
+                                                             annotation_type = self.annotation_type,
+                                                             density = self.ip, 
+                                                             exon_offset = self.exon_offset, 
+                                                             intron_offset = self.intron_offset, 
+                                                             is_scaled = self.is_scaled,
+                                                             combine_regions = True)
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
+                                                                annotation_type = self.annotation_type,
+                                                                density = self.inp, 
+                                                                exon_offset = self.exon_offset, 
+                                                                intron_offset = self.intron_offset, 
+                                                                is_scaled = self.is_scaled,
+                                                                combine_regions = True)
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
@@ -287,19 +297,21 @@ class ClipWithInput(Map):
         # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         # print("ANNOTATION: {}".format(self.annotation))
         self.ip_raw_matrix['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
+                                                             annotation_type = self.annotation_type,
+                                                             density = self.ip, 
+                                                             exon_offset = self.exon_offset, 
+                                                             intron_offset = self.intron_offset, 
+                                                             is_scaled = self.is_scaled,
+                                                             combine_regions = True)
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.input_raw_matrix['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
+                                                                annotation_type = self.annotation_type,
+                                                                density = self.inp, 
+                                                                exon_offset = self.exon_offset, 
+                                                                intron_offset = self.intron_offset, 
+                                                                is_scaled = self.is_scaled,
+                                                                combine_regions = True)
         # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
         self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))

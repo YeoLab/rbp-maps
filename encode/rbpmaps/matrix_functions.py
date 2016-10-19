@@ -324,12 +324,13 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
     three_skipped = {}
     five_downstream = {}
     
-            
     with open(annotation) as f:
+        # print(annotation_type)
         # f.next() # for title
         for line in f:
-            if not line.startswith('#'):
-                event = line.rstrip().split('\t')[0]
+            if not line.startswith('#') and not line.startswith('ID'):
+                # event = line.rstrip().split('\t')[0]
+                event = line
                 upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,annotation_type).get_bedtools()
                 
                 """ Deprecated
@@ -373,7 +374,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle)
                 
-                    # print("length of 5p skipped: {}".format(len(wiggle)))
+                # print("length of 5p skipped: {}".format(len(wiggle)))
                 # else:
                 #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 five_skipped[event] = wiggle

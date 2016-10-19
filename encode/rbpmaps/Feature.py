@@ -36,7 +36,8 @@ class SkippedExonFeature():
         self.annotation = annotation.rstrip()
     def get_bedtools(self):
         if(self.source == 'miso'):
-            up, se, down = self.annotation.split('@')
+            event = self.annotation.split('\t')[0]
+            up, se, down = event.split('@')
             
             chrom, start, stop, strand = up.split(':')
             up = bt.create_interval_from_list([chrom, int(start)-1, stop, '0', '0', strand])
@@ -71,6 +72,26 @@ class SkippedExonFeature():
             elif(strand == '-'):
                 up = bt.create_interval_from_list([chrom, downstream_es, downstream_ee, '0', '0', strand])
                 down = bt.create_interval_from_list([chrom, upstream_es, upstream_ee, '0', '0', strand])
+        elif(self.source == 'rmats'):
+            id, GeneID, geneSymbol, chrom, strand, \
+            exonStart_0base, exonEnd, \
+            upstreamES, upstreamEE, \
+            downstreamES, downstreamEE, \
+            ID1, IJC_SAMPLE_1, SJC_SAMPLE_1, \
+            IJC_SAMPLE_2, SJC_SAMPLE_2, \
+            IncFormLen, SkipFormLen, PValue, \
+            FDR, IncLevel1, IncLevel2, IncLevelDifference = self.annotation.split('\t')
+            
+            se = bt.create_interval_from_list([chrom, exonStart_0base, exonEnd, '0', '0', strand])
+            if(strand == '+'):
+                up = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
+                down = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
+            elif(strand == '-'):
+                down = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
+                up = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
+            else:
+                print("Warning, strand not correct!")
+                return -1
         return up, se, down
 
 class A5ssFeature():
@@ -79,7 +100,8 @@ class A5ssFeature():
         self.annotation = annotation.rstrip()
     def get_bedtools(self):
         if(self.source == 'miso'):
-            alt, downstream = self.annotation.split('@')
+            event = self.annotation.split('\t')[0]
+            alt, downstream = event.split('@')
             chrom, start, end, strand = alt.split(':')
             end1, end2 = end.split('|')
             if(strand == '+'):
@@ -90,6 +112,21 @@ class A5ssFeature():
                 splice2 = bt.create_interval_from_list([chrom,int(end1)-1,start,'0','0',strand]) # middle
             chrom, start, end, strand = downstream.split(':')
             downstream = bt.create_interval_from_list([chrom,int(start)-1,end,'0','0',strand])
+        elif(self.source == 'rmats'):
+            ID, GeneID, geneSymbol, chrom, strand, \
+            longExonStart_0base, longExonEnd, \
+            shortES, shortEE, \
+            flankingES, flankingEE, \
+            ID1, IJC_SAMPLE_1, SJC_SAMPLE_1, \
+            IJC_SAMPLE_2, SJC_SAMPLE_2, \
+            IncFormLen, SkipFormLen, \
+            PValue, FDR, \
+            IncLevel1, IncLevel2, IncLevelDifference = self.annotation.split('\t')
+            
+            downstream = bt.create_interval_from_list([chrom, flankingES, flankingEE, '0', '0', strand])
+            splice1 = bt.create_interval_from_list([chrom, longExonStart_0base, longExonEnd, '0', '0', strand])
+            splice2 = bt.create_interval_from_list([chrom, shortES, shortEE, '0', '0', strand])
+            
         return splice1, splice2, downstream
     
 class A3ssFeature():
@@ -112,7 +149,8 @@ class A3ssFeature():
         [splice2]---------------------[upstream exon] (-)
         """
         if(self.source == 'miso'):
-            upstream, alt = self.annotation.split('@')
+            event = self.annotation.split('\t')[0]
+            upstream, alt = event.split('@')
             chrom, start, end, strand = upstream.split(':')
             upstream = bt.create_interval_from_list([chrom,int(start)-1,end,'0','0',strand])
             
@@ -125,34 +163,18 @@ class A3ssFeature():
             elif(strand == '-'):
                 splice1 = bt.create_interval_from_list([chrom,int(end)-1,start2,'0','0',strand])
                 splice2 = bt.create_interval_from_list([chrom,int(end)-1,start1,'0','0',strand])
-        elif(self.source == 'eric'):
-            xintao, eric1, eric2 = self.annotation.split('||')
-            print(xintao, eric1, eric2)
-            transcript, chrom, pos1, pos2, strand = xintao.split(':')
-                
-            upend, s1start = pos1.split('-')
-            upend, s2start = pos2.split('-')
-            print(eric1, eric2)
-            if(strand == '+'):
-                if(eric1 == 'Not_found'):
-                    print("not found 1")
-                    upstream = bt.create_interval_from_list([chrom, 1, upend, '0', '0', strand])
-                else:
-                    transcript, upchrom, uppos, upstrand = eric1.split(':')
-                    upstart, upend = uppos.split('-')
-                    upstream = bt.create_interval_from_list([upchrom, upstart, upend, '0', '0', upstrand])
-                    
-                if(eric2 == 'Not_found'):
-                    splice1 = bt.create_interval_from_list([chrom, s1start, 251000000, '0', '0', strand])
-                    splice2 = bt.create_interval_from_list([chrom, s2start, 251000000, '0', '0', strand])
-                else:
-                    transcript, dnchrom, dnpos, strand = eric2.split(':')
-                    s2start, end = dnpos.split('-')
-                    splice1 = bt.create_interval_from_list([dnchrom, s1start, end, '0', '0', strand])
-                    splice2 = bt.create_interval_from_list([chrom, s2start, end, '0', '0', strand])
-            elif(strand == '-'):
-                pass
-                
+        elif(self.source == 'rmats'):
+            ID, GeneID, geneSymbol, chrom, strand, \
+            longExonStart_0base, longExonEnd, \
+            shortES, shortEE, \
+            flankingES, flankingEE, \
+            ID1, IJC_SAMPLE_1, SJC_SAMPLE_1, \
+            IJC_SAMPLE_2, SJC_SAMPLE_2, IncFormLen, SkipFormLen, \
+            PValue, FDR, IncLevel1, IncLevel2, IncLevelDifference = self.annotation.split('\t')
+            
+            upstream = bt.create_interval_from_list([chrom, flankingES, flankingEE, '0', '0', strand])
+            splice1 = bt.create_interval_from_list([chrom, longExonStart_0base, longExonEnd, '0', '0', strand])
+            splice2 = bt.create_interval_from_list([chrom, shortES, shortEE, '0', '0', strand])
         return upstream, splice1, splice2
 
 
@@ -185,6 +207,22 @@ class RIFeature():
                 downstream_end = region3
             upstream = bt.create_interval_from_list([chrom,upstream_start,upstream_end,'0','0',strand])
             downstream = bt.create_interval_from_list([chrom,downstream_start,downstream_end,'0','0',strand]) 
+        elif(self.source == 'rmats'):
+            ID, GeneID, geneSymbol, chrom, strand, \
+            riExonStart_0base, riExonEnd, \
+            upstreamES, upstreamEE, \
+            downstreamES, downstreamEE, \
+            ID1, IJC_SAMPLE_1, SJC_SAMPLE_1, \
+            IJC_SAMPLE_2, SJC_SAMPLE_2, \
+            IncFormLen, SkipFormLen, \
+            PValue, FDR, \
+            IncLevel1, IncLevel2, IncLevelDifference = self.annotation.split('\t')
+            if(strand == '+'):
+                upstream = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
+                downstream = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
+            elif(strand == '-'):
+                downstream = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
+                upstream = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
         return upstream, downstream
 """        
 annotation = 'chr3:53274267:53274364:-@chr3:53271813:53271836:-@chr3:53268999:53269190:-'
@@ -249,7 +287,7 @@ upstream, splice1, splice2 = F.get_bedtools()
 print(upstream)
 print(splice1)
 print(splice2)
-"""
+
 annotation = 'SLC26A6_ENSG00000225697.6;A3SS:chr3:48665379-48664540:48665379:48664485:-||Not_found||Not_found'
 print(annotation)
 F = A3ssFeature(annotation,'eric')
@@ -257,3 +295,4 @@ upstream, splice1, splice2 = F.get_bedtools()
 print(upstream)
 print(splice1)
 print(splice2)
+"""

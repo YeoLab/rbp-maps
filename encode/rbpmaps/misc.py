@@ -23,6 +23,9 @@ def create_bedtool(annotation):
 
 def create_bed_tool_from_miso_se(miso_annotation):
     """
+    Deprecated function
+    """
+    """
     takes a single miso annotation in the form of:
     
     chr3:53274267:53274364:-
