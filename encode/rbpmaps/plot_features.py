@@ -231,6 +231,11 @@ def main(argv=None): # IGNORE:C0111
                         inclusionClip.create_ri_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_ri_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_ri_matrices_one_region(label='all',normalize=False)
+                    elif(event == 'mxe'):
+                        inclusionClip.create_mxe_matrices_one_region(label='included',normalize=False)
+                        exclusionClip.create_mxe_matrices_one_region(label='excluded',normalize=False)
+                        bothClip.create_mxe_matrices_one_region(label='all',normalize=False)
+                        
                     elif(event == 'bed'):
                         inclusionClip.create_matrices(label='included', is_scaled = False)
                         exclusionClip.create_matrices(label='excluded', is_scaled = False)
@@ -281,6 +286,8 @@ def main(argv=None): # IGNORE:C0111
                             Plot.plot_se(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         elif(event == 'ri'):
                             Plot.plot_ri(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                        elif(event == 'mxe'):
+                            Plot.plot_mxe(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         elif(event == 'bed'):
                             print("starting to plot...")
                             Plot.plot_bed(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)

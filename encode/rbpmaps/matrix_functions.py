@@ -98,24 +98,128 @@ def create_matrix(annotation, density, left = 300, right = 300, is_scaled = True
     print("SUCCESS")
     return pd.DataFrame(densities).T
 
-def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="xintao"):
+def create_mxe_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="rmats"):
+    three_upstream = {}
+    three_up_mxe = {}
+    five_up_mxe = {}
+    three_down_mxe = {}
+    five_down_mxe = {}
+    five_downstream = {}
+    
+    with open(annotation) as f:
+        for line in f:
+            if not line.startswith('event_name') and not line.startswith('ID'):
+                event = line.rstrip() # .split('\t')[0]
+                upstream_interval, upstream_mxe_interval, \
+                downstream_mxe_interval, downstream_interval = Feature.MXEFeature(event, annotation_type).get_bedtools() 
+                
+                """three prime upstream region"""
+                left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
+                                                                        upstream_mxe_interval,
+                                                                        upstream_interval,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                    
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+        
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) 
+                
+                three_upstream[event] = wiggle
+                
+                """five prime site of mxe1 (upstream mxe) region"""
+                left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
+                                                                        upstream_interval,
+                                                                        upstream_mxe_interval,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle)
+                five_up_mxe[event] = wiggle
+                
+                """three prime site of mxe1 (upstream mxe) region"""
+                left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
+                                                                        downstream_mxe_interval,
+                                                                        upstream_mxe_interval,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                    
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+        
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) 
+                
+                three_up_mxe[event] = wiggle
+                
+                """five prime site of mxe2 (downstream mxe) region"""
+                left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
+                                                                        upstream_mxe_interval,
+                                                                        downstream_mxe_interval,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle)
+                five_down_mxe[event] = wiggle
+                
+                """three prime site of mxe2 (downstream mxe) region"""
+                left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
+                                                                        downstream_interval,
+                                                                        downstream_mxe_interval,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                    
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+        
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) 
+                
+                three_down_mxe[event] = wiggle
+                
+                
+                """five prime site of downstream region"""
+                left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
+                                                                        downstream_mxe_interval,
+                                                                        downstream_interval,
+                                                                        exon_offset,
+                                                                        intron_offset)
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) # convert all nans to 0
+
+                five_downstream[event] = wiggle
+    
+        three_upstream = pd.DataFrame(three_upstream).T
+        five_up_mxe = pd.DataFrame(five_up_mxe).T
+        three_up_mxe = pd.DataFrame(three_up_mxe).T
+        five_down_mxe = pd.DataFrame(five_down_mxe).T
+        three_down_mxe = pd.DataFrame(three_down_mxe).T
+        five_downstream = pd.DataFrame(five_downstream).T
+        if combine_regions == False:
+            return three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream
+        else:
+            ra = pd.concat([three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream],axis=1)
+            ra.columns = range(0,ra.shape[1])
+            return ra
+def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="rmats"):
     three_upstream = {}
     five_downstream = {}
             
     with open(annotation) as f:
         # f.next() # for title
         for line in f:
-            if not line.startswith('#'):
-                event = line.rstrip().split('\t')[0]
+            if not line.startswith('event_name') and not line.startswith('ID'):
+                event = line.rstrip() # .split('\t')[0]
                 upstream_interval, downstream_interval = Feature.RIFeature(event,annotation_type).get_bedtools()
-                
-                """ Deprecated
-                upstream, se, downstream = event.split('@')
-                
-                upstream_interval = misc.create_bed_tool_from_miso_se(upstream)
-                interval = misc.create_bed_tool_from_miso_se(se)
-                downstream_interval = misc.create_bed_tool_from_miso_se(downstream)
-                """
                 
                 """three prime upstream region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
@@ -152,7 +256,7 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 # else:
                 #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 five_downstream[event] = wiggle
-
+        
         three_upstream = pd.DataFrame(three_upstream).T
         five_downstream = pd.DataFrame(five_downstream).T
         if combine_regions == False:
@@ -163,7 +267,7 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             # print("TYPE OF MATRIX: {}".format(type(ra)))
             return ra
     
-def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type = "miso"):
+def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type = "rmats"):
     # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
     # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
     # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
@@ -182,8 +286,8 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     with open(annotation) as f:
         # f.next() # for title
         for line in f:
-            if not line.startswith('event_name'):
-                event = line.rstrip().split('\t')[0]
+            if not line.startswith('event_name') and not line.startswith('ID'):
+                event = line.rstrip() # .split('\t')[0]
                 alt1, alt2, downstream = Feature.A5ssFeature(event,annotation_type).get_bedtools()
                 """three prime alt1  (shorter) region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
@@ -242,7 +346,7 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             ra = pd.concat([three_alt1,three_alt2,five_downstream],axis=1)
             ra.columns = range(0,ra.shape[1])
             return ra      
-def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="miso"):
+def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
     """
     Three regions:
     """
@@ -255,8 +359,8 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     with open(annotation) as f:
         # f.next() # for title
         for line in f:
-            if not line.startswith('event_name'):
-                event = line.rstrip().split('\t')[0]
+            if not line.startswith('event_name') and not line.startswith('ID'):
+                event = line.rstrip() # .split('\t')[0]
                 
                 upstream, alt1, alt2 = Feature.A3ssFeature(event,annotation_type).get_bedtools()
                 # print('three prime site upstream')
@@ -317,20 +421,17 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             ra.columns = range(0,ra.shape[1])
             return ra                           
                         
-def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="miso"):
-    # print("creating se matrix for {} on {}".format(density.name,annotation))
+def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
     five_downstream = {}
     
     with open(annotation) as f:
-        # print(annotation_type)
-        # f.next() # for title
         for line in f:
-            if not line.startswith('#') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID'):
                 # event = line.rstrip().split('\t')[0]
-                event = line
+                event = line.rstrip()
                 upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,annotation_type).get_bedtools()
                 
                 """ Deprecated
@@ -347,19 +448,11 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                         exon_offset,
                                                                         intron_offset)
                 wiggle = pd.Series(wiggle)
-                # print("downstream interval = ",interval)
-                # print(" interval = ", upstream_interval)
-                
-                # print(event, wiggle)
-                # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
         
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) 
-                
-                    # print("length of 3p upstream: {}".format(len(wiggle)))
-                # else:
-                #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
+
                 three_upstream[event] = wiggle
                 """five prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
@@ -369,14 +462,9 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                         intron_offset)
                 
                 wiggle = pd.Series(wiggle)
-                # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle)
-                
-                # print("length of 5p skipped: {}".format(len(wiggle)))
-                # else:
-                #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 five_skipped[event] = wiggle
                 """three prime site of skipped region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
@@ -385,14 +473,9 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                          exon_offset,
                                                                          intron_offset)
                 wiggle = pd.Series(wiggle)
-                # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) #
-                
-                    # print("length of 3p skipped: {}".format(len(wiggle)))
-                # else:
-                #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 three_skipped[event] = wiggle
                 """five prime site of downstream region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
@@ -401,14 +484,9 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                         exon_offset,
                                                                         intron_offset)
                 wiggle = pd.Series(wiggle)
-                # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
-                
-                    # print("length of 5p downstream: {}".format(len(wiggle)))
-                # else:
-                #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 five_downstream[event] = wiggle
 
         three_upstream = pd.DataFrame(three_upstream).T
@@ -420,10 +498,8 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         else:
             ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
             ra.columns = range(0,ra.shape[1])
-            # print("TYPE OF MATRIX: {}".format(type(ra)))
             return ra
 
-# makes a raw count histogram of rbp for each position in each region
 def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exons, exon_overhang, intron_overhang):
     try:
         region_types = ["upstream_region_skipped_exon",

@@ -223,7 +223,44 @@ class RIFeature():
             elif(strand == '-'):
                 downstream = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
                 upstream = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
+            else:
+                print("strand not correct")
+                return -1
         return upstream, downstream
+class MXEFeature():
+    def __init__(self, annotation, source):
+        self.source = source
+        self.annotation = annotation.rstrip()
+    def get_bedtools(self):
+        
+        if(self.source == 'rmats'):
+            """
+            1stExon describes the upstream mutually exclusive exon
+            2ndExon describes the downstream mutually excluxive exon
+            """
+            ID, GeneID, geneSymbol, chrom, strand, \
+            firstExonStart_0base, firstExonEnd, \
+            secondExonStart_0base, secondExonEnd, \
+            upstreamES, upstreamEE, \
+            downstreamES, downstreamEE, \
+            ID1, IJC_SAMPLE_1, SJC_SAMPLE_1, \
+            IJC_SAMPLE_2, SJC_SAMPLE_2, IncFormLen, SkipFormLen, \
+            PValue, FDR, IncLevel1, IncLevel2, IncLevelDifference = self.annotation.split('\t')
+            
+            if(strand == '+'):
+                upstream = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
+                downstream = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
+                up_mxe = bt.create_interval_from_list([chrom, firstExonStart_0base, firstExonEnd, '0', '0', strand])
+                down_mxe = bt.create_interval_from_list([chrom, secondExonStart_0base, secondExonEnd, '0', '0', strand])
+            elif(strand == '-'): # upstream/downstream is flipped for rmats
+                downstream = bt.create_interval_from_list([chrom, upstreamES, upstreamEE, '0', '0', strand])
+                upstream = bt.create_interval_from_list([chrom, downstreamES, downstreamEE, '0', '0', strand])
+                down_mxe = bt.create_interval_from_list([chrom, firstExonStart_0base, firstExonEnd, '0', '0', strand])
+                up_mxe = bt.create_interval_from_list([chrom, secondExonStart_0base, secondExonEnd, '0', '0', strand])
+            else:
+                print("Warning, strand not correct!")
+                return -1
+        return upstream, up_mxe, down_mxe, downstream
 """        
 annotation = 'chr3:53274267:53274364:-@chr3:53271813:53271836:-@chr3:53268999:53269190:-'
 print(annotation)
