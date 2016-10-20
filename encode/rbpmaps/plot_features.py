@@ -62,7 +62,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-m", "--manifest", dest="manifest",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
     parser.add_argument("-r", "--rmats", dest="rmats", help="annotation directory")
-    parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, cdsstart, cdsend, txstart, txend]")
+    parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, a3ss, a5ss, ri, mxe, cdsstart, cdsend, txstart, txend]")
     parser.add_argument("-t", "--test", dest="test", help="for testing purposes...", default=False, action='store_true')
     parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao, bed)", default='miso')
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
@@ -235,13 +235,12 @@ def main(argv=None): # IGNORE:C0111
                         inclusionClip.create_mxe_matrices_one_region(label='included',normalize=False)
                         exclusionClip.create_mxe_matrices_one_region(label='excluded',normalize=False)
                         bothClip.create_mxe_matrices_one_region(label='all',normalize=False)
-                        
-                    elif(event == 'bed'):
+                    elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
                         inclusionClip.create_matrices(label='included', is_scaled = False)
                         exclusionClip.create_matrices(label='excluded', is_scaled = False)
                         bothClip.create_matrices(label='all', is_scaled = False)
                     else:
-                        print('invalid event (choose a3ss, a5ss, se, ri, bed)')
+                        print('invalid event (choose a3ss, a5ss, se, ri, cdsstarts, cdsends, txstarts, txends)')
                         sys.exit(1)
                         
                     for n in range(0,len(normfuncs)):
@@ -258,19 +257,16 @@ def main(argv=None): # IGNORE:C0111
                         bo_rmo = {'region1':bo}
                         inc_e_rmo = {'region1':inc_e}
                         exc_e_rmo = {'region1':exc_e}
-                        
                         output_filename = os.path.join(outdir,reps[i])+".{}.{}.removeoutliers.svg".format(args.event,normfuncnames[n])
-                        
+
                         """
                         This is what is ultimately going to be plotted:
                         """
-                        
                         pd.Series(inc).to_csv(output_filename.replace('.svg','.included.txt'))
                         pd.Series(exc).to_csv(output_filename.replace('.svg','.excluded.txt'))
                         pd.Series(bo).to_csv(output_filename.replace('.svg','.both.txt'))
                         pd.Series(inc_e).to_csv(output_filename.replace('.svg','.included-err.txt'))
                         pd.Series(exc_e).to_csv(output_filename.replace('.svg','.excluded-err.txt'))
-                        
                         title = '{} ({}_0{}) {} events (keep={})\nincl (n={}), excl (n={})'.format(rbp_name,
                                                                                                    uid,
                                                                                                    i+1,
@@ -288,11 +284,11 @@ def main(argv=None): # IGNORE:C0111
                             Plot.plot_ri(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         elif(event == 'mxe'):
                             Plot.plot_mxe(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
-                        elif(event == 'bed'):
+                        elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
                             print("starting to plot...")
                             Plot.plot_bed(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
                         else:
-                            print("invalid event (choose a3ss, a5ss, se, ri, bed)")
+                            print("invalid event (choose a3ss, a5ss, se, ri, cdsstarts, cdsends, txstarts, txends)")
             except Exception as e:
                 print(e)
                 print("Failed to Process {}".format(line))

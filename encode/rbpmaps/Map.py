@@ -152,19 +152,21 @@ class ClipWithInput(Map):
     def create_matrices(self, label='', is_scaled=True):
         self.ip_raw_matrix['feature'] = mtx.create_matrix(annotation = self.annotation, 
                                                        density = self.ip, 
-                                                       left = self.left, 
-                                                       right = self.right, 
-                                                       is_scaled = is_scaled)
+                                                       upstream_offset = 0, 
+                                                       downstream_offset = 0, 
+                                                       is_scaled = False,
+                                                       annotation_type = self.annotation_type)
         
         self.input_raw_matrix['feature'] = mtx.create_matrix(annotation = self.annotation, 
-                                                          density = self.inp, 
-                                                          left = self.left, 
-                                                          right = self.right, 
-                                                          is_scaled = is_scaled)
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
+                                                       density = self.inp, 
+                                                       upstream_offset = 0, 
+                                                       downstream_offset = 0, 
+                                                       is_scaled = False,
+                                                       annotation_type = self.annotation_type)
+        
         self.ip_raw_matrix['feature'].to_csv("{}.ip.{}_raw_density_matrix.csv".format(self.output_base,label))
-        print('FINISH CREATE MATRIX')
-    
+        self.input_raw_matrix['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
+        
     def create_a3ss_matrices_one_region(self, label="", normalize=True, normfunc=norm.KLDivergence, min_density_sum=0):
         print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
         

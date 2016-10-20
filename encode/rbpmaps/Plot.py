@@ -153,18 +153,9 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
-        
-        linewidth = 2
-        errorbar_linewidth = 0.7
-        
+
         ax1 = fig.add_subplot(1,2,1)
-        ax1.plot(inclusion['region1'], linewidth=linewidth, alpha=.8, color = color1)
-        ax1.plot(exclusion['region1'], linewidth=linewidth, alpha=.8, color = color2)
-        ax1.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
-        ax1.plot((inclusion['region1']+inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((inclusion['region1']-inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((exclusion['region1']+exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax1.plot((exclusion['region1']-exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,51,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
@@ -172,20 +163,13 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,2,2, sharey=ax1)
-        ax2.plot(inclusion['region2'], linewidth=linewidth, alpha=.8, color = color1)
-        ax2.plot(exclusion['region2'], linewidth=linewidth, alpha=.8, color = color2)
-        ax2.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
-        ax2.plot((inclusion['region2']+inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((inclusion['region2']-inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((exclusion['region2']+exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax2.plot((exclusion['region2']-exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        
+        plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax2, left=True)
         ax2.set_yticklabels([])
         ax2.set_xticklabels(range(-50,51,50),rotation=90)
         ax2.axvline(x=50,linestyle=':',alpha=0.5)
 
-        ax1.legend()
+        ax2.legend()
         plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()
@@ -210,7 +194,6 @@ def three_frame(region1, region2, region3,
             
         ax = fig.add_subplot(1,4,2)
         ax.plot(region2, linewidth=linewidth, alpha=.7, color = color)
-            
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
@@ -269,7 +252,27 @@ def four_frame(region1, region2, region3, region4,
     plt.cla()
     plt.close()
 
-
+def plot_err(ax, region, inclusion, exclusion, both, 
+             inclusion_err, exclusion_err,
+             color1, color2, color3, 
+             linewidth=2, errorbar_linewidth=0.7):
+    ax.plot(both[region], linewidth=linewidth, 
+            alpha=.5, color = color3, label = 'all events')
+    ax.plot(inclusion[region], linewidth=linewidth, 
+            alpha=.8, color = color1, label = 'included in KD')
+    ax.plot(exclusion[region], linewidth=linewidth, 
+            alpha=.8, color = color2, label = 'excluded in KD')
+    
+    
+    ax.plot((inclusion[region]+inclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+    ax.plot((inclusion[region]-inclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
+    ax.plot((exclusion[region]+exclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+    ax.plot((exclusion[region]-exclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+    
 def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, both,
                                                           inclusion_err, exclusion_err,
                                                           title, output_file, 
@@ -297,17 +300,9 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
-        linewidth = 2
-        errorbar_linewidth = 0.7
         
         ax1 = fig.add_subplot(1,4,1)
-        ax1.plot(inclusion['region1'], linewidth=linewidth, alpha=.8, color = color1)
-        ax1.plot(exclusion['region1'], linewidth=linewidth, alpha=.8, color = color2)
-        ax1.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
-        ax1.plot((inclusion['region1']+inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((inclusion['region1']-inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((exclusion['region1']+exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax1.plot((exclusion['region1']-exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
@@ -315,45 +310,27 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,4,2,sharey=ax1)
-        ax2.plot(inclusion['region2'], linewidth=linewidth, alpha=.8, color = color1)
-        ax2.plot(exclusion['region2'], linewidth=linewidth, alpha=.8, color = color2)
-        ax2.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
-        ax2.plot((inclusion['region2']+inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((inclusion['region2']-inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((exclusion['region2']+exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax2.plot((exclusion['region2']-exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax2.set_yticklabels([])
         ax2.set_xticklabels(range(-300,51,50),rotation=90)
         ax2.axvline(x=300,linestyle=':',alpha=0.5)
         sns.despine(ax=ax2, left=True)
         
         ax3 = fig.add_subplot(1,4,3,sharey=ax1)
-        ax3.plot(inclusion['region3'], linewidth=linewidth, alpha=.8, color = color1)
-        ax3.plot(exclusion['region3'], linewidth=linewidth, alpha=.8, color = color2)
-        ax3.plot(both['region3'], linewidth=linewidth, alpha=.3, color = color3)
-        ax3.plot((inclusion['region3']+inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax3.plot((inclusion['region3']-inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax3.plot((exclusion['region3']+exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax3.plot((exclusion['region3']-exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax3.set_yticklabels([])
         ax3.set_xticklabels(range(-50,351,50),rotation=90)
         ax3.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax3, left=True)
         
         ax4 = fig.add_subplot(1,4,4,sharey=ax1)
-        ax4.plot(inclusion['region4'], linewidth=linewidth, alpha=.8, color = color1, label="incl in kd")
-        ax4.plot(exclusion['region4'], linewidth=linewidth, alpha=.8, color = color2, label="excl in kd")
-        ax4.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
-        ax4.plot((inclusion['region4']+inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax4.plot((inclusion['region4']-inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax4.plot((exclusion['region4']+exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax4.plot((exclusion['region4']-exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax4.set_yticklabels([])
         ax4.axvline(x=300,linestyle=':',alpha=0.5)
         ax4.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax4, left=True)
         
-        ax1.legend()
+        ax4.legend()
         plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()
@@ -368,7 +345,7 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
     
     """
     Special plot:
-    plots a 4-region map that contains three separate plots for inclusion, 
+    plots a 6-region map that contains three separate plots for inclusion, 
     exclusion, and all spliced events. 
     
     Args:
@@ -386,17 +363,9 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
-        linewidth = 2
-        errorbar_linewidth = 0.7
         
         ax1 = fig.add_subplot(1,6,1)
-        ax1.plot(inclusion['region1'], linewidth=linewidth, alpha=.8, color = color1)
-        ax1.plot(exclusion['region1'], linewidth=linewidth, alpha=.8, color = color2)
-        ax1.plot(both['region1'], linewidth=linewidth, alpha=.3, color = color3)
-        ax1.plot((inclusion['region1']+inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((inclusion['region1']-inclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((exclusion['region1']+exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax1.plot((exclusion['region1']-exclusion_err['region1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
@@ -404,70 +373,40 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,6,2,sharey=ax1)
-        ax2.plot(inclusion['region2'], linewidth=linewidth, alpha=.8, color = color1)
-        ax2.plot(exclusion['region2'], linewidth=linewidth, alpha=.8, color = color2)
-        ax2.plot(both['region2'], linewidth=linewidth, alpha=.3, color = color3)
-        ax2.plot((inclusion['region2']+inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((inclusion['region2']-inclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((exclusion['region2']+exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax2.plot((exclusion['region2']-exclusion_err['region2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax2.set_yticklabels([])
         ax2.set_xticklabels(range(-300,51,50),rotation=90)
         ax2.axvline(x=300,linestyle=':',alpha=0.5)
         sns.despine(ax=ax2, left=True)
         
         ax3 = fig.add_subplot(1,6,3,sharey=ax1)
-        ax3.plot(inclusion['region3'], linewidth=linewidth, alpha=.8, color = color1)
-        ax3.plot(exclusion['region3'], linewidth=linewidth, alpha=.8, color = color2)
-        ax3.plot(both['region3'], linewidth=linewidth, alpha=.3, color = color3)
-        ax3.plot((inclusion['region3']+inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax3.plot((inclusion['region3']-inclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax3.plot((exclusion['region3']+exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax3.plot((exclusion['region3']-exclusion_err['region3']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax3.set_yticklabels([])
         ax3.set_xticklabels(range(-50,351,50),rotation=90)
         ax3.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax3, left=True)
         
         ax4 = fig.add_subplot(1,6,4,sharey=ax1)
-        ax4.plot(inclusion['region4'], linewidth=linewidth, alpha=.8, color = color1, label="incl in kd")
-        ax4.plot(exclusion['region4'], linewidth=linewidth, alpha=.8, color = color2, label="excl in kd")
-        ax4.plot(both['region4'], linewidth=linewidth, alpha=.3, color = color3, label="background")
-        ax4.plot((inclusion['region4']+inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax4.plot((inclusion['region4']-inclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax4.plot((exclusion['region4']+exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax4.plot((exclusion['region4']-exclusion_err['region4']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax4.set_yticklabels([])
         ax4.axvline(x=300,linestyle=':',alpha=0.5)
         ax4.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax4, left=True)
         
         ax5 = fig.add_subplot(1,6,5,sharey=ax1)
-        ax5.plot(inclusion['region5'], linewidth=linewidth, alpha=.8, color = color1)
-        ax5.plot(exclusion['region5'], linewidth=linewidth, alpha=.8, color = color2)
-        ax5.plot(both['region5'], linewidth=linewidth, alpha=.3, color = color3)
-        ax5.plot((inclusion['region5']+inclusion_err['region5']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax5.plot((inclusion['region5']-inclusion_err['region5']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax5.plot((exclusion['region5']+exclusion_err['region5']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax5.plot((exclusion['region5']-exclusion_err['region5']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax5, 'region5', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax5.set_yticklabels([])
         ax5.set_xticklabels(range(-50,351,50),rotation=90)
         ax5.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax5, left=True)
         
         ax6 = fig.add_subplot(1,6,6,sharey=ax1)
-        ax6.plot(inclusion['region6'], linewidth=linewidth, alpha=.8, color = color1, label="incl in kd")
-        ax6.plot(exclusion['region6'], linewidth=linewidth, alpha=.8, color = color2, label="excl in kd")
-        ax6.plot(both['region6'], linewidth=linewidth, alpha=.3, color = color3, label="background")
-        ax6.plot((inclusion['region6']+inclusion_err['region6']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax6.plot((inclusion['region6']-inclusion_err['region6']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax6.plot((exclusion['region6']+exclusion_err['region6']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax6.plot((exclusion['region6']-exclusion_err['region6']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax6, 'region6', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax6.set_yticklabels([])
         ax6.axvline(x=300,linestyle=':',alpha=0.5)
         ax6.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax6, left=True)
-        ax1.legend()
+        ax6.legend()
         plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()
@@ -621,19 +560,8 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
         
-        linewidth = 2
-        errorbar_linewidth = 0.7
-        
         ax1 = fig.add_subplot(1,4,1)
-        ax1.plot(i['three_upstream'], linewidth=linewidth, alpha=.8, color = color1)
-        ax1.plot(e['three_upstream'], linewidth=linewidth, alpha=.8, color = color2)
-        ax1.plot(b['three_upstream'], linewidth=linewidth, alpha=.3, color = color3)
-        
-        ax1.plot((i['three_upstream']+ie['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((i['three_upstream']-ie['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax1.plot((e['three_upstream']+ee['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax1.plot((e['three_upstream']-ee['three_upstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        
+        plot_err(ax1, 'three_upstream', i, e, b, ie, ee, color1, color2, color3)
         sns.despine(ax=ax1)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
@@ -642,14 +570,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,4,2, sharey=ax1)
-        ax2.plot(i['five_alt1'], linewidth=linewidth, alpha=.8, color = color1)
-        ax2.plot(e['five_alt1'], linewidth=linewidth, alpha=.8, color = color2)
-        ax2.plot(b['five_alt1'], linewidth=linewidth, alpha=.3, color = color3)
-        
-        ax2.plot((i['five_alt1']+ie['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((i['five_alt1']-ie['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax2.plot((e['five_alt1']+ee['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax2.plot((e['five_alt1']-ee['five_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax2, 'five_alt1', i, e, b, ie, ee, color1, color2, color3)
         
         sns.despine(ax=ax2, left=True)
         ax2.set_yticklabels([])
@@ -657,20 +578,14 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax2.axvline(x=300,linestyle=':',alpha=0.5)
             
         ax3 = fig.add_subplot(1,4,3, sharey=ax1)
-        ax3.plot(i['five_alt2'], linewidth=linewidth, alpha=.8, color = color1)
-        ax3.plot(e['five_alt2'], linewidth=linewidth, alpha=.8, color = color2)
-        ax3.plot(b['five_alt2'], linewidth=linewidth, alpha=.3, color = color3)
-        ax3.plot((i['five_alt2']+ie['five_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax3.plot((i['five_alt2']-ie['five_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax3.plot((e['five_alt2']+ee['five_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax3.plot((e['five_alt2']-ee['five_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        plot_err(ax3, 'five_alt2', i, e, b, ie, ee, color1, color2, color3)
         
         sns.despine(ax=ax3, left=True)
         ax3.set_yticklabels([])
         ax3.axvline(x=300,linestyle=':',alpha=0.5)
         ax3.set_xticklabels(range(-300,51,50),rotation=90)
         
-        ax1.legend()
+        ax3.legend()
         plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()
@@ -730,59 +645,32 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
         
-        linewidth = 2
-        errorbar_linewidth = 0.7
-        
-        ax = fig.add_subplot(1,4,1)
-        ax.plot(i['three_alt1'], linewidth=linewidth, alpha=.8, color = color1)
-        ax.plot(e['three_alt1'], linewidth=linewidth, alpha=.8, color = color2)
-        ax.plot(b['three_alt1'], linewidth=linewidth, alpha=.3, color = color3)
-        
-        ax.plot((i['three_alt1']+ie['three_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax.plot((i['three_alt1']-ie['three_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax.plot((e['three_alt1']+ee['three_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax.plot((e['three_alt1']-ee['three_alt1']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        
-        sns.despine(ax=ax)
-        ax.set_ylim(min_height, max_height)
-        ax.set_ylabel("Mean Read Density")
-        ax.set_xticklabels(range(-50,351,50),rotation=90)
-        ax.axvline(x=50,linestyle=':',alpha=0.5)
-        
+        ax1 = fig.add_subplot(1,4,1)
+        plot_err(ax1, 'three_alt1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        sns.despine(ax=ax1)
+        ax1.set_ylim(min_height, max_height)
+        ax1.set_ylabel("Mean Read Density")
+        ax1.set_xticklabels(range(-50,351,50),rotation=90)
+        ax1.axvline(x=50,linestyle=':',alpha=0.5)
         sns.set_style({'ytick.major.size':0})
         
-        ax = fig.add_subplot(1,4,2)
-        ax.plot(i['three_alt2'], linewidth=linewidth, alpha=.8, color = color1)
-        ax.plot(e['three_alt2'], linewidth=linewidth, alpha=.8, color = color2)
-        ax.plot(b['three_alt2'], linewidth=linewidth, alpha=.3, color = color3)
-        
-        ax.plot((i['three_alt2']+ie['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax.plot((i['three_alt2']-ie['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax.plot((e['three_alt2']+ee['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax.plot((e['three_alt2']-ee['three_alt2']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        
-        sns.despine(ax=ax, left=True)
-        ax.set_ylim(min_height, max_height)
-        ax.set_yticklabels([])
-        ax.set_xticklabels(range(-50,351,50),rotation=90)
-        ax.axvline(x=50,linestyle=':',alpha=0.5)
+        ax2 = fig.add_subplot(1,4,2)
+        plot_err(ax2, 'three_alt2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        sns.despine(ax=ax2, left=True)
+        ax2.set_ylim(min_height, max_height)
+        ax2.set_yticklabels([])
+        ax2.set_xticklabels(range(-50,351,50),rotation=90)
+        ax2.axvline(x=50,linestyle=':',alpha=0.5)
             
-        ax = fig.add_subplot(1,4,3)
-        ax.plot(i['five_downstream'], linewidth=linewidth, alpha=.8, color = color1)
-        ax.plot(e['five_downstream'], linewidth=linewidth, alpha=.8, color = color2)
-        ax.plot(b['five_downstream'], linewidth=linewidth, alpha=.3, color = color3)
-        ax.plot((i['five_downstream']+ie['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax.plot((i['five_downstream']-ie['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-        ax.plot((e['five_downstream']+ee['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-        ax.plot((e['five_downstream']-ee['five_downstream']), linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+        ax3 = fig.add_subplot(1,4,3)
+        plot_err(ax3, 'five_downstream', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        sns.despine(ax=ax3, left=True)
+        ax3.set_ylim(min_height, max_height)
+        ax3.set_yticklabels([])
+        ax3.axvline(x=300,linestyle=':',alpha=0.5)
+        ax3.set_xticklabels(range(-300,51,50),rotation=90)
         
-        sns.despine(ax=ax, left=True)
-        ax.set_ylim(min_height, max_height)
-        ax.set_yticklabels([])
-        ax.axvline(x=300,linestyle=':',alpha=0.5)
-        ax.set_xticklabels(range(-300,51,50),rotation=90)
-        
-        ax.legend()
+        ax3.legend()
         plt.suptitle(title,y=1.03)
     plt.clf()
     plt.cla()

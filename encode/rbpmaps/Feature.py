@@ -19,15 +19,13 @@ class Feature():
         self.source = source
 
     def get_bedtool(self):
-        if(self.source == 'miso'):
-            chrom, start, end, strand = self.annotation.split(':')
-            start = int(start) - 1
-            end = int(end)
+        if(self.source == 'bed'):
+            chrom, start, end, name, score, strand = self.annotation.split('\t')
         return bt.create_interval_from_list([chrom,
                                              start,
                                              end,
-                                             '0',
-                                             '0',
+                                             name,
+                                             score,
                                              strand])
 
 class SkippedExonFeature():

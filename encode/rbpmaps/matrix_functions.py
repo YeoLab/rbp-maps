@@ -5,97 +5,29 @@ Created on Jun 18, 2016
 '''
 import pandas as pd
 import numpy as np
-import pybedtools
 import intervals
 import misc
 import Feature
 
-def create_matrix(annotation, density, left = 300, right = 300, is_scaled = True):
-    print("creating the matrix for {}".format(density.get_name()))
-    # print("is this going to be scaled? {}".format(is_scaled))
+def create_matrix(annotation, density, upstream_offset, downstream_offset, is_scaled = True, annotation_type = 'bed'):
+    # print("creating the matrix for {}".format(density.get_name()))
     count = 0
     densities = {}
-    # if(type(annotation) == pd.DataFrame)
-    if(type(annotation) != pybedtools.bedtool.BedTool):
-        bed_tool = misc.create_bedtool(annotation)
-    else:
-        bed_tool = annotation
-
-    for interval in bed_tool:
-        try:
-            # print(interval)
-            count = count + 1
-            if count % 50000 == 0:
-                print('processed {} features'.format(count))
-            wiggle = pd.Series(intervals.some_range(density, interval, 0, 0))
-            """
-            We should process the intervals and the flanking regions separately 
-            if we only want to scale the feature of interest. 
-            """
-            if not all(np.isnan(wiggle)):
-                
-                wiggle = wiggle.fillna(0) # convert all nans to 0
-                
-                wiggle = abs(wiggle) # convert all values to positive
-                
-                if(is_scaled == True):
-                    wiggle = intervals.get_scale(wiggle)
-                
-                """
-                For positive stranded features:
-                    upstream interval is effectively 'left' of the interval,
-                    downstream interval is effectively 'right', coordinate-wise.
-                For negative stranded features:
-                    upstream interval is effectively 'right' (coordinates are larger),
-                    downstream interval is 'left' 
-                """
-                if interval.strand == '+': 
-                    upstream_interval = pybedtools.create_interval_from_list([interval.chrom,
-                                                                              interval.start-left,
-                                                                              interval.start,
-                                                                              interval.name,
-                                                                              interval.score,
-                                                                              interval.strand])
-                    downstream_interval = pybedtools.create_interval_from_list([interval.chrom,
-                                                                                interval.stop,
-                                                                                interval.stop+right,
-                                                                                interval.name,
-                                                                                interval.score,
-                                                                                interval.strand])
-                else:
-                    upstream_interval = pybedtools.create_interval_from_list([interval.chrom,
-                                                                              interval.stop,
-                                                                              interval.stop+right,
-                                                                              interval.name,
-                                                                              interval.score,
-                                                                              interval.strand])
-                    downstream_interval = pybedtools.create_interval_from_list([interval.chrom,
-                                                                                interval.start-left,
-                                                                                interval.start,
-                                                                                interval.name,
-                                                                                interval.score,
-                                                                                interval.strand])
-                
-                upstream_wiggle = pd.Series(intervals.some_range(density,upstream_interval, 0, 0))
-                upstream_wiggle = pd.Series(abs(np.nan_to_num(upstream_wiggle)))
-                
-                # print(type(upstream_wiggle))
-                # print(type(wiggle))
-                downstream_wiggle = pd.Series(intervals.some_range(density,downstream_interval, 0, 0))
-                downstream_wiggle = pd.Series(abs(np.nan_to_num(downstream_wiggle)))
-                
-                # print(pd.concat([upstream_wiggle,wiggle,downstream_wiggle]).reset_index(drop=True).shape)
-                # print(len(pd.concat([upstream_wiggle,wiggle,downstream_wiggle],axis=1).reset_index(drop=True)))
-                densities[intervals.rename_index(interval)] = pd.concat([upstream_wiggle,wiggle,downstream_wiggle]).reset_index(drop=True)
-                
-                # densities[intervals.rename_index(interval)] = wiggle
-
-        except Exception as e:
-            print(e)
-            print(type(wiggle))
-            print(type(upstream_wiggle))
-            print(type(downstream_wiggle))
-    print("SUCCESS")
+    with open(annotation) as f:
+        for line in f:
+            if not line.startswith('event_name') and not line.startswith('ID'):
+                count = count + 1
+                if count % 50000 == 0:
+                    print('processed {} features'.format(count))
+                event = line.rstrip() # .split('\t')[0]
+                interval = Feature.Feature(event, annotation_type).get_bedtool()
+                wiggle = pd.Series(intervals.some_range(density, interval, 0, 0))
+                if not all(np.isnan(wiggle)):
+                    wiggle = wiggle.fillna(0) # convert all nans to 0
+                    wiggle = abs(wiggle) # convert all values to positive
+                    if(is_scaled == True):
+                        wiggle = intervals.get_scale(wiggle)
+                    densities[intervals.rename_index(interval)] = wiggle
     return pd.DataFrame(densities).T
 
 def create_mxe_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="rmats"):

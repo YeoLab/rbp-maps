@@ -27,6 +27,8 @@ def remove_outliers(rbpdataframe, conf = 0.95):
 def KLDivergence(density, input_density, min_density_threshold = 0):
     # print("TYPE OF OBJECT: {}".format(type(density)))
     # print("KLDivergence (entropy of PDF)")
+    if density.shape[0] == 1:
+        return density
     PDF_CONST = 1.0/len(density.columns)
     
     density = density.replace(-1,np.nan)
@@ -51,6 +53,8 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     do en
     plot mean
     """
+    if density.shape[0] == 1:
+        return density
     # print('Entropy of reads')
     ipdf = density.replace(-1, np.nan)
     indf = input_density.replace(-1, np.nan)
@@ -87,7 +91,8 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     do pdf
     
     """
-    
+    if density.shape[0] == 1:
+        return density
     en = entropy_of_reads(density, input_density, min_density_threshold)
     # min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
     # en = en + min_normalized_read_number
@@ -129,6 +134,8 @@ def baseline_rpm_mean_subtraction(density, input_density, min_density_threshold 
 
 def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     # print("normalization and subtraction")
+    if density.shape[0] == 1:
+        return density
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
@@ -137,6 +144,8 @@ def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     return subtracted
     
 def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
+    if density.shape[0] == 1:
+        return density
     # print("normalization and per region subtraction")
     PDF_CONST = 1.0/len(density.columns)
         
