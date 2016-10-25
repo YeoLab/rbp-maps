@@ -61,7 +61,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-m", "--manifest", dest="manifest",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
-    parser.add_argument("-r", "--rmats", dest="rmats", help="annotation directory")
+    parser.add_argument("-r", "--rmats", dest="rmats", help="annotation directory or testfile (if -t)")
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, a3ss, a5ss, ri, mxe, cdsstart, cdsend, txstart, txend]")
     parser.add_argument("-t", "--test", dest="test", help="for testing purposes...", default=False, action='store_true')
     parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao, bed)", default='miso')
@@ -105,7 +105,7 @@ def main(argv=None): # IGNORE:C0111
                     inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                     
                     assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
-                    if(args.flipped):
+                    if(args.flipped or 'encode_v12' in rep1 or 'encode_v12' in rep2):
                         rep1neg = rep1.replace('.bam','.norm.pos.bw')
                         rep1pos = rep1.replace('.bam','.norm.neg.bw')
                         
@@ -163,7 +163,7 @@ def main(argv=None): # IGNORE:C0111
                     rbp = ReadDensity.ReadDensity(pos=reppos[i],neg=repneg[i],name=reps[i])
                     inp = ReadDensity.ReadDensity(pos=inputpos,neg=inputneg)
                     output_file = os.path.join(outdir,reps[i])+".svg"
-                    
+                    """
                     normfuncs = [norm.KLDivergence, norm.normalize_and_per_region_subtract,
                                  norm.entropy_of_reads, norm.pdf_of_entropy_of_reads,
                                  norm.get_density, norm.get_input]
@@ -174,19 +174,19 @@ def main(argv=None): # IGNORE:C0111
                                      'density_baseline',
                                      'input_baseline'
                                      ]
+                    """
                     
-                    """
-                    normfuncs = [norm.normalize_and_per_region_subtract, norm.get_density, norm.get_input]
-                    normfuncnames = ['subtract_by_region','density_baseline','input_baseline']
-                    """
+                    normfuncs = [norm.normalize_and_per_region_subtract]
+                    normfuncnames = ['subtract_by_region']
+                    
                     if not test:
                         positive_annotation = os.path.join(rmats_dir,'{}-{}-{}-positive.txt').format(rbp_name,cell_line,event.upper())
                         negative_annotation = os.path.join(rmats_dir,'{}-{}-{}-negative.txt').format(rbp_name,cell_line,event.upper())
                         bg_annotation = os.path.join(rmats_dir,'{}-{}-{}.txt').format(rbp_name,cell_line,event.upper())
                     else:
-                        positive_annotation = os.path.join(rmats_dir,'{}_{}.tsv').format(annotation_type)
-                        negative_annotation = os.path.join(rmats_dir,'{}_{}.tsv').format(annotation_type)
-                        bg_annotation = os.path.join(rmats_dir,'{}_{}.tsv').format(annotation_type)
+                        positive_annotation = os.path.join(rmats_dir)
+                        negative_annotation = os.path.join(rmats_dir)
+                        bg_annotation = os.path.join(rmats_dir)
                     
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
@@ -216,25 +216,25 @@ def main(argv=None): # IGNORE:C0111
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
                     if(event == 'a3ss'):
-                        inclusionClip.create_a3ss_matrices_one_region(label='included', normalize=False)
-                        exclusionClip.create_a3ss_matrices_one_region(label='excluded', normalize=False)
-                        bothClip.create_a3ss_matrices_one_region(label='all', normalize=False)
+                        inclusionClip.create_a3ss_matrices(label='included')
+                        exclusionClip.create_a3ss_matrices(label='excluded')
+                        bothClip.create_a3ss_matrices(label='all')
                     elif(event == 'a5ss'):
-                        inclusionClip.create_a5ss_matrices_one_region(label='included', normalize=False)
-                        exclusionClip.create_a5ss_matrices_one_region(label='excluded', normalize=False)
-                        bothClip.create_a5ss_matrices_one_region(label='all', normalize=False)
+                        inclusionClip.create_a5ss_matrices(label='included')
+                        exclusionClip.create_a5ss_matrices(label='excluded')
+                        bothClip.create_a5ss_matrices(label='all')
                     elif(event == 'se'):
-                        inclusionClip.create_se_matrices_one_region(label='included',normalize=False)
-                        exclusionClip.create_se_matrices_one_region(label='excluded',normalize=False)
-                        bothClip.create_se_matrices_one_region(label='all',normalize=False)
+                        inclusionClip.create_se_matrices(label='included')
+                        exclusionClip.create_se_matrices(label='excluded')
+                        bothClip.create_se_matrices(label='all')
                     elif(event == 'ri'):
-                        inclusionClip.create_ri_matrices_one_region(label='included',normalize=False)
-                        exclusionClip.create_ri_matrices_one_region(label='excluded',normalize=False)
-                        bothClip.create_ri_matrices_one_region(label='all',normalize=False)
+                        inclusionClip.create_ri_matrices(label='included')
+                        exclusionClip.create_ri_matrices(label='excluded')
+                        bothClip.create_ri_matrices(label='all')
                     elif(event == 'mxe'):
-                        inclusionClip.create_mxe_matrices_one_region(label='included',normalize=False)
-                        exclusionClip.create_mxe_matrices_one_region(label='excluded',normalize=False)
-                        bothClip.create_mxe_matrices_one_region(label='all',normalize=False)
+                        inclusionClip.create_mxe_matrices(label='included')
+                        exclusionClip.create_mxe_matrices(label='excluded')
+                        bothClip.create_mxe_matrices(label='all')
                     elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
                         inclusionClip.create_matrices(label='included', is_scaled = False)
                         exclusionClip.create_matrices(label='excluded', is_scaled = False)

@@ -24,11 +24,9 @@ def remove_outliers(rbpdataframe, conf = 0.95):
         sems.append(df.sem())
     return means, sems
 
-def KLDivergence(density, input_density, min_density_threshold = 0):
+def entropy(density, input_density, min_density_threshold = 0):
     # print("TYPE OF OBJECT: {}".format(type(density)))
     # print("KLDivergence (entropy of PDF)")
-    if density.shape[0] == 1:
-        return density
     PDF_CONST = 1.0/len(density.columns)
     
     density = density.replace(-1,np.nan)
@@ -53,8 +51,7 @@ def entropy_of_reads(density, input_density, min_density_threshold = 0):
     do en
     plot mean
     """
-    if density.shape[0] == 1:
-        return density
+
     # print('Entropy of reads')
     ipdf = density.replace(-1, np.nan)
     indf = input_density.replace(-1, np.nan)
@@ -91,8 +88,7 @@ def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
     do pdf
     
     """
-    if density.shape[0] == 1:
-        return density
+
     en = entropy_of_reads(density, input_density, min_density_threshold)
     # min_normalized_read_number = abs(min([item for item in en.unstack().values if abs(item) > 0]))
     # en = en + min_normalized_read_number
@@ -109,16 +105,6 @@ def get_input(density, input_density, min_density_threshold = 0):
     # df = input_density[input_density.sum(axis=1) > min_density_threshold]
     # print("TYPE AFTER INPUT: {}".format(type(input_density)))
     return input_density
-
-def calculate_pdf(density, min_density_threshold = 0):
-    # print("calculate PDF")
-    df = density.replace(-1, np.nan)
-    
-    # df = densities[densities.sum(axis=1) > min_density_threshold]
-    min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
-    df = df + min_normalized_read_number
-    pdf = df.div(df.sum(axis=1), axis=0)
-    return pdf # , mean, sem
     
 def normalize(density, input_density, min_density_threshold = 0):
     """
@@ -134,33 +120,63 @@ def baseline_rpm_mean_subtraction(density, input_density, min_density_threshold 
 
 def normalize_and_subtract(density, input_density, min_density_threshold = 0):
     # print("normalization and subtraction")
-    if density.shape[0] == 1:
-        return density
+
     pdf = calculate_pdf(density,min_density_threshold)
     input_pdf = calculate_pdf(input_density,min_density_threshold)
         
     subtracted = pd.DataFrame(pdf.mean() - input_pdf.mean()).T
     # print("TYPE AFTER normalize_and_subtract: {}".format(type(input_density)))
     return subtracted
-    
+
 def normalize_and_per_region_subtract(density, input_density, min_density_threshold = 0):
-    if density.shape[0] == 1:
-        return density
-    # print("normalization and per region subtraction")
-    PDF_CONST = 1.0/len(density.columns)
-        
-    pdf = calculate_pdf(density, min_density_threshold)
-    input_pdf = calculate_pdf(input_density, min_density_threshold)
-        
-    pdft = pd.merge(pdf,input_pdf, how='left',left_index=True,right_index=True)
-        
-    pdf = pdft.filter(regex='\d+_x')
-    pdfi = pdft.filter(regex='\d+_y')
+    """
+    Normalizes ip matrix of m x n (where m is the row of each event in a feature,
+    and n is the column relating to nucleotide position). 
+    """
+    # PDF_CONST = 1.0/len(density.columns)
     
+    dft = pd.merge(density,input_density, how='outer',left_index=True,right_index=True)
+    
+    dfx = dft.filter(regex='\d+_x')
+    dfy = dft.filter(regex='\d+_y')
+    
+    pdf = calculate_pdf(dfx, min_density_threshold)
+    pdfi = calculate_pdf(dfy, min_density_threshold)
     
     pdf = pdf.rename(columns=lambda x: x.replace('_x', ''))
-    pdfi = pdfi.rename(columns=lambda x: x.replace('_y', '')).fillna(PDF_CONST)
+    pdfi = pdfi.rename(columns=lambda x: x.replace('_y', ''))
+    
+    # pdfi = fill_all_nans_with_minpdf(pdfi, PDF_CONST)
+    # pdf = fill_all_nans_with_minpdf(pdf, PDF_CONST)
     
     subtracted = pdf.sub(pdfi)
     # print("TYPE AFTER PER REGION SUBTRACT: {}".format(type(subtracted)))
     return subtracted
+
+def calculate_pdf(density, min_density_threshold = 0):
+    """
+    Calculates the PDF of a density matrix.
+    Logic:
+    
+    Args: 
+        density (pandas.DataFrame) : r x c matrix of densities. May contain
+            NaN corresponding to values in which no density was returned.
+            These values should be counted.
+            May contain -1 corresponding to values in which a particular
+            region is shorter than the full DataFrame length. These 
+            values should not be counted.
+        min_density_threshold (integer) : minimum total density across
+            a row. (Deprecated - may be removed in the future)
+    
+    Returns:
+        pdf (pandas.DataFrame) : r x c matrix of densities normalized
+            across each respective (r)ow as a probability density func.
+    """
+    density = density.fillna(0) # NaNs are regions which contain zero density
+    df = density.replace(-1, np.nan) # -1 are regions which should not be counted at all
+    
+    # df = df[df.sum(axis=1) > min_density_threshold]
+    min_normalized_read_number = min([item for item in df.unstack().values if item > 0])
+    df = df + min_normalized_read_number
+    pdf = df.div(df.sum(axis=1), axis=0)
+    return pdf # , mean, sem

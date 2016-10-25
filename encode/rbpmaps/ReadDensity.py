@@ -8,7 +8,7 @@ import numpy as np
 
 class ReadDensity():
     """
-    BigWig class
+    ReadDensity class
     Attributes:
         self.pos(positive *.bw file)
         self.neg(negative *.bw file)
@@ -31,7 +31,8 @@ class ReadDensity():
     def values(self, chrom, start, end, strand):
         """
         Given a chromosome coordinate, return a list of values
-        pertaining to the rbpmaps over each nucleotide position
+        pertaining to the rbpmaps over each nucleotide position.
+        Reverse the list if going in the negative strand.
         
         Args:
             chrom (str): (eg. chr1)

@@ -6,6 +6,7 @@ Created on Jun 20, 2016
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import misc
 import seaborn as sns
 from gscripts.general import dataviz
 from matplotlib import rc
@@ -15,8 +16,65 @@ import numpy as np
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
+def plot_err(ax, region, inclusion, exclusion, both, 
+             inclusion_err, exclusion_err,
+             inclusion_color, exclusion_color, both_color,
+             inclusion_label = 'included in KD', 
+             exclusion_label = 'excluded in KD', 
+             both_label = 'all events', 
+             linewidth=2, 
+             errorbar_linewidth=0.7):
+    """Helps plot a region for three events, usually inclusion, 
+    exclusion, and both (background) densities, plus errorlines.
+    
+    Parameters
+    ----------
+    ax : matplotlib.axes._subplots.AxesSubplot
+    region : string
+    inclusion : dictionary
+    exclusion : dictionary
+    both : dictionary
+    inclusion_err : dictionary
+    exclusion_err : dictionary
+    inclusion_color : string
+    exclusion_color : string
+    both_color : string
+    inclusion_label : string
+    exclusion_label : string
+    both_label : string
+    linewidth : int
+    errorbar_linewidth : int
+    """
+    ax.plot(both[region], linewidth=linewidth, 
+            alpha=.5, color = both_color, label = both_label)
+    ax.plot(inclusion[region], linewidth=linewidth, 
+            alpha=.8, color = inclusion_color, label = inclusion_label)
+    ax.plot(exclusion[region], linewidth=linewidth, 
+            alpha=.8, color = exclusion_color, label = exclusion_label)
+    
+    
+    ax.plot((inclusion[region]+inclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = inclusion_color, linestyle = ':')
+    ax.plot((inclusion[region]-inclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = inclusion_color, linestyle = ':')
+    ax.plot((exclusion[region]+exclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
+    ax.plot((exclusion[region]-exclusion_err[region]), 
+            linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
+    
 def single_frame(means, title, output_file, color='red'):
-        
+    """Plots a single frame given a set of points, 
+    in this case the means of densities across a predescribed
+    event.
+    
+    Parameters
+    ----------
+    means (list) : list of mean density values to plot
+    title (string) : plot title
+    output_file (string) : output file including extension (.svg)
+    color (string) : color of the means line (eg. 'red')
+
+    """
     ax = plt.gca()
         
     ax.plot(means, color = color, label = 'Mean Read Density')
@@ -34,43 +92,28 @@ def single_frame(means, title, output_file, color='red'):
     plt.cla()
     plt.close()
 
-def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both, 
-                                                 title, output_file):
-    ax = plt.gca()
-    ax.plot(inclusion['region1'], color = sns.color_palette("hls", 8)[0], label = 'Inclusion')
-    ax.plot(exclusion['region1'], color = sns.color_palette("hls", 8)[1], label = 'Exclusion')
-    ax.plot(both['region1'], color = sns.color_palette("hls", 8)[2], label = 'All events')
-    ax.legend()
-
-    ax.set_ylabel('Read Density')
-    ax.set_title(title,y=1.03)
-    # plt.xticks([0,300,400,699],['upstream (300bp)','feature (0%)','feature (100%)','downstream (300bp)'])
-    # ymax = max(means) * 1.1
-    # ymin = min(means) * 0.9 if min(means) > 0 else min(means)*1.1 # in case of negatives for subtraction
-        
-    # ax.set_ylim([ymin,ymax])
-    plt.savefig(output_file)
-    plt.clf()
-    plt.cla()
-    plt.close()
-
-def plot_bed(up, down, both, 
-             uperr, downerr,
-             title, output_file):
-    up_a = {}
-    down_a = {}
-    both_a = {}
-    uperr_a = {}
-    downerr_a = {}
+def plot_bed(up, down, both, uperr, downerr, title, output_file):
+    """Plots a single frame feature of events. 
+    Just array-ifies the dictionary of lists and calls
+    single_frame_with_up_down_events_error
     
-    up_a['region1'] = np.asarray(up['region1'])
-    down_a['region1'] = np.asarray(down['region1'])
-    both_a['region1'] = np.asarray(both['region1'])
-    uperr_a['region1'] = np.asarray(uperr['region1'])
-    downerr_a['region1'] = np.asarray(downerr['region1'])
-    
-    single_frame_with_up_down_events_error(up_a, down_a, both_a, 
-                                           uperr_a, downerr_a, title, output_file)
+    Parameters
+    ----------
+    up : dictionary of lists
+    down : dictionary of lists
+    both : dictionary of lists
+    uperr : dictionary of lists
+    downerr : dictionary of lists
+    title : string
+    output_file : string
+    """
+    single_frame_with_up_down_events_error(misc.toarray(up),
+                                           misc.toarray(down),
+                                           misc.toarray(both),
+                                           misc.toarray(uperr),
+                                           misc.toarray(downerr), 
+                                           title, 
+                                           output_file)
 def single_frame_with_up_down_events_error(up, down, both,
                                            uperr, downerr, 
                                            title, output_file,
@@ -82,44 +125,14 @@ def single_frame_with_up_down_events_error(up, down, both,
                                            bglab = 'All significant events'):
     ax = plt.gca()
     
-    errorbar_linewidth = 0.7
-    
-    ax.plot(up['region1'], color = upcolor, label = uplab)
-    ax.plot((up['region1']+uperr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = upcolor, linestyle = ':')
-    ax.plot((up['region1']-uperr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = upcolor, linestyle = ':')
-    
-    ax.plot(down['region1'], color = downcolor, label = downlab)
-    ax.plot((down['region1']+downerr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = downcolor, linestyle = ':')
-    ax.plot((down['region1']-downerr['region1']), linewidth=errorbar_linewidth, alpha=.5, color = downcolor, linestyle = ':')
-    
-    ax.plot(both['region1'], color = bgcolor, label = bglab)
+    plot_err(ax, 'region1', up, down, both, uperr, downerr, upcolor, downcolor, bgcolor)
     
     ax.legend()
 
     ax.set_ylabel('Read Density')
     ax.set_title(title,y=1.03)
-    # plt.xticks([0,300,400,699],['upstream (300bp)','feature (0%)','feature (100%)','downstream (300bp)'])
-    # ymax = max(means) * 1.1
-    # ymin = min(means) * 0.9 if min(means) > 0 else min(means)*1.1 # in case of negatives for subtraction
-        
-    # ax.set_ylim([ymin,ymax])
-    plt.savefig(output_file)
-    plt.clf()
-    plt.cla()
-    plt.close()
-
-def single_frame_with_error(means, error, title, output_file, color='red'):
-        
-    ax = plt.gca()
-        
-    ax.plot((means+error), color = sns.color_palette("hls", 8)[0], alpha = 0.3, label = 'Standard Error')
-    ax.plot(means, color = color, label = 'Mean Read Density')
-    ax.plot((means-error), color = sns.color_palette("hls", 8)[0], alpha = 0.3)
-    ax.legend()
-
-    ax.set_ylabel('Read Density')
-    ax.set_title(title,y=1.03)
-
+    plt.xticks([0,300,599],['upstream (300bp)','feature','downstream (300bp)'])
+    
     plt.savefig(output_file)
     plt.clf()
     plt.cla()
@@ -252,26 +265,7 @@ def four_frame(region1, region2, region3, region4,
     plt.cla()
     plt.close()
 
-def plot_err(ax, region, inclusion, exclusion, both, 
-             inclusion_err, exclusion_err,
-             color1, color2, color3, 
-             linewidth=2, errorbar_linewidth=0.7):
-    ax.plot(both[region], linewidth=linewidth, 
-            alpha=.5, color = color3, label = 'all events')
-    ax.plot(inclusion[region], linewidth=linewidth, 
-            alpha=.8, color = color1, label = 'included in KD')
-    ax.plot(exclusion[region], linewidth=linewidth, 
-            alpha=.8, color = color2, label = 'excluded in KD')
-    
-    
-    ax.plot((inclusion[region]+inclusion_err[region]), 
-            linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-    ax.plot((inclusion[region]-inclusion_err[region]), 
-            linewidth=errorbar_linewidth, alpha=.5, color = color1, linestyle = ':')
-    ax.plot((exclusion[region]+exclusion_err[region]), 
-            linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
-    ax.plot((exclusion[region]-exclusion_err[region]), 
-            linewidth=errorbar_linewidth, alpha=.5, color = color2, linestyle = ':')
+
     
 def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, both,
                                                           inclusion_err, exclusion_err,

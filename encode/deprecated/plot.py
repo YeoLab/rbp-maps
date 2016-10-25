@@ -31,6 +31,43 @@ __all__ = []
 __version__ = 0.1
 __date__ = '2016-5-5'
 __updated__ = '2016-5-5'
+
+
+def single_frame_with_error(means, error, title, output_file, color='red'):
+        
+    ax = plt.gca()
+        
+    ax.plot((means+error), color = sns.color_palette("hls", 8)[0], alpha = 0.3, label = 'Standard Error')
+    ax.plot(means, color = color, label = 'Mean Read Density')
+    ax.plot((means-error), color = sns.color_palette("hls", 8)[0], alpha = 0.3)
+    ax.legend()
+
+    ax.set_ylabel('Read Density')
+    ax.set_title(title,y=1.03)
+
+    plt.savefig(output_file)
+    plt.clf()
+    plt.cla()
+    plt.close()
+def single_frame_with_inclusion_exclusion_events(inclusion, exclusion, both, 
+                                                 title, output_file):
+    ax = plt.gca()
+    ax.plot(inclusion['region1'], color = sns.color_palette("hls", 8)[0], label = 'Inclusion')
+    ax.plot(exclusion['region1'], color = sns.color_palette("hls", 8)[1], label = 'Exclusion')
+    ax.plot(both['region1'], color = sns.color_palette("hls", 8)[2], label = 'All events')
+    ax.legend()
+
+    ax.set_ylabel('Read Density')
+    ax.set_title(title,y=1.03)
+    # plt.xticks([0,300,400,699],['upstream (300bp)','feature (0%)','feature (100%)','downstream (300bp)'])
+    # ymax = max(means) * 1.1
+    # ymin = min(means) * 0.9 if min(means) > 0 else min(means)*1.1 # in case of negatives for subtraction
+        
+    # ax.set_ylim([ymin,ymax])
+    plt.savefig(output_file)
+    plt.clf()
+    plt.cla()
+    plt.close()
     
 def five_frame(region1, region2, region3, region4, region5,
                title, output_file, color='red'):
