@@ -170,9 +170,9 @@ def main(argv=None): # IGNORE:C0111
                 for n in range(0,len(normfuncs)):
                         
                         
-                    inclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
-                    exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
-                    bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('both',normfuncnames[n]),min_density_sum=0)
+                    inclusionClip.normalize(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
+                    exclusionClip.normalize(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
+                    bothClip.normalize(normfunc=normfuncs[n],label="{}.{}".format('both',normfuncnames[n]),min_density_sum=0)
                         
                     inc = {'region1':inclusionClip.matrix[event].mean()}
                     exc = {'region1':exclusionClip.matrix[event].mean()}
@@ -189,7 +189,7 @@ def main(argv=None): # IGNORE:C0111
                 bothClip.reset_matrix()
                 bothClip.create_se_matrices_one_region(rbp_name,normalize=False)
                 print("matrix created")
-                bothClip.set_matrix(normfunc=norm.normalize_and_per_region_subtract,label="{}.{}".format('both','per-region-subtract'),min_density_sum=0)
+                bothClip.normalize(normfunc=norm.normalize_and_per_region_subtract,label="{}.{}".format('both','per-region-subtract'),min_density_sum=0)
                 print('getting features')
                 for key, value in bothClip.matrix.iteritems():
                     print('FEATURE: {}'.format(key))

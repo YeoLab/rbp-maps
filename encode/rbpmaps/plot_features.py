@@ -24,7 +24,7 @@ from argparse import RawDescriptionHelpFormatter
 import ReadDensity
 import Plot
 import misc
-import generate_manifests as gm
+import logging
 import pandas as pd
 import sys
 import normalization_functions as norm
@@ -68,13 +68,27 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
-
+    
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
     outdir = args.output
     event = args.event
-
+    
+    # Process logging info
+    logger = logging.getLogger('plot_features')
+    logger.setLevel(logging.INFO)
+    ih = logging.FileHandler(os.path.join(outdir,'log.txt'))
+    eh = logging.FileHandler(os.path.join(outdir,'log.err'))
+    ih.setLevel(logging.INFO)
+    eh.setLevel(logging.ERROR)
+    logger.addHandler(ih)
+    logger.addHandler(eh)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ih.setFormatter(formatter)
+    eh.setFormatter(formatter)
+    logger.info("starting program")
+    
     # Process rmats stuff
     rmats_dir = args.rmats
 
@@ -83,7 +97,6 @@ def main(argv=None): # IGNORE:C0111
     
     # Process testing and some other stuff
     annotation_type = args.annotation_type
-    test = args.test
     
     # Process mapping options
     exon_offset = args.exon_offset
@@ -97,6 +110,7 @@ def main(argv=None): # IGNORE:C0111
                 repneg = []
                 line = line.split('\t')
                 if(len(line) == 6):
+                    logger.info("Parsing 2 Clip/1 Input manifest")
                     uid = line[0].strip() # changed
                     rbp_name = line[1]
                     cell_line = line[2]
@@ -126,11 +140,14 @@ def main(argv=None): # IGNORE:C0111
 
                     my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
                     my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')
-
+                    
                     reps = [my_rep1_name, my_rep2_name]
                     reppos = [rep1pos, rep2pos]
                     repneg = [rep1neg, rep2neg]
+                    logger.info("Processing reps: {}, {}".format(my_rep1_name, my_rep2_name))
+                    
                 elif(len(line) == 5):
+                    logger.info("Parsing 1 Clip/1 Input manifest")
                     uid = line[0].strip() # changed
                     rbp_name = line[1]
                     cell_line = line[2]
@@ -151,147 +168,148 @@ def main(argv=None): # IGNORE:C0111
                         inputpos = inp.replace('.bam','.norm.pos.bw')
                         
                     my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
-                    
+                    logger.info("Processing reps: {}, {}".format(my_rep1_name))
                     reps = [my_rep1_name]
                     reppos = [rep1pos]
                     repneg = [rep1neg]
                 else:
                     print("malformed manifest line. at: {}".format(line[0]))
+                    logger.error("Manifest line is malformed (check columns) at {}".format(line[0]))
                     sys.exit(1)
                 for i in range(0,len(reps)):
                     
-                    rbp = ReadDensity.ReadDensity(pos=reppos[i],neg=repneg[i],name=reps[i])
-                    inp = ReadDensity.ReadDensity(pos=inputpos,neg=inputneg)
-                    output_file = os.path.join(outdir,reps[i])+".svg"
                     """
-                    normfuncs = [norm.KLDivergence, norm.normalize_and_per_region_subtract,
-                                 norm.entropy_of_reads, norm.pdf_of_entropy_of_reads,
-                                 norm.get_density, norm.get_input]
-                    normfuncnames = ['KLDivergence',
-                                     'subtract_by_region',
-                                     'entropy_of_reads',
-                                     'pdf_entropy_of_reads',
-                                     'density_baseline',
-                                     'input_baseline'
-                                     ]
+                    Check if bigwigs exist and create ReadDensity for IP and INPUT
                     """
                     
-                    normfuncs = [norm.normalize_and_per_region_subtract]
-                    normfuncnames = ['subtract_by_region']
+                    if not(os.path.isfile(reppos[i]) and 
+                           os.path.isfile(repneg[i]) and 
+                           os.path.isfile(inputpos) and 
+                           os.path.isfile(inputneg)):
+                        logger.error('BigWigs dont exist for RBP: {}'.format(rbp_name))                        
                     
-                    if not test:
-                        positive_annotation = os.path.join(rmats_dir,'{}-{}-{}-positive.txt').format(rbp_name,cell_line,event.upper())
-                        negative_annotation = os.path.join(rmats_dir,'{}-{}-{}-negative.txt').format(rbp_name,cell_line,event.upper())
-                        bg_annotation = os.path.join(rmats_dir,'{}-{}-{}.txt').format(rbp_name,cell_line,event.upper())
-                    else:
-                        positive_annotation = os.path.join(rmats_dir)
-                        negative_annotation = os.path.join(rmats_dir)
-                        bg_annotation = os.path.join(rmats_dir)
+                    rbp = ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i])
+                    inp = ReadDensity.ReadDensity(pos=inputpos, neg=inputneg)
                     
+                    
+                    """
+                    Check if Annotations exist
+                    """
+                    
+                    positive_annotation = os.path.join(rmats_dir,'{}-{}-{}-positive.txt').format(rbp_name,cell_line,event.upper())
+                    negative_annotation = os.path.join(rmats_dir,'{}-{}-{}-negative.txt').format(rbp_name,cell_line,event.upper())
+                    bg_annotation = os.path.join(rmats_dir,'{}-{}-{}.txt').format(rbp_name,cell_line,event.upper())
+                    
+                    if (os.path.isfile(positive_annotation)==False):
+                        logger.error("Positive annotation doesn't exist: {}".format(positive_annotation))
+                    if (os.path.isfile(positive_annotation)==False):
+                        logger.error("Negative annotation doesn't exist: {}".format(negative_annotation))
+                    if (os.path.isfile(positive_annotation)==False):
+                        logger.error("Background annotation doesn't exist: {}".format(bg_annotation))
+                    
+                    """
+                    Create the Maps
+                    """
+                    logger.info("Creating ClipWithInput: {}.{}".format(reps[i],'included'))
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name="{}.{}".format(reps[i],'included'),
-                                                annotation=positive_annotation,
-                                                annotation_type=annotation_type,
-                                                output_file=output_file,
+                                                name = "{}.{}".format(reps[i],'included'),
+                                                annotation = positive_annotation,
+                                                annotation_type = annotation_type,
+                                                output_file = os.path.join(outdir,'included.svg'),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
                     
-                            
+                    logger.info("Creating ClipWithInput: {}.{}".format(reps[i],'excluded'))
                     exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'excluded'),
                                                 annotation=negative_annotation,
                                                 annotation_type=annotation_type,
-                                                output_file=output_file,
+                                                output_file=os.path.join(outdir,'excluded.svg'),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
                     
+                    logger.info("Creating ClipWithInput: {}.{}".format(reps[i],'background'))
                     bothClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
                                                 name="{}.{}".format(reps[i],'background'),
                                                 annotation=bg_annotation,
                                                 annotation_type=annotation_type,
-                                                output_file=output_file,
+                                                output_file=os.path.join(outdir,'both.svg'),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
-                    if(event == 'a3ss'):
-                        inclusionClip.create_a3ss_matrices(label='included')
-                        exclusionClip.create_a3ss_matrices(label='excluded')
-                        bothClip.create_a3ss_matrices(label='all')
-                    elif(event == 'a5ss'):
-                        inclusionClip.create_a5ss_matrices(label='included')
-                        exclusionClip.create_a5ss_matrices(label='excluded')
-                        bothClip.create_a5ss_matrices(label='all')
-                    elif(event == 'se'):
-                        inclusionClip.create_se_matrices(label='included')
-                        exclusionClip.create_se_matrices(label='excluded')
-                        bothClip.create_se_matrices(label='all')
-                    elif(event == 'ri'):
-                        inclusionClip.create_ri_matrices(label='included')
-                        exclusionClip.create_ri_matrices(label='excluded')
-                        bothClip.create_ri_matrices(label='all')
-                    elif(event == 'mxe'):
-                        inclusionClip.create_mxe_matrices(label='included')
-                        exclusionClip.create_mxe_matrices(label='excluded')
-                        bothClip.create_mxe_matrices(label='all')
-                    elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
-                        inclusionClip.create_matrices(label='included', is_scaled = False)
-                        exclusionClip.create_matrices(label='excluded', is_scaled = False)
-                        bothClip.create_matrices(label='all', is_scaled = False)
-                    else:
-                        print('invalid event (choose a3ss, a5ss, se, ri, cdsstarts, cdsends, txstarts, txends)')
-                        sys.exit(1)
-                        
-                    for n in range(0,len(normfuncs)):
+                    
+                    clips = {'included':inclusionClip, 'excluded':exclusionClip, 'all':bothClip}
+                    
+                    
+                    """
+                    Define the normalization functions
+                    """
+                    normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract}
 
-                        inclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
-                        exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
-                        bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
+                    """
+                    Create and normalize inclusion, exclusion, and background CLIP density values
+                    """                    
+                    for norm_name, norm_func in normfuncs.iteritems():
+                    # for n in range(0,len(normfuncs)):
+                        output_filename = os.path.join(outdir,reps[i])+".{}.{}.removeoutliers.svg".format(args.event,norm_name)
+                        for key, clip in clips.iteritems():
+                            if(event == 'a3ss'):
+                                clip.create_a3ss_matrices(label=key)
+                            elif(event == 'a5ss'):
+                                clip.create_a5ss_matrices(label=key)
+                            elif(event == 'se'):
+                                clip.create_se_matrices(label=key)
+                            elif(event == 'mxe'):
+                                clip.create_mxe_matrices(label=key)
+                            elif(event == 'ri'):
+                                clip.create_ri_matrices(label=key)
+                            elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
+                                clip.create_matrices(label=key, scaled=False)
+                            else:
+                                logger.error("Invalid event chosen: {}".format(event))
+                                sys.exit(1)
+                            logger.info("Normalizing {} map".format(key))
+                            clip.normalize(normfunc=norm_func,label="{}.{}".format(key,norm_name),min_density_sum=0)
+                            clip.set_means_and_sems('feature',confidence)
+                            clip.get_means().to_csv(output_filename.replace('.svg','.{}.txt'.format(key)))
                         
-                        inc, inc_e = norm.remove_outliers(inclusionClip.matrix['feature'],confidence)
-                        exc, exc_e = norm.remove_outliers(exclusionClip.matrix['feature'],confidence)
-                        bo, bo_e = norm.remove_outliers(bothClip.matrix['feature'],confidence)
-                        inc_rmo = {'region1':inc}
-                        exc_rmo = {'region1':exc}
-                        bo_rmo = {'region1':bo}
-                        inc_e_rmo = {'region1':inc_e}
-                        exc_e_rmo = {'region1':exc_e}
-                        output_filename = os.path.join(outdir,reps[i])+".{}.{}.removeoutliers.svg".format(args.event,normfuncnames[n])
-
                         """
-                        This is what is ultimately going to be plotted:
+                        Plot all inclusion, exclusion, and background CLIP maps in one figure.
                         """
-                        pd.Series(inc).to_csv(output_filename.replace('.svg','.included.txt'))
-                        pd.Series(exc).to_csv(output_filename.replace('.svg','.excluded.txt'))
-                        pd.Series(bo).to_csv(output_filename.replace('.svg','.both.txt'))
-                        pd.Series(inc_e).to_csv(output_filename.replace('.svg','.included-err.txt'))
-                        pd.Series(exc_e).to_csv(output_filename.replace('.svg','.excluded-err.txt'))
+                        inc = {'region1':clips['included'].means}
+                        exc = {'region1':clips['excluded'].means}
+                        bo = {'region1':clips['all'].means}
+                        inc_e = {'region1':clips['included'].sems}
+                        exc_e = {'region1':clips['excluded'].sems}
+                                                
                         title = '{} ({}_0{}) {} events (keep={})\nincl (n={}), excl (n={})'.format(rbp_name,
                                                                                                    uid,
                                                                                                    i+1,
                                                                                                    event,
                                                                                                    confidence,
-                                                                                                   len(inclusionClip.matrix['feature']),
-                                                                                                   len(exclusionClip.matrix['feature']))
+                                                                                                   len(inclusionClip.density['feature']),
+                                                                                                   len(exclusionClip.density['feature']))
+                        logger.info("Plotting maps for {}".format(event))
                         if(event == 'a3ss'):
-                            Plot.plot_a3ss(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                            Plot.plot_a3ss(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         elif(event == 'a5ss'):
-                            Plot.plot_a5ss(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                            Plot.plot_a5ss(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         elif(event == 'se'):
-                            Plot.plot_se(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                            Plot.plot_se(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         elif(event == 'ri'):
-                            Plot.plot_ri(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                            Plot.plot_ri(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         elif(event == 'mxe'):
-                            Plot.plot_mxe(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                            Plot.plot_mxe(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
-                            print("starting to plot...")
-                            Plot.plot_bed(inc_rmo, exc_rmo, bo_rmo, inc_e_rmo, exc_e_rmo, title, output_filename)
+                            Plot.plot_bed(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         else:
-                            print("invalid event (choose a3ss, a5ss, se, ri, cdsstarts, cdsends, txstarts, txends)")
+                            logger.error("invalid event (choose a3ss, a5ss, se, ri, cdsstarts, cdsends, txstarts, txends)")
             except Exception as e:
                 print(e)
-                print("Failed to Process {}".format(line))
+                logger.error("Failed to process {}".format(line))
 
 if __name__ == "__main__":
+    
     main()

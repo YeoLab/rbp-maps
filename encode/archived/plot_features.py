@@ -257,7 +257,7 @@ def main(argv=None): # IGNORE:C0111
                                                 output_file=output_file)
                             current_rbp.create_se_matrices(normalize=False)
                             for n in range(0,len(normfuncs)):
-                                current_rbp.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                                current_rbp.normalize(normfunc=normfuncs[n],min_density_sum=0)
                                 Plot.four_frame(current_rbp.matrix['three_upstream'].mean(), 
                                                 current_rbp.matrix['five_skipped'].mean(), 
                                                 current_rbp.matrix['three_skipped'].mean(), 
@@ -286,9 +286,9 @@ def main(argv=None): # IGNORE:C0111
                             bothClip.create_se_matrices(normalize=False)
                             
                             for n in range(0,len(normfuncs)):
-                                inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                                bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                                inclusionClip.normalize(normfunc=normfuncs[n],min_density_sum=0)
+                                exclusionClip.normalize(normfunc=normfuncs[n],min_density_sum=0)
+                                bothClip.normalize(normfunc=normfuncs[n],min_density_sum=0)
                                 
                                 inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
                                        'region2':inclusionClip.matrix['five_skipped'].mean(),
@@ -320,13 +320,13 @@ def main(argv=None): # IGNORE:C0111
                                         title=current_rbp.name,
                                         output_file=os.path.join(outdir,reps[i])+".se.subtracted.svg")
                         
-                        current_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
+                        current_rbp.normalize(normfunc=norm.KLDivergence,min_density_sum=0)
                         Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
                                                      current_rbp.matrix['feature'].sem(),
                                         title=current_rbp.name,
                                         output_file=os.path.join(outdir,reps[i])+".se.KLDivergence.svg")
                         
-                        current_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
+                        current_rbp.normalize(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
                         Plot.single_frame_with_error(current_rbp.matrix['feature'].mean(), 
                                                      current_rbp.matrix['feature'].sem(),
                                         title=current_rbp.name,

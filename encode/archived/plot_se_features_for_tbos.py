@@ -181,9 +181,9 @@ def main(argv=None): # IGNORE:C0111
                     for n in range(0,len(normfuncs)):
                         
                         
-                        inclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
-                        exclusionClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
-                        bothClip.set_matrix(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
+                        inclusionClip.normalize(normfunc=normfuncs[n],label="{}.{}".format('included',normfuncnames[n]),min_density_sum=0)
+                        exclusionClip.normalize(normfunc=normfuncs[n],label="{}.{}".format('excluded',normfuncnames[n]),min_density_sum=0)
+                        bothClip.normalize(normfunc=normfuncs[n],label="{}.{}".format('all',normfuncnames[n]),min_density_sum=0)
                         
                         inclusion_error = inclusionClip.matrix['feature'].sem(axis=0)
                         exclusion_error = exclusionClip.matrix['feature'].sem(axis=0)

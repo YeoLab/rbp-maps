@@ -449,9 +449,9 @@ def plot_se(inclusion, exclusion, both, inclusion_err, exclusion_err, title, out
     exclusion, and all spliced events. 
     
     Args:
-        inclusion: {region1, region2, region3, region4}
-        exclusion: {region1, region2, region3, region4}
-        both: {region1, region2, region3, region4}
+        inclusion (dictionary) : dictionary of means
+        exclusion (dictionary) : dictionary of means
+        both: dictionary of means
         
     """
     

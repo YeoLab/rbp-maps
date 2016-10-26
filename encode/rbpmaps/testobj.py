@@ -47,7 +47,7 @@ def main():
                     title=some_rbp.name,
                     output_file='/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj3/242_01_U2AF2.normandsubtract.svg')
     
-    some_rbp.set_matrix(normfunc=norm.KLDivergence,min_density_sum=0)
+    some_rbp.normalize(normfunc=norm.KLDivergence,min_density_sum=0)
     
     Plot.four_frame(some_rbp.matrix['three_upstream'].mean(), 
                     some_rbp.matrix['five_skipped'].mean(), 
@@ -56,7 +56,7 @@ def main():
                     title=some_rbp.name,
                     output_file='/Users/brianyee/git/encode/encode/rbpmaps/testfiles/242_01_U2AF2/testobj3/242_01_U2AF2.kldivergence.svg')
     
-    some_rbp.set_matrix(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
+    some_rbp.normalize(normfunc=norm.normalize_and_per_region_subtract,min_density_sum=0)
     
     Plot.four_frame(some_rbp.matrix['three_upstream'].mean(), 
                     some_rbp.matrix['five_skipped'].mean(), 

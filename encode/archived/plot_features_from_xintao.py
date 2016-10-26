@@ -278,9 +278,9 @@ def main(argv=None): # IGNORE:C0111
                         bothClip.create_se_matrices(label='all',normalize=False)
                         
                     for n in range(0,len(normfuncs)):
-                        inclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                        exclusionClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
-                        bothClip.set_matrix(normfunc=normfuncs[n],min_density_sum=0)
+                        inclusionClip.normalize(normfunc=normfuncs[n],min_density_sum=0)
+                        exclusionClip.normalize(normfunc=normfuncs[n],min_density_sum=0)
+                        bothClip.normalize(normfunc=normfuncs[n],min_density_sum=0)
                                 
                         inc = {'region1':inclusionClip.matrix['three_upstream'].mean(),
                                        'region2':inclusionClip.matrix['five_skipped'].mean(),

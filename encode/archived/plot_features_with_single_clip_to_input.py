@@ -282,9 +282,9 @@ def main(argv=None): # IGNORE:C0111
                     for n in range(0,len(normfuncs)):
                         
                         
-                        inclusionClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
-                        exclusionClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
-                        bothClip.set_matrix(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
+                        inclusionClip.normalize(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
+                        exclusionClip.normalize(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
+                        bothClip.normalize(normfunc=normfuncs[n],label=normfuncnames[n],min_density_sum=0)
                         
                         inc = {'region1':inclusionClip.matrix['feature'].mean()}
                         exc = {'region1':exclusionClip.matrix['feature'].mean()}

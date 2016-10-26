@@ -8,6 +8,7 @@ import matrix_functions as mtx
 import normalization_functions as norm
 import os
 import datetime
+import logging
 import pandas as pd
 
 class Map():
@@ -16,7 +17,8 @@ class Map():
     
     Attributes:
         self.output_file (string) : output file 
-            (deprecated - we use output_base instead).
+            (deprecated - we use this to just get output_base instead).
+        self.log_file (string) : log file 
         self.name (string) : name of the Map object 
             (deprecated - will be removed later).
         self.is_scaled (boolean) : if regions need to be scaled - 
@@ -35,7 +37,7 @@ class Map():
         self.intron_offset (integer) : given an intron boundary how many 
             bases 'outside' the exon to plot 
             (eg. intron_offset = 4: ------[--------]----|-- if '-'=1nt)
-        self.matrix (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
+        self.density (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
             Pandas.DataFrames representing normed or unnormed m x n 
             matrices where m is the each event within a given feature 
             and n is the length in nucleotides.
@@ -59,136 +61,43 @@ class Map():
         self.right = right
         self.exon_offset = exon_offset
         self.intron_offset = intron_offset
+        self.density = {}
         
-        self.matrix = {}
-        
-        
-    def set_matrix(self, df):
+    def normalize(self, df):
         """
         Sets the Matrix for a Map
         """
-        self.matrix = df
+        self.density = df
     
-    def get_matrix(self):
+    def get_density(self):
         """
         Returns the Matrix for a Map
         """
-        return self.matrix
-class Clip(Map):
-    """
-    Clip class. Represents a Clip Map
-    Attributes:
-        self.ip (ReadDensity.ReadDensity) : ReadDensity of the IP 
-        self.raw_matrix (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
-            Pandas.DataFrames representing UNNORMED m x n 
-            matrices where m is the each event within a given feature 
-            and n is the length in nucleotides.
-        self.matrix (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
-            Pandas.DataFrames representing NORMED m x n 
-            matrices where m is the each event within a given feature 
-            and n is the length in nucleotides.
-    """
+        return self.density
 
-    def __init__(self, ReadDensity, output_file,
-                 name, 
-                 annotation,
-                 annotation_type = "miso",
-                 is_scaled = False,
-                 left = 0, right = 0,
-                 exon_offset = 50, intron_offset = 300):
-        '''
-        Constructor
-        '''
-        Map.__init__(self, output_file,
-                     name, is_scaled, 
-                     annotation,
-                     annotation_type,
-                     left, right,
-                     exon_offset, intron_offset)
-        self.ip = ReadDensity
-        
-        self.raw_matrix = {}
-        self.matrix = {}
-        
-    def set_annotation(self,annotation_file):
-        """
-        Sets the annotation file
-        """
-        self.annotation = annotation_file
-        
-    def set_matrix(self, normfunc = norm.normalize, min_density_sum = 0):
-        """
-        For every region designated in matrix['region'], normalize
-        
-        Args:
-            normfunc (normalize_functions function) : function that takes a pandas DataFrame and
-                applies a normalization function (default: normalize_functions.normalize())
-            min_density_sum (integer) : minimum sum across an event to be considered
-                might be deprecated ??? not sure what to do with this param...
-        """
-        for key in self.raw_matrix:
-            self.raw_matrix[key].to_csv("{}.{}.raw_matrix.csv".format(self.output_base, key))
-            self.matrix[key] = normfunc(self.raw_matrix[key], min_density_sum)
-            
-    
-    def create_matrices(self, prefix = 'feature'):
-        """
-        Sets the raw_matrix as a matrix given:
-            1. a Clip's IP (ReadDensity) and 
-            2. it's annotation (bedfile, etc.)
-        
-        Args: 
-            prefix (string) : matrix label, what we want to call this matrix.
-        """
-        self.raw_matrix[prefix] = mtx.create_matrix(annotation = self.annotation, 
-                                                    density = self.ip, 
-                                                    left = self.left, 
-                                                    right = self.right, 
-                                                    is_scaled = self.is_scaled)
-    
-    def create_se_matrices(self):
-        """
-        Sets the raw matrix as a skipped exon matrix given:
-            1. a Clip's IP (ReadDensity) and 
-            2. it's annotation (bedfile, etc.). 
-        It will create four pandas.DataFrames corresponding to a skipped exon map
-        |  ]-1--|------|--2-[  |    |  ]-3--|------|--4-[  |  
-        """
-        
-        keys = ['three_upstream','five_skipped','three_skipped','five_downstream']
-        self.raw_matrix = dict(zip(keys,mtx.create_se_matrix(annotation = self.annotation, 
-                                                                  density = self.ip, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled)))    
-    def get_raw_matrix(self):
-        """
-        Returns the raw matrix.
-        """
-        return pd.DataFrame(self.raw_matrix.items())
-    def get_matrix(self):
-        """
-        Returns the normed matrix.
-        """
-        return pd.DataFrame(self.raw_matrix.items())
 class ClipWithInput(Map):
     """
     Clip class. Represents a Clip w/ Input Map
     Attributes:
         self.ip (ReadDensity.ReadDensity) : ReadDensity of the IP 
         self.inp (ReadDenstiy.ReadDensity) : ReadDensity of the Input
-        self.ip_raw_matrix (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
+        self.ip_raw_density (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
             Pandas.DataFrames representing UNNORMED IP m x n 
             matrices where m is the each event within a given feature 
-            and n is the length in nucleotides.
-        self.inp_raw_matrix (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
+            and n is the length in nucleotides. Each matrix may contain more than one
+            'feature', for example, one might plot both '3_UTRs' and 'Prox_Introns'
+            in the same map.
+        self.inp_raw_density (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
             Pandas.DataFrames representing UNNORMED INPUT m x n 
             matrices where m is the each event within a given feature 
-            and n is the length in nucleotides.
-        self.matrix (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
+            and n is the length in nucleotides. Each matrix may contain more than one
+            'feature', for example, one might plot both '3_UTRs' and 'Prox_Introns'
+            in the same map.
+        self.density (dictionary{'feature':pandas.DataFrame}) : a dictionary of  
             Pandas.DataFrames representing NORMED m x n 
             matrices (IP over INPUT) where m is the each event within a given feature 
-            and n is the length in nucleotides.
+            and n is the length in nucleotides. Note: Each feature will be normalized
+            independently.
     """
 
     def __init__(self, ReadDensity, InputReadDensity, output_file,
@@ -211,153 +120,192 @@ class ClipWithInput(Map):
         self.ip = ReadDensity
         self.inp = InputReadDensity
         
-        self.ip_raw_matrix = {}
-        self.input_raw_matrix = {}
-
-        self.matrix = {}
+        self.ip_raw_density = {}
+        self.input_raw_density = {}
         
+        self.maptype = ""
+        
+        self.density = {}
+        
+        self.means = list()
+        self.sems = list()
+        
+        self.logger = logging.getLogger('plot_features.Map.ClipWithInput')
+        self.logger.info('creating an instance of ClipWithDensity')
+        
+    def get_means(self):
+        """
+        Returns the mean densities as Series
+        """
+        return pd.Series(self.means)
+    
+    def get_sems(self):
+        """
+        Returns standard error as Series
+        """
+        return pd.Series(self.sems)
+    
     def set_annotation(self,annotation_file):
+        """
+        Sets the annotation source file
+        Args:
+            annotation_file (string) : MISO, RMATS, or any formatted file 
+                defined in Feature.py. 
+        """
         self.annotation = annotation_file
     
     def reset_matrix(self):
-        self.ip_raw_matrix = {}
-        self.input_raw_matrix = {}
-        self.matrix = {}
+        """
+        Resets all matrices (both raw and normed ip/input) to empty dictionaries
+        """
+        self.ip_raw_density = {}
+        self.input_raw_density = {}
+        self.density = {}
             
-    def set_matrix(self, normfunc = norm.entropy, min_density_sum = 0, label = ""):
-        for key in self.ip_raw_matrix:
+    def normalize(self, normfunc = norm.entropy, min_density_sum = 0, label = ""):
+        """
+        For each feature in the matrix, perform normalization
+        
+        Args:
+            normfunc (function) : a function(pandas.DataFrame, pandas.DataFrame, min_density_sum) 
+                that takes normalizes a Map's ip_raw_density DataFrame, 
+                containing its IP densities, over its input_raw_density 
+                DataFrame, containing its INPUT densities.
+            min_density_sum (integer) : density sum cutoff for each event to be counted, 
+                passed to normalization function
+            label (string) : an intermediate file of this normalized matrix is created for each 
+                feature in the matrix. This provides an optional secondary label, useful for
+                distinguishing 'included', 'excluded', and 'background' matrices, for example.
+        Writes:
+            *.normed_matrix.csv : for each key (feature) in a map's density dictionary, 
+                write the full contents of the normalized density matrix.
+        """
+        for feature in self.ip_raw_density:
             # print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
-            self.matrix[key] = normfunc(self.ip_raw_matrix[key],self.input_raw_matrix[key], min_density_sum)
-            self.matrix[key].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, key))
+            self.density[feature] = normfunc(self.ip_raw_density[feature],self.input_raw_density[feature], min_density_sum)
+            self.density[feature].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, feature))
             # print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
+    
+    def set_means_and_sems(self, feature, conf = 0.95):
+        """
+        Sets the means and standard error values after outlier
+        removal. Replaces remove_outliers.
+        
+        Args:
+            feature (string) : the feature 
+            conf (float) : keep {conf}% of densities
+        
+        """
+        means = list()
+        sems = list()
+        for key, value in self.density[feature].iteritems():
+            df = self.density[feature][key].dropna()
             
+            nums = len(df)
+            droppercent = (1-conf)/2.0
+            dropnum = int(nums*(droppercent))
+            df = df.sort_values()
+            if(dropnum>0):
+                df = df[dropnum:-dropnum]
+            
+            means.append(df.mean())
+            sems.append(df.sem())
+        self.means = means
+        self.sems = sems
+                
     def create_matrices(self, label="", is_scaled=True):
-        self.ip_raw_matrix['feature'] = mtx.create_matrix(annotation = self.annotation, 
-                                                       density = self.ip, 
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            densities[i]['feature'] = mtx.create_matrix(annotation = self.annotation, 
+                                                       density = rbps[i], 
                                                        upstream_offset = 0, 
                                                        downstream_offset = 0, 
                                                        is_scaled = False,
                                                        annotation_type = self.annotation_type)
-        
-        self.input_raw_matrix['feature'] = mtx.create_matrix(annotation = self.annotation, 
-                                                       density = self.inp, 
-                                                       upstream_offset = 0, 
-                                                       downstream_offset = 0, 
-                                                       is_scaled = False,
-                                                       annotation_type = self.annotation_type)
-        
-        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}_raw_density_matrix.csv".format(self.output_base,label))
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
-        
+        self.logger.info("Finished creating the Matrix - {}".format(self.name))
+        self.ip_raw_density['feature'].to_csv("{}.ip.{}_raw_density_matrix.csv".format(self.output_base,label))
+        self.input_raw_density['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
+        self.maptype = label
     def create_a3ss_matrices(self, label=""):
-        # print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the A3SS Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            densities[i]['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
                                                                annotation_type = self.annotation_type,
-                                                               density = self.ip, 
+                                                               density = rbps[i], 
                                                                exon_offset = self.exon_offset, 
                                                                intron_offset = self.intron_offset, 
                                                                is_scaled = self.is_scaled,
                                                                combine_regions = True)
-        # print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("starting create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix['feature'] = mtx.create_a3ss_matrix(annotation = self.annotation, 
-                                                                  annotation_type = self.annotation_type,
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
-        # print("finish create_a3ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.a3ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.a3ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-
+        self.logger.info("Finished creating the A3SS Matrix - {}".format(self.name))
+        self.ip_raw_density['feature'].to_csv("{}.ip.{}.{}.a3ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_density['feature'].to_csv("{}.input.{}.{}.a3ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.maptype = 'a3ss'
     def create_a5ss_matrices(self, label=""):
-        # print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        
-        self.ip_raw_matrix['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the A5SS Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            densities[i]['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
                                                                annotation_type = self.annotation_type,
-                                                               density = self.ip, 
+                                                               density = rbps[i], 
                                                                exon_offset = self.exon_offset, 
                                                                intron_offset = self.intron_offset, 
                                                                is_scaled = self.is_scaled,
                                                                combine_regions = True)
-        # print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("starting create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix['feature'] = mtx.create_a5ss_matrix(annotation = self.annotation, 
-                                                                  annotation_type = self.annotation_type,
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
-        # print("finish create_a5ss_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.a5ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.a5ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-
+        self.logger.info("Finished creating the A5SS Matrix - {}".format(self.name))
+        self.ip_raw_density['feature'].to_csv("{}.ip.{}.{}.a5ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_density['feature'].to_csv("{}.input.{}.{}.a5ss.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.maptype = 'a5ss'
     def create_mxe_matrices(self, label=""):
-        # print("starting create_mxe_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'] = mtx.create_mxe_matrix(annotation = self.annotation, 
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the MXE Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            
+            densities[i]['feature'] = mtx.create_mxe_matrix(annotation = self.annotation, 
                                                                annotation_type = self.annotation_type,
-                                                               density = self.ip, 
+                                                               density = rbps[i], 
                                                                exon_offset = self.exon_offset, 
                                                                intron_offset = self.intron_offset, 
                                                                is_scaled = self.is_scaled,
                                                                combine_regions = True)
-        # print("finish create_mxe_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("starting create_mxe_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix['feature'] = mtx.create_mxe_matrix(annotation = self.annotation, 
-                                                                  annotation_type = self.annotation_type,
-                                                                  density = self.inp, 
-                                                                  exon_offset = self.exon_offset, 
-                                                                  intron_offset = self.intron_offset, 
-                                                                  is_scaled = self.is_scaled,
-                                                                  combine_regions = True)
-        # print("finish create_mxe_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.mxe.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.mxe.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-
+        self.logger.info("Start creating the MXE Matrix - {}".format(self.name))
+        self.ip_raw_density['feature'].to_csv("{}.ip.{}.{}.mxe.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_density['feature'].to_csv("{}.input.{}.{}.mxe.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.maptype = 'mxe'
     def create_se_matrices(self, label=""):
-        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("ANNOTATION: {}".format(self.annotation))
-        self.ip_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the SE Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            densities[i]['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
                                                              annotation_type = self.annotation_type,
-                                                             density = self.ip, 
+                                                             density = rbps[i], 
                                                              exon_offset = self.exon_offset, 
                                                              intron_offset = self.intron_offset, 
                                                              is_scaled = self.is_scaled,
                                                              combine_regions = True)
-        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix['feature'] = mtx.create_se_matrix(annotation = self.annotation, 
-                                                                annotation_type = self.annotation_type,
-                                                                density = self.inp, 
-                                                                exon_offset = self.exon_offset, 
-                                                                intron_offset = self.intron_offset, 
-                                                                is_scaled = self.is_scaled,
-                                                                combine_regions = True)
-        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-
+        self.logger.info("Finished creating the SE Matrix - {}".format(self.name))
+        self.ip_raw_density['feature'].to_csv("{}.ip.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_density['feature'].to_csv("{}.input.{}.{}.se.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.maptype = 'se'
     def create_ri_matrices(self, label=""):
-        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("ANNOTATION: {}".format(self.annotation))
-        self.ip_raw_matrix['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the RI Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            densities[i]['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
                                                              annotation_type = self.annotation_type,
-                                                             density = self.ip, 
+                                                             density = rbps[i], 
                                                              exon_offset = self.exon_offset, 
                                                              intron_offset = self.intron_offset, 
                                                              is_scaled = self.is_scaled,
                                                              combine_regions = True)
-        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        # print("starting create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.input_raw_matrix['feature'] = mtx.create_ri_matrix(annotation = self.annotation, 
-                                                                annotation_type = self.annotation_type,
-                                                                density = self.inp, 
-                                                                exon_offset = self.exon_offset, 
-                                                                intron_offset = self.intron_offset, 
-                                                                is_scaled = self.is_scaled,
-                                                                combine_regions = True)
-        # print("finish create_se_matrix analysis {}".format(datetime.datetime.now().time()))
-        self.ip_raw_matrix['feature'].to_csv("{}.ip.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
-        self.input_raw_matrix['feature'].to_csv("{}.input.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.logger.info("Finished creating the SE Matrix - {}".format(self.name))
+        self.ip_raw_density['feature'].to_csv("{}.ip.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.input_raw_density['feature'].to_csv("{}.input.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
+        self.maptype = 'ri'
