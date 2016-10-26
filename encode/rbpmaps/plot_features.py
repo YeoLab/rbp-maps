@@ -177,7 +177,10 @@ def main(argv=None): # IGNORE:C0111
                     logger.error("Manifest line is malformed (check columns) at {}".format(line[0]))
                     sys.exit(1)
                 for i in range(0,len(reps)):
-                    
+                    """
+                    Set canonical prefix (e.g. 272_01_HNRNPK)
+                    """
+                    prefix = "{0}_{1:0=2d}_{2}".format(uid,i+1,rbp_name)
                     """
                     Check if bigwigs exist and create ReadDensity for IP and INPUT
                     """
@@ -254,24 +257,25 @@ def main(argv=None): # IGNORE:C0111
                     for norm_name, norm_func in normfuncs.iteritems():
                     # for n in range(0,len(normfuncs)):
                         output_filename = os.path.join(outdir,reps[i])+".{}.{}.removeoutliers.svg".format(args.event,norm_name)
+                        # key = included/excluded/all
                         for key, clip in clips.iteritems():
                             if(event == 'a3ss'):
-                                clip.create_a3ss_matrices(label=key)
+                                clip.create_a3ss_matrices(label="{}.{}".format(prefix,key))
                             elif(event == 'a5ss'):
-                                clip.create_a5ss_matrices(label=key)
+                                clip.create_a5ss_matrices(label="{}.{}".format(prefix,key))
                             elif(event == 'se'):
-                                clip.create_se_matrices(label=key)
+                                clip.create_se_matrices(label="{}.{}".format(prefix,key))
                             elif(event == 'mxe'):
-                                clip.create_mxe_matrices(label=key)
+                                clip.create_mxe_matrices(label="{}.{}".format(prefix,key))
                             elif(event == 'ri'):
-                                clip.create_ri_matrices(label=key)
+                                clip.create_ri_matrices(label="{}.{}".format(prefix,key))
                             elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
                                 clip.create_matrices(label=key, scaled=False)
                             else:
                                 logger.error("Invalid event chosen: {}".format(event))
                                 sys.exit(1)
                             logger.info("Normalizing {} map".format(key))
-                            clip.normalize(normfunc=norm_func,label="{}.{}".format(key,norm_name),min_density_sum=0)
+                            clip.normalize(normfunc=norm_func,label="{}.{}".format(prefix,norm_name),min_density_sum=0)
                             clip.set_means_and_sems('feature',confidence)
                             clip.get_means().to_csv(output_filename.replace('.svg','.{}.txt'.format(key)))
                         
@@ -284,9 +288,7 @@ def main(argv=None): # IGNORE:C0111
                         inc_e = {'region1':clips['included'].sems}
                         exc_e = {'region1':clips['excluded'].sems}
                                                 
-                        title = '{} ({}_0{}) {} events (keep={})\nincl (n={}), excl (n={})'.format(rbp_name,
-                                                                                                   uid,
-                                                                                                   i+1,
+                        title = '{}: {} events (keep={})\nincl (n={}), excl (n={})'.format(prefix,
                                                                                                    event,
                                                                                                    confidence,
                                                                                                    len(inclusionClip.density['feature']),
