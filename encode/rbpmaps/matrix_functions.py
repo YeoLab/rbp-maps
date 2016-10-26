@@ -9,8 +9,24 @@ import intervals
 import misc
 import Feature
 
-def create_matrix(annotation, density, upstream_offset, downstream_offset, is_scaled = True, annotation_type = 'bed'):
-    # print("creating the matrix for {}".format(density.get_name()))
+def create_matrix(annotation, density, 
+                  upstream_offset, downstream_offset, 
+                  is_scaled = True, annotation_type = 'bed'):
+    """
+    Creates an r x c pandas dataframe of r events for a feature of length c.
+    
+    Args:
+        annotation (string) : path of file containing the annotation
+        density (ReadDensity) : object containing positive and negative BigWig files
+        upstream_offset (integer) : number of bases upstream of feature to plot
+        downstream_offset (integer) : number of bases downstream of feature to plot
+        is_scaled (boolean) : if all features are of different length, this must be true
+            to resize all features to fit on a 0-100% scale.
+        annotation_type (string) : may be bed format or any additional defined format in Feature
+    
+    Returns:
+        pandas.DataFrame : a dataframe of r events for a feature of length c.
+    """
     count = 0
     densities = {}
     with open(annotation) as f:
@@ -30,7 +46,35 @@ def create_matrix(annotation, density, upstream_offset, downstream_offset, is_sc
                     densities[intervals.rename_index(interval)] = wiggle
     return pd.DataFrame(densities).T
 
-def create_mxe_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="rmats"):
+def create_mxe_matrix(annotation, density, 
+                      exon_offset, intron_offset, 
+                      is_scaled = False, combine_regions = True, 
+                      annotation_type="rmats"):
+    """
+    Creates an r x c pandas dataframe of r events for a mutually exclusive
+    exon feature. An MXE matrix will contain six distinct regions: 
+    
+    |_]----||----[__||__]----||----[__||__]----||----[_|
+    
+    - the [..exon_offset]--intron_offset--... 3' site of an upstream exon
+    - the ...--intron_offset--[exon_offset..] 5' site of the upstream skipped exon
+    - the [..exon_offset]--intron_offset--... 3' site of the upstream skipped exon
+    - the ...--intron_offset--[exon_offset..] 5' site of the downstream skipped exon
+    - the [..exon_offset]--intron_offset--... 3' site of the downstream skipped exon
+    - the ..--intron_offset--[exon_offset..] 5' site of the downstream exon
+    Args:
+        annotation (string) : path of file containing the annotation
+        density (ReadDensity) : object containing positive and negative BigWig files
+        exon_offset (integer) : how far into the exon boundary to plot
+        intron_offset (integer) : how far after the exon boundary to plot
+        is_scaled (boolean) : if all features are of different length, this must be true
+            to resize all features to fit on a 0-100% scale.
+        combine_regions (boolean) : if False, return six DataFrames instead of one.
+        annotation_type (string) : may be rmats format or any additional defined format in Feature
+    
+    Returns:
+        pandas.DataFrame : a dataframe of r events for an MXE feature.
+    """
     three_upstream = {}
     three_up_mxe = {}
     five_up_mxe = {}
@@ -142,7 +186,31 @@ def create_mxe_matrix(annotation, density, exon_offset, intron_offset, is_scaled
             ra = pd.concat([three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream],axis=1)
             ra.columns = range(0,ra.shape[1])
             return ra
-def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type="rmats"):
+def create_ri_matrix(annotation, density, 
+                     exon_offset, intron_offset, 
+                     is_scaled = False, combine_regions = True, 
+                     annotation_type="rmats"):
+    """
+    Creates an r x c pandas dataframe of r events for a Retained Intron feature.
+    A RI matrix will contain two distinct regions: 
+    
+    |_]----||----[_|
+    
+    - the [..exon_offset]--intron_offset--... 3' site of an upstream exon
+    - the ..--intron_offset--[exon_offset..] 5' site of the downstream exon
+    Args:
+        annotation (string) : path of file containing the annotation
+        density (ReadDensity) : object containing positive and negative BigWig files
+        exon_offset (integer) : how far into the exon boundary to plot
+        intron_offset (integer) : how far after the exon boundary to plot
+        is_scaled (boolean) : if all features are of different length, this must be true
+            to resize all features to fit on a 0-100% scale.
+        combine_regions (boolean) : if False, return two DataFrames instead of one
+        annotation_type (string) : may be rmats format or any additional defined format in Feature
+    
+    Returns:
+        pandas.DataFrame : a dataframe of r events for an MXE feature.
+    """
     three_upstream = {}
     five_downstream = {}
             
@@ -161,15 +229,9 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                         intron_offset)
                     
                 wiggle = pd.Series(wiggle)
-                # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
-        
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) 
-                
-                    # print("length of 3p upstream: {}".format(len(wiggle)))
-                # else:
-                #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 three_upstream[event] = wiggle
                 
                 """five prime site of downstream region"""
@@ -179,18 +241,14 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                                                                         exon_offset,
                                                                         intron_offset)
                 wiggle = pd.Series(wiggle)
-                # if not all(np.isnan(wiggle)):
                 wiggle = abs(wiggle) # convert all values to positive
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
-                
-                    # print("length of 5p downstream: {}".format(len(wiggle)))
-                # else:
-                #     wiggle = pd.Series([-1]*(intron_offset + exon_offset))
                 five_downstream[event] = wiggle
         
         three_upstream = pd.DataFrame(three_upstream).T
         five_downstream = pd.DataFrame(five_downstream).T
+        
         if combine_regions == False:
             return three_upstream, five_downstream
         else:
@@ -199,24 +257,39 @@ def create_ri_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             # print("TYPE OF MATRIX: {}".format(type(ra)))
             return ra
     
-def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions = True, annotation_type = "rmats"):
-    # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
-    # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
-    # chr2:55764619:55764721:+@chr2:55771074|55771161:55771210:+      ENSG00000163001
-    # chr17:62502194:62502407:-@chr17:62500960|62500998:62500795:-    ENSG00000108654
+def create_a5ss_matrix(annotation, density, 
+                       exon_offset, intron_offset, 
+                       is_scaled = True, combine_regions = True, 
+                       annotation_type = "rmats"):
     """
-    Four regions:
+    Creates an r x c pandas dataframe of r events for an 
+    alternative 5' splice site feature. An A5ss matrix will 
+    contain three distinct regions: 
+    
+    ______|__]------||------[__|
+    __|__]------|    |------[__|
+    
+    - the [..exon_offset]--intron_offset--... 3' site of an alt1 spliced exon
+    - the [..exon_offset]--intron_offset--... 3' site of an alt2 spliced exon
+    - the ..--intron_offset--[exon_offset..] 5' site of the downstream exon
+    Args:
+        annotation (string) : path of file containing the annotation
+        density (ReadDensity) : object containing positive and negative BigWig files
+        exon_offset (integer) : how far into the exon boundary to plot
+        intron_offset (integer) : how far after the exon boundary to plot
+        is_scaled (boolean) : if all features are of different length, this must be true
+            to resize all features to fit on a 0-100% scale.
+        combine_regions (boolean) : if False, return three DataFrames instead of one.
+        annotation_type (string) : may be rmats format or any additional defined format in Feature
+    
+    Returns:
+        pandas.DataFrame : a dataframe of r events for an A5SS feature.
     """
-    # [    |    ]----|---|----[    |    [    |    ]
     three_alt1 = {}
     three_alt2 = {}
     five_downstream = {}
-    # Feature format:
-    # chr17:80009218:80008888|80009170:-@chr17:80008538:80008640:-    ENSG00000169733
-    # chr2:183800103:183799993|183800021:-@chr2:183799480:183799560:-    ENSG00000061676
-    # chr17:80417868:80417948|80418199:+@chr17:80422163:80422306:+    ENSG00000141562
+
     with open(annotation) as f:
-        # f.next() # for title
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
                 event = line.rstrip() # .split('\t')[0]
@@ -280,16 +353,36 @@ def create_a5ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             return ra      
 def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
     """
-    Three regions:
+    Creates an r x c pandas dataframe of r events for an 
+    alternative 3' splice site feature. An A3SS matrix will 
+    contain three distinct regions: 
+
+    __|__]------||-----[__|____
+    __|__]------|    |------[__|
+    
+    - the [..exon_offset]--intron_offset--... 3' site of an upstream exon
+    - the ..--intron_offset--[exon_offset..] 5' site of the alt1 spliced exon
+    - the ..--intron_offset--[exon_offset..] 5' site of the alt2 spliced exon
+    
+    Args:
+        annotation (string) : path of file containing the annotation
+        density (ReadDensity) : object containing positive and negative BigWig files
+        exon_offset (integer) : how far into the exon boundary to plot
+        intron_offset (integer) : how far after the exon boundary to plot
+        is_scaled (boolean) : if all features are of different length, this must be true
+            to resize all features to fit on a 0-100% scale.
+        combine_regions (boolean) : if False, return three DataFrames instead of one.
+        annotation_type (string) : may be rmats format or any additional defined format in Feature
+    
+    Returns:
+        pandas.DataFrame : a dataframe of r events for an A3SS feature.
     """
-    # [    |    ]----|---|----[    |    [    |    ]
     three_upstream = {}
     five_alt1 = {}
     five_alt2 = {}
     
     
     with open(annotation) as f:
-        # f.next() # for title
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
                 event = line.rstrip() # .split('\t')[0]
@@ -354,6 +447,29 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
             return ra                           
                         
 def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
+    """
+    Creates an r x c pandas dataframe of r events for a skipped
+    exon feature. An SE matrix will contain four distinct regions: 
+    
+    |_]----||----[__||__]----||----[_|
+    
+    - the [..exon_offset]--intron_offset--... 3' site of an upstream exon
+    - the ...--intron_offset--[exon_offset..] 5' site of the upstream skipped exon
+    - the [..exon_offset]--intron_offset--... 3' site of the downstream skipped exon
+    - the ..--intron_offset--[exon_offset..] 5' site of the downstream exon
+    Args:
+        annotation (string) : path of file containing the annotation
+        density (ReadDensity) : object containing positive and negative BigWig files
+        exon_offset (integer) : how far into the exon boundary to plot
+        intron_offset (integer) : how far after the exon boundary to plot
+        is_scaled (boolean) : if all features are of different length, this must be true
+            to resize all features to fit on a 0-100% scale.
+        combine_regions (boolean) : if False, return four DataFrames instead of one.
+        annotation_type (string) : may be rmats format or any additional defined format in Feature
+    
+    Returns:
+        pandas.DataFrame : a dataframe of r events for an SE feature.
+    """
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
@@ -362,17 +478,9 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
     with open(annotation) as f:
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
-                # event = line.rstrip().split('\t')[0]
                 event = line.rstrip()
                 upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,annotation_type).get_bedtools()
                 
-                """ Deprecated
-                upstream, se, downstream = event.split('@')
-                
-                upstream_interval = misc.create_bed_tool_from_miso_se(upstream)
-                interval = misc.create_bed_tool_from_miso_se(se)
-                downstream_interval = misc.create_bed_tool_from_miso_se(downstream)
-                """
                 """three prime upstream region"""
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         interval,
@@ -432,7 +540,31 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             ra.columns = range(0,ra.shape[1])
             return ra
 
-def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exons, exon_overhang, intron_overhang):
+def make_hist_se(infile, outfile, 
+                 l10p_cutoff, l2fc_cutoff, 
+                 all_exons, exon_offset, 
+                 intron_offset):
+    """
+    Creates an r x c pandas dataframe of r events for a skipped
+    exon feature. An SE matrix will contain four distinct regions: 
+    
+    |_]----||----[__||__]----||----[_|
+    
+    - the [..exon_offset]--intron_offset--... 3' site of an upstream exon
+    - the ...--intron_offset--[exon_offset..] 5' site of the upstream skipped exon
+    - the [..exon_offset]--intron_offset--... 3' site of the downstream skipped exon
+    - the ..--intron_offset--[exon_offset..]  5' site of the downstream exon
+    Args:
+        infile (string) : input file (input normed bedfile)
+        outfile (string) : output file containing peaks per position
+        l10p_cutoff (float) : l10 pvalue cutoff
+        l2fc_cutoff (float) : l2 fold change cutoff
+        all_exons (string) : MISO-style annotation
+        exon_offset (integer) : how far into the exon boundary to plot
+        intron_offset (integer) : how far after the exon boundary to plot
+    Writes:
+        file containing the number of peaks at each position. Line-delimited.
+    """
     try:
         region_types = ["upstream_region_skipped_exon",
                         "upstream_region_downstream_exon",
@@ -440,6 +572,7 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
                         "downstream_region_upstream_exon"]
         position_sum = {}
         count = 0
+        hashing_val = 10000
         with open(infile,'r') as f:
             for line in f:
                 line = line.split('\t')
@@ -498,25 +631,25 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
         # count from 0 to max
         current_pos = 0
         o = open(outfile,'w')
-        for j in range(-exon_overhang, intron_overhang+1):
+        for j in range(-exon_offset, intron_offset+1):
             if misc.exists(position_sum,"downstream_region_upstream_exon",j):
                 o.write("{}\n".format(position_sum["downstream_region_upstream_exon",j]))
             else:
                 o.write("{}\n".format(0))
             current_pos = current_pos + 1
-        for j in range(-intron_overhang, exon_overhang+1):
+        for j in range(-intron_offset, exon_offset+1):
             if misc.exists(position_sum,"upstream_region_skipped_exon",j):
                 o.write("{}\n".format(position_sum["upstream_region_skipped_exon",j]))
             else:
                 o.write("{}\n".format(0))
             current_pos = current_pos + 1
-        for j in range(-exon_overhang, intron_overhang+1):
+        for j in range(-exon_offset, intron_offset+1):
             if misc.exists(position_sum,"downstream_region_skipped_exon",j):
                 o.write("{}\n".format(position_sum["downstream_region_skipped_exon",j]))
             else:
                 o.write("{}\n".format(0))
             current_pos = current_pos + 1
-        for j in range(-intron_overhang, exon_overhang+1):
+        for j in range(-intron_offset, exon_offset+1):
             if misc.exists(position_sum,"upstream_region_downstream_exon",j):
                 o.write("{}\n".format(position_sum["upstream_region_downstream_exon",j]))
             else:

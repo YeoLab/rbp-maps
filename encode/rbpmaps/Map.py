@@ -7,7 +7,6 @@ Created on Jun 27, 2016
 import matrix_functions as mtx
 import normalization_functions as norm
 import os
-import datetime
 import logging
 import pandas as pd
 
