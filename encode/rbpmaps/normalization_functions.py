@@ -46,38 +46,33 @@ def entropy(density, input_density, min_density_threshold = 0):
     return en
 def entropy_of_reads(density, input_density, min_density_threshold = 0):
     """
-    globally for input, add pseudocount of 1 read
-    divide each position by 1,000,000
-    do en
-    plot mean
+    Return the entropy of each position
+    Logic: 
+        Fill NaNs with zero - we want to count all regions and add pseudocount
+        Fill -1 with NaNs - we want to negate any -1, which signifies a premature exon boundary
+        Add minimum pseudocount
+        Calculate entropy
     """
-
-    # print('Entropy of reads')
-    ipdf = density.replace(-1, np.nan)
-    indf = input_density.replace(-1, np.nan)
+    df_indices = density.index
+    dfi_indices = input_density.index
+    missing = pd.index(set(df_indices) - set(dfi_indices))
     
-    # ipdf = density[density.sum(axis=1) > min_density_threshold]
-    # indf = input_density[input_density.sum(axis=1) > min_density_threshold]
+    input_density = input_density.append(input_density.ix[missing])
     
-    min_ip_read_number = min([item for item in ipdf.unstack().values if item > 0])
-    min_in_read_number = min([item for item in indf.unstack().values if item > 0])
+    density = density.fillna(0) # NaNs are regions which contain zero density
+    df = density.replace(-1, np.nan) # -1 are regions which should not be counted at all
+    
+    input_density = input_density.fillna(0) # NaNs are regions which contain zero density
+    dfi = input_density.replace(-1, np.nan) # -1 are regions which should not be counted at all
+    
+    min_ip_read_number = min([item for item in df.unstack().values if item > 0])
+    min_in_read_number = min([item for item in dfi.unstack().values if item > 0])
     min_read_number = min(min_ip_read_number,min_in_read_number)
     
-    ipdf = ipdf + min_read_number
-    indf = indf + min_read_number
+    df = df + min_read_number
+    dfi = dfi + min_read_number
     
-    ipdfdiv = ipdf # .div(1000000)
-    indfdiv = indf # .div(1000000)
-    
-    dft = pd.merge(ipdfdiv,indfdiv,how='left',left_index=True,right_index=True)
-    
-    ipdfdiv = dft.filter(regex='\d+_x')
-    indfdiv = dft.filter(regex='\d+_y')
-    
-    ipdfdiv = ipdfdiv.rename(columns=lambda x: x.replace('_x', ''))
-    indfdiv = indfdiv.rename(columns=lambda x: x.replace('_y', '')).fillna(min_read_number)
-    
-    en = ipdfdiv.multiply(np.log2(ipdfdiv.div(indfdiv)))
+    en = df.multiply(np.log2(df.div(dfi)))
     # print("TYPE AFTER ENTROPY OF READS: {}".format(type(en)))
     return en
 def pdf_of_entropy_of_reads(density, input_density, min_density_threshold = 0):
