@@ -8,6 +8,8 @@ import numpy as np
 import intervals
 import misc
 import Feature
+import logging
+logger = logging.getLogger('plot_features')
 
 def create_matrix(annotation, density, 
                   upstream_offset, downstream_offset, 
@@ -29,27 +31,51 @@ def create_matrix(annotation, density,
     """
     count = 0
     densities = {}
+    logger.info("Start matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            upstream_offset,
+                                                                                                            downstream_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
     with open(annotation) as f:
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
                 count = count + 1
                 if count % 50000 == 0:
-                    print('processed {} features'.format(count))
+                    logger.info('Processed {} features'.format(count))
                 event = line.rstrip() # .split('\t')[0]
                 interval = Feature.Feature(event, annotation_type).get_bedtool()
                 wiggle = pd.Series(intervals.some_range(density, interval, 0, 0))
+                wiggle = wiggle.fillna(0) # convert all nans to 0
+                wiggle = abs(wiggle) # convert all values to positive
+                if(is_scaled == True):
+                    wiggle = intervals.get_scale(wiggle)
+                densities[intervals.rename_index(interval)] = wiggle
+                """ Leave out for later discussion, but even if there is nothing there, 
+                    we want to keep the region. When we add pseudocounts, it will
+                    contribute to the map as a 'flat' region.
                 if not all(np.isnan(wiggle)):
                     wiggle = wiggle.fillna(0) # convert all nans to 0
                     wiggle = abs(wiggle) # convert all values to positive
                     if(is_scaled == True):
                         wiggle = intervals.get_scale(wiggle)
                     densities[intervals.rename_index(interval)] = wiggle
+                """
+    logger.info("Finished matrix creation.")
     return pd.DataFrame(densities).T
 
 def create_mxe_matrix(annotation, density, 
                       exon_offset, intron_offset, 
                       is_scaled = False, combine_regions = True, 
                       annotation_type="rmats"):
+    logger.info("Starting MXE matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            exon_offset,
+                                                                                                            intron_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
     """
     Creates an r x c pandas dataframe of r events for a mutually exclusive
     exon feature. An MXE matrix will contain six distinct regions: 
@@ -180,12 +206,13 @@ def create_mxe_matrix(annotation, density,
         five_down_mxe = pd.DataFrame(five_down_mxe).T
         three_down_mxe = pd.DataFrame(three_down_mxe).T
         five_downstream = pd.DataFrame(five_downstream).T
-        if combine_regions == False:
-            return three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream
-        else:
-            ra = pd.concat([three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream],axis=1)
-            ra.columns = range(0,ra.shape[1])
-            return ra
+    logger.info("Finished matrix creation.")
+    if combine_regions == False:
+        return three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream
+    else:
+        ra = pd.concat([three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream],axis=1)
+        ra.columns = range(0,ra.shape[1])
+        return ra
 def create_ri_matrix(annotation, density, 
                      exon_offset, intron_offset, 
                      is_scaled = False, combine_regions = True, 
@@ -211,6 +238,14 @@ def create_ri_matrix(annotation, density,
     Returns:
         pandas.DataFrame : a dataframe of r events for an MXE feature.
     """
+    logger.info("Starting RI matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            exon_offset,
+                                                                                                            intron_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
+    
     three_upstream = {}
     five_downstream = {}
             
@@ -248,14 +283,14 @@ def create_ri_matrix(annotation, density,
         
         three_upstream = pd.DataFrame(three_upstream).T
         five_downstream = pd.DataFrame(five_downstream).T
-        
-        if combine_regions == False:
-            return three_upstream, five_downstream
-        else:
-            ra = pd.concat([three_upstream,five_downstream],axis=1)
-            ra.columns = range(0,ra.shape[1])
-            # print("TYPE OF MATRIX: {}".format(type(ra)))
-            return ra
+    logger.info("Finished matrix creation.")
+    if combine_regions == False:
+        return three_upstream, five_downstream
+    else:
+        ra = pd.concat([three_upstream,five_downstream],axis=1)
+        ra.columns = range(0,ra.shape[1])
+        # print("TYPE OF MATRIX: {}".format(type(ra)))
+        return ra
     
 def create_a5ss_matrix(annotation, density, 
                        exon_offset, intron_offset, 
@@ -285,6 +320,13 @@ def create_a5ss_matrix(annotation, density,
     Returns:
         pandas.DataFrame : a dataframe of r events for an A5SS feature.
     """
+    logger.info("Starting A5SS matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            exon_offset,
+                                                                                                            intron_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
     three_alt1 = {}
     three_alt2 = {}
     five_downstream = {}
@@ -344,13 +386,13 @@ def create_a5ss_matrix(annotation, density,
         three_alt1 = pd.DataFrame(three_alt1).T
         three_alt2 = pd.DataFrame(three_alt2).T
         five_downstream = pd.DataFrame(five_downstream).T
-
-        if combine_regions == False:
-            return three_alt1, three_alt2, five_downstream
-        else:
-            ra = pd.concat([three_alt1,three_alt2,five_downstream],axis=1)
-            ra.columns = range(0,ra.shape[1])
-            return ra      
+    logger.info("Finished matrix creation.")
+    if combine_regions == False:
+        return three_alt1, three_alt2, five_downstream
+    else:
+        ra = pd.concat([three_alt1,three_alt2,five_downstream],axis=1)
+        ra.columns = range(0,ra.shape[1])
+        return ra      
 def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
     """
     Creates an r x c pandas dataframe of r events for an 
@@ -377,6 +419,13 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     Returns:
         pandas.DataFrame : a dataframe of r events for an A3SS feature.
     """
+    logger.info("Starting a3ss matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            exon_offset,
+                                                                                                            intron_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
     three_upstream = {}
     five_alt1 = {}
     five_alt2 = {}
@@ -439,12 +488,13 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         three_upstream = pd.DataFrame(three_upstream).T
         five_alt1 = pd.DataFrame(five_alt1).T
         five_alt2 = pd.DataFrame(five_alt2).T
-        if combine_regions == False:
-            return three_upstream, five_alt1, five_alt2
-        else:
-            ra = pd.concat([three_upstream,five_alt1,five_alt2],axis=1)
-            ra.columns = range(0,ra.shape[1])
-            return ra                           
+    logger.info("Finished matrix creation.")
+    if combine_regions == False:
+        return three_upstream, five_alt1, five_alt2
+    else:
+        ra = pd.concat([three_upstream,five_alt1,five_alt2],axis=1)
+        ra.columns = range(0,ra.shape[1])
+        return ra                           
                         
 def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
     """
@@ -470,6 +520,13 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
     Returns:
         pandas.DataFrame : a dataframe of r events for an SE feature.
     """
+    logger.info("Starting SE matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            exon_offset,
+                                                                                                            intron_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
@@ -533,12 +590,13 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
-        if combine_regions == False:
-            return three_upstream, five_skipped, three_skipped, five_downstream
-        else:
-            ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
-            ra.columns = range(0,ra.shape[1])
-            return ra
+    logger.info("Finished matrix creation.")
+    if combine_regions == False:
+        return three_upstream, five_skipped, three_skipped, five_downstream
+    else:
+        ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
+        ra.columns = range(0,ra.shape[1])
+        return ra
 
 def make_hist_se(infile, outfile, 
                  l10p_cutoff, l2fc_cutoff, 
@@ -565,6 +623,7 @@ def make_hist_se(infile, outfile,
     Writes:
         file containing the number of peaks at each position. Line-delimited.
     """
+    
     try:
         region_types = ["upstream_region_skipped_exon",
                         "upstream_region_downstream_exon",

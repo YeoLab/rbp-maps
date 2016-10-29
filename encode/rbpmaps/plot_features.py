@@ -68,7 +68,6 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
-    
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
@@ -116,18 +115,18 @@ def main(argv=None): # IGNORE:C0111
                     cell_line = line[2]
                     rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
                     rep2 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
-                    inp = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
+                    inp1 = line[5].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                     
                     assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
-                    if(args.flipped or 'encode_v12' in rep1 or 'encode_v12' in rep2):
+                    if(args.flipped):
                         rep1neg = rep1.replace('.bam','.norm.pos.bw')
                         rep1pos = rep1.replace('.bam','.norm.neg.bw')
                         
                         rep2neg = rep2.replace('.bam','.norm.pos.bw')
                         rep2pos = rep2.replace('.bam','.norm.neg.bw')
                         
-                        inputneg = inp.replace('.bam','.norm.pos.bw')
-                        inputpos = inp.replace('.bam','.norm.neg.bw')
+                        inputneg = inp1.replace('.bam','.norm.pos.bw')
+                        inputpos = inp1.replace('.bam','.norm.neg.bw')
                     else:
                         rep1neg = rep1.replace('.bam','.norm.pos.bw')
                         rep1pos = rep1.replace('.bam','.norm.neg.bw')
@@ -135,12 +134,13 @@ def main(argv=None): # IGNORE:C0111
                         rep2neg = rep2.replace('.bam','.norm.pos.bw')
                         rep2pos = rep2.replace('.bam','.norm.neg.bw')
                         
-                        inputneg = inp.replace('.bam','.norm.pos.bw')
-                        inputpos = inp.replace('.bam','.norm.neg.bw')
+                        inputneg = inp1.replace('.bam','.norm.pos.bw')
+                        inputpos = inp1.replace('.bam','.norm.neg.bw')
 
                     my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
                     my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')
                     
+                    bams = [rep1, rep2]
                     reps = [my_rep1_name, my_rep2_name]
                     reppos = [rep1pos, rep2pos]
                     repneg = [rep1neg, rep2neg]
@@ -152,23 +152,24 @@ def main(argv=None): # IGNORE:C0111
                     rbp_name = line[1]
                     cell_line = line[2]
                     rep1 = line[3].replace('/ps-yeolab2/','/ps-yeolab3/') # NOTHING should be in ps-yeolab2
-                    inp = line[4].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
+                    inp1 = line[4].replace('/ps-yeolab2/','/ps-yeolab3/').strip() # this may be the last column in the manifest.
                     
                     if(args.flipped):
                         rep1neg = rep1.replace('.bam','.norm.pos.bw')
                         rep1pos = rep1.replace('.bam','.norm.neg.bw')
 
-                        inputneg = inp.replace('.bam','.norm.pos.bw')
-                        inputpos = inp.replace('.bam','.norm.neg.bw')
+                        inputneg = inp1.replace('.bam','.norm.pos.bw')
+                        inputpos = inp1.replace('.bam','.norm.neg.bw')
                     else:
                         rep1neg = rep1.replace('.bam','.norm.neg.bw')
                         rep1pos = rep1.replace('.bam','.norm.pos.bw')
 
-                        inputneg = inp.replace('.bam','.norm.neg.bw')
-                        inputpos = inp.replace('.bam','.norm.pos.bw')
+                        inputneg = inp1.replace('.bam','.norm.neg.bw')
+                        inputpos = inp1.replace('.bam','.norm.pos.bw')
                         
                     my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
-                    logger.info("Processing reps: {}, {}".format(my_rep1_name))
+                    logger.info("Processing reps: {}".format(my_rep1_name))
+                    bams = [rep1]
                     reps = [my_rep1_name]
                     reppos = [rep1pos]
                     repneg = [rep1neg]
@@ -191,8 +192,8 @@ def main(argv=None): # IGNORE:C0111
                            os.path.isfile(inputneg)):
                         logger.error('BigWigs dont exist for RBP: {}'.format(rbp_name))                        
                     
-                    rbp = ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i])
-                    inp = ReadDensity.ReadDensity(pos=inputpos, neg=inputneg)
+                    rbp = ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i], bam = bams[i])
+                    inp = ReadDensity.ReadDensity(pos=inputpos, neg=inputneg, bam = inp1)
                     
                     
                     """
@@ -249,11 +250,13 @@ def main(argv=None): # IGNORE:C0111
                     """
                     Define the normalization functions
                     """
-                    normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract,
+                    normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract}
+                    """
+                    ,
                                  'density':norm.get_density,
                                  'input':norm.get_input,
-                                 'entropy':norm.entropy_of_reads}
-
+                                 'read_entropy':norm.read_entropy}
+                    """
                     """
                     Create and normalize inclusion, exclusion, and background CLIP density values
                     """                    
@@ -273,7 +276,7 @@ def main(argv=None): # IGNORE:C0111
                             elif(event == 'ri'):
                                 clip.create_ri_matrices(label="{}.{}".format(prefix,key))
                             elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
-                                clip.create_matrices(label=key, scaled=False)
+                                clip.create_matrices(label="{}.{}".format(prefix,key), scaled=False)
                             else:
                                 logger.error("Invalid event chosen: {}".format(event))
                                 sys.exit(1)

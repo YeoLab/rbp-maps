@@ -4,6 +4,7 @@ Created on May 3, 2016
 @author: Gabe
 '''
 import pyBigWig
+import pysam
 import numpy as np
 
 class ReadDensity():
@@ -13,21 +14,21 @@ class ReadDensity():
         self.pos(positive *.bw file)
         self.neg(negative *.bw file)
     """
-    def __init__(self, pos, neg, name = None):
+    def __init__(self, pos, neg, name = None, bam = None):
         try:
             self.pos = pyBigWig.open(pos)
             self.neg = pyBigWig.open(neg)
             self.name = name if name is not None else pos.replace('pos','*').replace('neg','*')
+            print(bam)
+            self.bam = pysam.AlignmentFile(bam)
         except Exception as e:
             print("couldn't open the bigwig files!")
             print(e)
             return 1
-    def get_name(self):
-        """
-        returns name
-        """
-        return self.name
     
+    def pseudocount(self):
+        return 1000000.0/self.bam.count()
+        
     def values(self, chrom, start, end, strand):
         """
         Given a chromosome coordinate, return a list of values

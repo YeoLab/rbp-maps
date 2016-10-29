@@ -161,7 +161,7 @@ class ClipWithInput(Map):
         self.input_raw_density = {}
         self.density = {}
             
-    def normalize(self, normfunc = norm.entropy, min_density_sum = 0, label = ""):
+    def normalize(self, normfunc = norm.read_entropy, min_density_sum = 0, label = ""):
         """
         For each feature in the matrix, perform normalization
         
@@ -179,9 +179,14 @@ class ClipWithInput(Map):
             *.normed_matrix.csv : for each key (feature) in a map's density dictionary, 
                 write the full contents of the normalized density matrix.
         """
+        
         for feature in self.ip_raw_density:
             # print("starting normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
-            self.density[feature] = normfunc(self.ip_raw_density[feature],self.input_raw_density[feature], min_density_sum)
+            self.density[feature] = normfunc(self.ip_raw_density[feature],
+                                             self.input_raw_density[feature], 
+                                             self.ip.pseudocount(),
+                                             self.inp.pseudocount(),
+                                             min_density_sum)
             self.density[feature].to_csv("{}.{}.{}.normed_matrix.csv".format(self.output_base, label, feature))
             # print("finished normalization for key {} {} {}".format(key, label, datetime.datetime.now().time()))
     
