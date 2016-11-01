@@ -62,7 +62,7 @@ def create_matrix(annotation, density,
                         wiggle = intervals.get_scale(wiggle)
                     densities[intervals.rename_index(interval)] = wiggle
                 """
-    logger.info("Finished matrix creation.")
+    logger.info("Finished matrix creation: {}".format(len(densities)))
     return pd.DataFrame(densities).T
 
 def create_mxe_matrix(annotation, density, 
@@ -206,7 +206,13 @@ def create_mxe_matrix(annotation, density,
         five_down_mxe = pd.DataFrame(five_down_mxe).T
         three_down_mxe = pd.DataFrame(three_down_mxe).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation.")
+    logger.info("Finished matrix creation: 3'up:{}, 5'up_mxe:{}, 3'up_mxe:{}, \
+                 5'down_mxe:{}, 3'down_mxe:{}, 5'down{}".format(three_upstream.shape[0],
+                                                                five_up_mxe.shape[0],
+                                                                three_up_mxe.shape[0],
+                                                                five_down_mxe.shape[0],
+                                                                three_down_mxe.shape[0],
+                                                                five_downstream.shape[0]))
     if combine_regions == False:
         return three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream
     else:
@@ -283,7 +289,8 @@ def create_ri_matrix(annotation, density,
         
         three_upstream = pd.DataFrame(three_upstream).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation.")
+    logger.info("Finished matrix creation: up:{}, down:{}".format(three_upstream.shape[0],
+                                                                  five_downstream.shape[0]))
     if combine_regions == False:
         return three_upstream, five_downstream
     else:
@@ -386,7 +393,9 @@ def create_a5ss_matrix(annotation, density,
         three_alt1 = pd.DataFrame(three_alt1).T
         three_alt2 = pd.DataFrame(three_alt2).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation.")
+    logger.info("Finished matrix creation: alt1:{}, alt2:{}, 5'down{}".format(three_alt1.shape[0],
+                                                                              three_alt2.shape[0],
+                                                                              five_downstream.shape[0]))
     if combine_regions == False:
         return three_alt1, three_alt2, five_downstream
     else:
@@ -488,7 +497,9 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         three_upstream = pd.DataFrame(three_upstream).T
         five_alt1 = pd.DataFrame(five_alt1).T
         five_alt2 = pd.DataFrame(five_alt2).T
-    logger.info("Finished matrix creation.")
+    logger.info("Finished matrix creation: alt1:{}, alt2:{}, 3'Up{}".format(five_alt1.shape[0],
+                                                                            five_alt2.shape[0],
+                                                                            three_upstream.shape[0]))
     if combine_regions == False:
         return three_upstream, five_alt1, five_alt2
     else:
@@ -590,7 +601,10 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation.")
+    logger.info("Finished matrix creation: {}, {}, {}, {}".format(three_upstream.shape[0],
+                                                                  five_skipped.shape[0],
+                                                                  three_skipped.shape[0],
+                                                                  five_downstream.shape[0]))
     if combine_regions == False:
         return three_upstream, five_skipped, three_skipped, five_downstream
     else:
