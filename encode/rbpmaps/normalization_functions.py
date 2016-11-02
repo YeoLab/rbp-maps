@@ -144,9 +144,9 @@ def normalize_and_per_region_subtract(density, input_density,
     input_density = input_density.append(input_density.ix[missing])
     
     pdf = calculate_pdf(density, pseudocount, min_density_threshold)
-    pdf.to_csv('/Users/brianyee/git/encode/encode/rbpmaps/testfiles/rbfox2/outputs/ip_pdf.csv')
+    # pdf.to_csv('/Users/brianyee/git/encode/encode/rbpmaps/testfiles/rbfox2/outputs/ip_pdf.csv')
     pdfi = calculate_pdf(input_density, ipseudocount, min_density_threshold)
-    pdfi.to_csv('/Users/brianyee/git/encode/encode/rbpmaps/testfiles/rbfox2/outputs/input_pdf.csv')
+    # pdfi.to_csv('/Users/brianyee/git/encode/encode/rbpmaps/testfiles/rbfox2/outputs/input_pdf.csv')
     subtracted = pdf.sub(pdfi)
     logger.info("Starting normalization (per region subtraction)")
     return subtracted

@@ -128,14 +128,14 @@ def main(argv=None): # IGNORE:C0111
                         inputneg = inp1.replace('.bam','.norm.pos.bw')
                         inputpos = inp1.replace('.bam','.norm.neg.bw')
                     else:
-                        rep1neg = rep1.replace('.bam','.norm.pos.bw')
-                        rep1pos = rep1.replace('.bam','.norm.neg.bw')
+                        rep1pos = rep1.replace('.bam','.norm.pos.bw')
+                        rep1neg = rep1.replace('.bam','.norm.neg.bw')
                         
-                        rep2neg = rep2.replace('.bam','.norm.pos.bw')
-                        rep2pos = rep2.replace('.bam','.norm.neg.bw')
+                        rep2pos = rep2.replace('.bam','.norm.pos.bw')
+                        rep2neg = rep2.replace('.bam','.norm.neg.bw')
                         
-                        inputneg = inp1.replace('.bam','.norm.pos.bw')
-                        inputpos = inp1.replace('.bam','.norm.neg.bw')
+                        inputpos = inp1.replace('.bam','.norm.pos.bw')
+                        inputneg = inp1.replace('.bam','.norm.neg.bw')
 
                     my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
                     my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')
@@ -214,37 +214,38 @@ def main(argv=None): # IGNORE:C0111
                     """
                     Create the Maps
                     """
+
                     logger.info("Creating ClipWithInput: {}.{}".format(reps[i],'included'))
                     inclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name = "{}.{}".format(reps[i],'included'),
+                                                name = prefix,
                                                 annotation = positive_annotation,
                                                 annotation_type = annotation_type,
-                                                output_file = os.path.join(outdir,'included.svg'),
+                                                output_file = "{}.svg".format(os.path.join(outdir,prefix)),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
                     
                     logger.info("Creating ClipWithInput: {}.{}".format(reps[i],'excluded'))
                     exclusionClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name="{}.{}".format(reps[i],'excluded'),
-                                                annotation=negative_annotation,
-                                                annotation_type=annotation_type,
-                                                output_file=os.path.join(outdir,'excluded.svg'),
+                                                name = prefix,
+                                                annotation = negative_annotation,
+                                                annotation_type = annotation_type,
+                                                output_file = "{}.svg".format(os.path.join(outdir,prefix)),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
                     
                     logger.info("Creating ClipWithInput: {}.{}".format(reps[i],'background'))
-                    bothClip = ClipWithInput(ReadDensity = rbp,
+                    backgroundClip = ClipWithInput(ReadDensity = rbp,
                                                 InputReadDensity = inp,
-                                                name="{}.{}".format(reps[i],'background'),
-                                                annotation=bg_annotation,
-                                                annotation_type=annotation_type,
-                                                output_file=os.path.join(outdir,'both.svg'),
+                                                name= prefix,
+                                                annotation = bg_annotation,
+                                                annotation_type = annotation_type,
+                                                output_file = "{}.svg".format(os.path.join(outdir,prefix)),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
                     
-                    clips = {'included':inclusionClip, 'excluded':exclusionClip, 'all':bothClip}
+                    clips = {'included':inclusionClip, 'excluded':exclusionClip, 'background':backgroundClip}
                     
                     
                     """
@@ -266,17 +267,17 @@ def main(argv=None): # IGNORE:C0111
                         # key = included/excluded/all
                         for key, clip in clips.iteritems():
                             if(event == 'a3ss'):
-                                clip.create_a3ss_matrices(label="{}.{}".format(prefix,key))
+                                clip.create_a3ss_matrices(label="{}".format(key))
                             elif(event == 'a5ss'):
-                                clip.create_a5ss_matrices(label="{}.{}".format(prefix,key))
+                                clip.create_a5ss_matrices(label="{}".format(key))
                             elif(event == 'se'):
-                                clip.create_se_matrices(label="{}.{}".format(prefix,key))
+                                clip.create_se_matrices(label="{}".format(key))
                             elif(event == 'mxe'):
-                                clip.create_mxe_matrices(label="{}.{}".format(prefix,key))
+                                clip.create_mxe_matrices(label="{}".format(key))
                             elif(event == 'ri'):
-                                clip.create_ri_matrices(label="{}.{}".format(prefix,key))
+                                clip.create_ri_matrices(label="{}".format(key))
                             elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
-                                clip.create_matrices(label="{}.{}".format(prefix,key), scaled=False)
+                                clip.create_matrices(label="{}".format(key), scaled=False)
                             else:
                                 logger.error("Invalid event chosen: {}".format(event))
                                 sys.exit(1)
