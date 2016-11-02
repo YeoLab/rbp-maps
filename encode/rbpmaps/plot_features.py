@@ -251,13 +251,11 @@ def main(argv=None): # IGNORE:C0111
                     """
                     Define the normalization functions
                     """
-                    normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract}
-                    """
-                    ,
+                    normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract,
                                  'density':norm.get_density,
                                  'input':norm.get_input,
                                  'read_entropy':norm.read_entropy}
-                    """
+                    
                     """
                     Create and normalize inclusion, exclusion, and background CLIP density values
                     """                    
