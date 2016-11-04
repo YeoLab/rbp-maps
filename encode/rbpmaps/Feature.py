@@ -10,14 +10,13 @@ class Feature():
     classdocs
     '''
 
-
     def __init__(self, annotation, source):
         '''
         Constructor
         '''
-        self.annotation = annotation.rstrip()
         self.source = source
-
+        self.annotation = annotation.rstrip()
+        
     def get_bedtool(self):
         if(self.source == 'bed'):
             chrom, start, end, name, score, strand = self.annotation.split('\t')
@@ -28,10 +27,10 @@ class Feature():
                                              score,
                                              strand])
 
-class SkippedExonFeature():
+class SkippedExonFeature(Feature):
     def __init__(self, annotation, source):
-        self.source = source
-        self.annotation = annotation.rstrip()
+        Feature.__init__(self, annotation, source)
+
     def get_bedtools(self):
         if(self.source == 'miso'):
             event = self.annotation.split('\t')[0]
@@ -94,8 +93,8 @@ class SkippedExonFeature():
 
 class A5ssFeature():
     def __init__(self, annotation, source):
-        self.source = source
-        self.annotation = annotation.rstrip()
+        Feature.__init__(self, annotation, source)
+
     def get_bedtools(self):
         if(self.source == 'miso'):
             event = self.annotation.split('\t')[0]
@@ -129,8 +128,8 @@ class A5ssFeature():
     
 class A3ssFeature():
     def __init__(self, annotation, source):
-        self.source = source
-        self.annotation = annotation.rstrip()
+        Feature.__init__(self, annotation, source)
+
     def get_bedtools(self):
         """
         Produces 3 intervals: 
@@ -178,8 +177,8 @@ class A3ssFeature():
 
 class RIFeature():
     def __init__(self, annotation, source):
-        self.source = source
-        self.annotation = annotation.rstrip()
+        Feature.__init__(self, annotation, source)
+
     def get_bedtools(self):
         
         if(self.source == 'xintao'):
@@ -227,8 +226,8 @@ class RIFeature():
         return upstream, downstream
 class MXEFeature():
     def __init__(self, annotation, source):
-        self.source = source
-        self.annotation = annotation.rstrip()
+        Feature.__init__(self, annotation, source)
+
     def get_bedtools(self):
         
         if(self.source == 'rmats'):
@@ -283,8 +282,6 @@ splice1, splice2, downstream = F.get_bedtools()
 print(splice1)
 print(splice2)
 print(downstream)
-
-
 
 annotation = 'CCT8_ENSG00000156261.8;RI:chr21:30434649:30434736-30434811:30434896:-'
 print(annotation)

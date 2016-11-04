@@ -88,7 +88,7 @@ def read_entropy(density, input_density,
     dfi = dfi + ipseudocount
     
     en = df.multiply(np.log2(df.div(dfi)))
-    logger.info("Finished normalization (pdf_entropy)")
+    logger.info("Finished normalization (read_entropy)")
     return en
 def pdf_read_entropy(density, input_density, 
                      pseudocount, ipseudocount,

@@ -217,7 +217,7 @@ class ClipWithInput(Map):
         self.means = means
         self.sems = sems
                 
-    def create_matrices(self, label="", is_scaled=True):
+    def create_matrices(self, label="", scaled=True):
         densities = [self.ip_raw_density, self.input_raw_density]
         rbps = [self.ip, self.inp]
         self.logger.info("Start creating the Matrix - {}".format(self.name))

@@ -289,7 +289,7 @@ def main(argv=None): # IGNORE:C0111
                         """
                         inc = {'region1':clips['included'].means}
                         exc = {'region1':clips['excluded'].means}
-                        bo = {'region1':clips['all'].means}
+                        bo = {'region1':clips['background'].means}
                         inc_e = {'region1':clips['included'].sems}
                         exc_e = {'region1':clips['excluded'].sems}
                                                 
@@ -309,7 +309,9 @@ def main(argv=None): # IGNORE:C0111
                             Plot.plot_ri(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         elif(event == 'mxe'):
                             Plot.plot_mxe(inc, exc, bo, inc_e, exc_e, title, output_filename)
-                        elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
+                        elif(event == 'cdsstarts' or event == 'cdsends' or \
+                             event == 'txstarts' or event == 'txends' or \
+                             event == 'txstop' or event == 'txstops'):
                             Plot.plot_bed(inc, exc, bo, inc_e, exc_e, title, output_filename)
                         else:
                             logger.error("invalid event (choose a3ss, a5ss, se, ri, cdsstarts, cdsends, txstarts, txends)")
