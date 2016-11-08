@@ -200,6 +200,7 @@ class ClipWithInput(Map):
             conf (float) : keep {conf}% of densities
         
         """
+        self.logger.info("Start removing outliers - {} (conf={})".format(self.name, conf))
         means = list()
         sems = list()
         for key, value in self.density[feature].iteritems():
@@ -216,11 +217,11 @@ class ClipWithInput(Map):
             sems.append(df.sem())
         self.means = means
         self.sems = sems
-                
+        self.logger.info("Finish removing outliers - {} (conf={})".format(self.name, conf))      
     def create_matrices(self, label="", scaled=True):
         densities = [self.ip_raw_density, self.input_raw_density]
         rbps = [self.ip, self.inp]
-        self.logger.info("Start creating the Matrix - {}".format(self.name))
+        self.logger.info("Start creating the Matrix - {} (scaled={})".format(self.name,scaled))
         for i in range(0,len(densities)):
             densities[i]['feature'] = mtx.create_matrix(annotation = self.annotation, 
                                                        density = rbps[i], 
@@ -228,7 +229,7 @@ class ClipWithInput(Map):
                                                        downstream_offset = 0, 
                                                        is_scaled = False,
                                                        annotation_type = self.annotation_type)
-        self.logger.info("Finished creating the Matrix - {}".format(self.name))
+        self.logger.info("Finished creating the Matrix - {} (scaled={})".format(self.name,scaled))
         self.ip_raw_density['feature'].to_csv("{}.ip.{}_raw_density_matrix.csv".format(self.output_base,label))
         self.input_raw_density['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
         self.maptype = label

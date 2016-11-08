@@ -81,13 +81,16 @@ def read_entropy(density, input_density,
     
     input_density = input_density.append(input_density.ix[missing])
     
-    df = clean(density)
-    dfi = clean(input_density)
+    rpm = clean(density)
+    rpmi = clean(input_density)
     
-    df = df + pseudocount
-    dfi = dfi + ipseudocount
+    r = (rpm)/(pseudocount)
+    ri = (rpmi)/(ipseudocount)
     
-    en = df.multiply(np.log2(df.div(dfi)))
+    r = r + 1
+    ri = ri + 1
+    
+    en = r.multiply(np.log2(r.div(ri)))
     logger.info("Finished normalization (read_entropy)")
     return en
 def pdf_read_entropy(density, input_density, 

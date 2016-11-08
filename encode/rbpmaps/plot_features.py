@@ -68,6 +68,8 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
+    parser.add_argument("-five", "--five", dest="five", help="look for .5 extension to prefix", default=False)
+
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
@@ -119,23 +121,43 @@ def main(argv=None): # IGNORE:C0111
                     
                     assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
                     if(args.flipped):
-                        rep1neg = rep1.replace('.bam','.norm.pos.bw')
-                        rep1pos = rep1.replace('.bam','.norm.neg.bw')
-                        
-                        rep2neg = rep2.replace('.bam','.norm.pos.bw')
-                        rep2pos = rep2.replace('.bam','.norm.neg.bw')
-                        
-                        inputneg = inp1.replace('.bam','.norm.pos.bw')
-                        inputpos = inp1.replace('.bam','.norm.neg.bw')
+                        if(args.fivep):
+                            rep1neg = rep1.replace('.bam','.5.norm.pos.bw')
+                            rep1pos = rep1.replace('.bam','.5.norm.neg.bw')
+                            
+                            rep2neg = rep2.replace('.bam','.5.norm.pos.bw')
+                            rep2pos = rep2.replace('.bam','.5.norm.neg.bw')
+                            
+                            inputneg = inp1.replace('.bam','.5.norm.pos.bw')
+                            inputpos = inp1.replace('.bam','.5.norm.neg.bw')
+                        else:
+                            rep1neg = rep1.replace('.bam','.norm.pos.bw')
+                            rep1pos = rep1.replace('.bam','.norm.neg.bw')
+                            
+                            rep2neg = rep2.replace('.bam','.norm.pos.bw')
+                            rep2pos = rep2.replace('.bam','.norm.neg.bw')
+                            
+                            inputneg = inp1.replace('.bam','.norm.pos.bw')
+                            inputpos = inp1.replace('.bam','.norm.neg.bw')
                     else:
-                        rep1pos = rep1.replace('.bam','.norm.pos.bw')
-                        rep1neg = rep1.replace('.bam','.norm.neg.bw')
-                        
-                        rep2pos = rep2.replace('.bam','.norm.pos.bw')
-                        rep2neg = rep2.replace('.bam','.norm.neg.bw')
-                        
-                        inputpos = inp1.replace('.bam','.norm.pos.bw')
-                        inputneg = inp1.replace('.bam','.norm.neg.bw')
+                        if(args.fivep):
+                            rep1pos = rep1.replace('.bam','.5.norm.pos.bw')
+                            rep1neg = rep1.replace('.bam','.5.norm.neg.bw')
+                            
+                            rep2pos = rep2.replace('.bam','.5.norm.pos.bw')
+                            rep2neg = rep2.replace('.bam','.5.norm.neg.bw')
+                            
+                            inputpos = inp1.replace('.bam','.5.norm.pos.bw')
+                            inputneg = inp1.replace('.bam','.5.norm.neg.bw')
+                        else:
+                            rep1pos = rep1.replace('.bam','.norm.pos.bw')
+                            rep1neg = rep1.replace('.bam','.norm.neg.bw')
+                            
+                            rep2pos = rep2.replace('.bam','.norm.pos.bw')
+                            rep2neg = rep2.replace('.bam','.norm.neg.bw')
+                            
+                            inputpos = inp1.replace('.bam','.norm.pos.bw')
+                            inputneg = inp1.replace('.bam','.norm.neg.bw')
 
                     my_rep1_name = os.path.basename(rep1).replace('.merged.r2.bam','')
                     my_rep2_name = os.path.basename(rep2).replace('.merged.r2.bam','')

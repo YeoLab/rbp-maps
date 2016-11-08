@@ -28,7 +28,8 @@ class ReadDensity():
     
     def pseudocount(self):
         return 1000000.0/self.bam.count()
-        
+    def rpm_to_r(self, rpm):
+        return (rpm*1000000.0)/self.bam.count()
     def values(self, chrom, start, end, strand):
         """
         Given a chromosome coordinate, return a list of values
