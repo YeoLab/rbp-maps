@@ -68,7 +68,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
-    parser.add_argument("-five", "--five", dest="five", help="look for .5 extension to prefix", default=False)
+    parser.add_argument("-five", "--five", dest="five", help="look for .5 extension to prefix", default=False, action='store_true')
 
     # Process arguments
     args = parser.parse_args()
@@ -121,7 +121,7 @@ def main(argv=None): # IGNORE:C0111
                     
                     assert(rep1 != '' and rep2 != ''), 'replicate files do not exist for this RBP.'
                     if(args.flipped):
-                        if(args.fivep):
+                        if(args.five):
                             rep1neg = rep1.replace('.bam','.5.norm.pos.bw')
                             rep1pos = rep1.replace('.bam','.5.norm.neg.bw')
                             
@@ -140,7 +140,7 @@ def main(argv=None): # IGNORE:C0111
                             inputneg = inp1.replace('.bam','.norm.pos.bw')
                             inputpos = inp1.replace('.bam','.norm.neg.bw')
                     else:
-                        if(args.fivep):
+                        if(args.five):
                             rep1pos = rep1.replace('.bam','.5.norm.pos.bw')
                             rep1neg = rep1.replace('.bam','.5.norm.neg.bw')
                             
@@ -273,10 +273,11 @@ def main(argv=None): # IGNORE:C0111
                     """
                     Define the normalization functions
                     """
-                    normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract,
+                    """normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract,
                                  'density':norm.get_density,
                                  'input':norm.get_input,
-                                 'read_entropy':norm.read_entropy}
+                                 'read_entropy':norm.read_entropy}"""
+                    normfuncs = {'read_entropy':norm.read_entropy}
                     
                     """
                     Create and normalize inclusion, exclusion, and background CLIP density values

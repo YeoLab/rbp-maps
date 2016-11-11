@@ -75,6 +75,9 @@ def read_entropy(density, input_density,
         Calculate entropy
     """
     logger.info("Starting normalization (read_entropy)")
+    total_ip_mapped_reads = 1000000/pseudocount
+    total_input_mapped_reads = 1000000/ipseudocount
+    
     df_indices = density.index
     dfi_indices = input_density.index
     missing = set(df_indices) - set(dfi_indices)
@@ -90,7 +93,10 @@ def read_entropy(density, input_density,
     r = r + 1
     ri = ri + 1
     
-    en = r.multiply(np.log2(r.div(ri)))
+    pr = r/total_ip_mapped_reads
+    pri = ri/total_ip_mapped_reads
+    
+    en = pr.multiply(np.log2(pr.div(pri)))
     logger.info("Finished normalization (read_entropy)")
     return en
 def pdf_read_entropy(density, input_density, 
@@ -113,13 +119,13 @@ def get_density(density, input_density,
                 pseudocount, ipseudocount,
                 min_density_threshold = 0):
     logger.info("Returning density")
-    return density
+    return clean(density)
 
 def get_input(density, input_density, 
               pseudocount, ipseudocount,
               min_density_threshold = 0):
     logger.info("Returning input density")
-    return input_density
+    return clean(input_density)
 
 def normalize_and_subtract(density, input_density, 
                            pseudocount, ipseudocount,

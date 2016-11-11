@@ -295,13 +295,16 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
         
+        sns.set(font_scale=1)
         ax1 = fig.add_subplot(1,4,1)
         plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax1)
         sns.set_style({'ytick.major.size':0})
+        sns.set(font_scale=0)
         
         ax2 = fig.add_subplot(1,4,2,sharey=ax1)
         plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
