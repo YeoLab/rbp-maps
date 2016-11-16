@@ -68,10 +68,16 @@ def read_entropy(density, input_density,
                  min_density_threshold = 0):
     """
     Return the entropy of each position
+    Args:
+        density (pandas.DataFrame) : matrix of RPM-normalized read densities in ip CLIP
+        input_density (pandas.DataFrame) : matrix of RPM-normalized read densities in input CLIP
+        pseudocount (float) : RPM-normalized read density of one read in ip CLIP
+        ipseudocount (float) : RPM-normalized read density of one read in input CLIP
+        min_density_threshold (int) : deprecated.
     Logic: 
-        Fill NaNs with zero - we want to count all regions and add pseudocount
-        Fill -1 with NaNs - we want to negate any -1, which signifies a premature exon boundary
-        Add minimum pseudocount
+        Turn normalized RPM densities to reads (density matrix -> read matrix)
+        Add 1 read to entire dataframe (except for nan positions) (read matrix -> read matrix + 1)
+        Divide each position by total mapped reads (read matrix + 1 -> probability matrix)
         Calculate entropy
     """
     logger.info("Starting normalization (read_entropy)")
