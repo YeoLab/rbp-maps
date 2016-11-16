@@ -1,9 +1,9 @@
 #!/usr/local/bin/python2.7
 # encoding: utf-8
 '''
-rbpmaps.plot_all_tss -- shortdesc
+density.plot_all_tss -- shortdesc
 
-rbpmaps.plot_all_tss is a description
+density.plot_all_tss is a description
 
 It defines classes_and_methods
 
@@ -23,9 +23,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import ReadDensity
 import Plot
-import misc
 import logging
-import pandas as pd
 import sys
 import normalization_functions as norm
 from Map import ClipWithInput
@@ -61,7 +59,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-m", "--manifest", dest="manifest",required=True)
     parser.add_argument("-f", "--flipped", dest="flipped", help="if positive is negative (pos.bw really means neg.bw)", default=False, action='store_true')
-    parser.add_argument("-r", "--rmats", dest="rmats", help="annotation directory or testfile (if -t)")
+    parser.add_argument("-r", "--annotation_dir", dest="annotation_dir", help="annotation directory or testfile (if -t)")
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, a3ss, a5ss, ri, mxe, cdsstart, cdsend, txstart, txend]")
     parser.add_argument("-t", "--test", dest="test", help="for testing purposes...", default=False, action='store_true')
     parser.add_argument("-a", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao, bed)", default='miso')
@@ -69,7 +67,11 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
     parser.add_argument("-five", "--five", dest="five", help="look for .5 extension to prefix", default=False, action='store_true')
-
+    parser.add_argument("-sub", "--subtract", dest="subtract", help="normalize via subtraction method", default=False, action='store_true')
+    parser.add_argument("-entropy", "--entropy", dest="entropy", help="normalize via entropy method", default=False, action='store_true')
+    parser.add_argument("-density", "--density", dest="density", help="plot raw density", default=False, action='store_true')
+    parser.add_argument("-input", "--input", dest="input", help="plot input density", default=False, action='store_true')
+    
     # Process arguments
     args = parser.parse_args()
     input_file = args.manifest # changed
@@ -90,8 +92,8 @@ def main(argv=None): # IGNORE:C0111
     eh.setFormatter(formatter)
     logger.info("starting program")
     
-    # Process rmats stuff
-    rmats_dir = args.rmats
+    # Process annotation stuff
+    annotation_dir = args.annotation_dir
 
     # Process outlier removal
     confidence = args.confidence
@@ -102,6 +104,12 @@ def main(argv=None): # IGNORE:C0111
     # Process mapping options
     exon_offset = args.exon_offset
     intron_offset = args.intron_offset
+    
+    # Process normalization options
+    norm_entropy = args.entropy
+    norm_density = args.density
+    norm_input = args.input
+    norm_subtraction = args.subtract
     
     with open(input_file,'r') as f:
         for line in f:
@@ -222,9 +230,9 @@ def main(argv=None): # IGNORE:C0111
                     Check if Annotations exist
                     """
                     
-                    positive_annotation = os.path.join(rmats_dir,'{}-{}-{}-positive.txt').format(rbp_name,cell_line,event.upper())
-                    negative_annotation = os.path.join(rmats_dir,'{}-{}-{}-negative.txt').format(rbp_name,cell_line,event.upper())
-                    bg_annotation = os.path.join(rmats_dir,'{}-{}-{}.txt').format(rbp_name,cell_line,event.upper())
+                    positive_annotation = os.path.join(annotation_dir,'{}-{}-{}-positive.txt').format(rbp_name,cell_line,event.upper())
+                    negative_annotation = os.path.join(annotation_dir,'{}-{}-{}-negative.txt').format(rbp_name,cell_line,event.upper())
+                    bg_annotation = os.path.join(annotation_dir,'{}-{}-{}.txt').format(rbp_name,cell_line,event.upper())
                     
                     if (os.path.isfile(positive_annotation)==False):
                         logger.error("Positive annotation doesn't exist: {}".format(positive_annotation))
@@ -273,11 +281,15 @@ def main(argv=None): # IGNORE:C0111
                     """
                     Define the normalization functions
                     """
-                    """normfuncs = {'subtract_by_region':norm.normalize_and_per_region_subtract,
-                                 'density':norm.get_density,
-                                 'input':norm.get_input,
-                                 'read_entropy':norm.read_entropy}"""
-                    normfuncs = {'read_entropy':norm.read_entropy}
+                    normfuncs = {}
+                    if norm_subtraction:
+                        normfuncs['subtract_by_region'] = norm.normalize_and_per_region_subtract
+                    if norm_entropy:
+                        normfuncs['entropy'] = norm.read_entropy
+                    if norm_input:
+                        normfuncs['input'] = norm.get_input
+                    if norm_density:
+                        normfuncs['density'] = norm.get_density
                     
                     """
                     Create and normalize inclusion, exclusion, and background CLIP density values
@@ -297,7 +309,7 @@ def main(argv=None): # IGNORE:C0111
                                 clip.create_mxe_matrices(label="{}".format(key))
                             elif(event == 'ri'):
                                 clip.create_ri_matrices(label="{}".format(key))
-                            elif(event == 'cdsstarts' or event == 'cdsends' or event == 'txstarts' or event == 'txends'):
+                            elif(event.find('cds') > -1 or event.find('tx') > -1): # lol
                                 clip.create_matrices(label="{}".format(key), scaled=False)
                             else:
                                 logger.error("Invalid event chosen: {}".format(event))
@@ -315,7 +327,7 @@ def main(argv=None): # IGNORE:C0111
                         bo = {'region1':clips['background'].means}
                         inc_e = {'region1':clips['included'].sems}
                         exc_e = {'region1':clips['excluded'].sems}
-                                                
+                        
                         title = '{}: {} events (keep={})\nincl (n={}), excl (n={})'.format(prefix,
                                                                                                    event,
                                                                                                    confidence,

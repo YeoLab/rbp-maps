@@ -100,7 +100,7 @@ def read_entropy(density, input_density,
     ri = ri + 1
     
     pr = r/total_ip_mapped_reads
-    pri = ri/total_ip_mapped_reads
+    pri = ri/total_input_mapped_reads
     
     en = pr.multiply(np.log2(pr.div(pri)))
     logger.info("Finished normalization (read_entropy)")
@@ -159,9 +159,9 @@ def normalize_and_per_region_subtract(density, input_density,
     input_density = input_density.append(input_density.ix[missing])
     
     pdf = calculate_pdf(density, pseudocount, min_density_threshold)
-    # pdf.to_csv('/Users/brianyee/git/encode/encode/rbpmaps/testfiles/rbfox2/outputs/ip_pdf.csv')
+    # pdf.to_csv('/Users/brianyee/git/encode/encode/density/testfiles/rbfox2/outputs/ip_pdf.csv')
     pdfi = calculate_pdf(input_density, ipseudocount, min_density_threshold)
-    # pdfi.to_csv('/Users/brianyee/git/encode/encode/rbpmaps/testfiles/rbfox2/outputs/input_pdf.csv')
+    # pdfi.to_csv('/Users/brianyee/git/encode/encode/density/testfiles/rbfox2/outputs/input_pdf.csv')
     subtracted = pdf.sub(pdfi)
     logger.info("Starting normalization (per region subtraction)")
     return subtracted

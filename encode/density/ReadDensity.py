@@ -1,22 +1,24 @@
 '''
-Created on Nov 16, 2016
+Created on May 3, 2016
 
-@author: Brian
+@author: Gabe
 '''
 import pyBigWig
 import pysam
 import numpy as np
 
-class Peak():
+class ReadDensity():
     """
-    Peak class
+    ReadDensity class
     Attributes:
-        self.bedfile
+        self.pos(positive *.bw file)
+        self.neg(negative *.bw file)
     """
-    def __init__(self, bed, name = None, bam = None):
+    def __init__(self, pos, neg, name = None, bam = None):
         try:
-            self.bed = pyBigWig.open(bed)
-            self.name = name if name is not None else bed.replace('pos','*').replace('neg','*')
+            self.pos = pyBigWig.open(pos)
+            self.neg = pyBigWig.open(neg)
+            self.name = name if name is not None else pos.replace('pos','*').replace('neg','*')
             print(bam)
             self.bam = pysam.AlignmentFile(bam)
         except Exception as e:
@@ -31,7 +33,7 @@ class Peak():
     def values(self, chrom, start, end, strand):
         """
         Given a chromosome coordinate, return a list of values
-        pertaining to the rbpmaps over each nucleotide position.
+        pertaining to the density over each nucleotide position.
         Reverse the list if going in the negative strand.
         
         Args:
