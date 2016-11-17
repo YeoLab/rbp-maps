@@ -41,7 +41,6 @@ Peaks:
 ```
 /clip/204_01_RBFOX2_inputnormedpeaks.bed
 /clip/204_02_RBFOX2_inputnormedpeaks.bed
-/clip/204_01_RBFOX2_inputnormedpeaks.bed
 ...
 ```
 ## Example Folder Hierarchy: ##
