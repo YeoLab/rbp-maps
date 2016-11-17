@@ -4,9 +4,10 @@ ENCODE RBP maps
 ## Requires:
 (For Density Plots) : 
 - Input norm manifest (the same manifest used for input normalization)
-- *.norm.pos.bw \: the RPM-normalized BigWig file for the IP and INPUT CLIPs specified in the manifest
-- *.norm.neg.bw \: the RPM-normalized BigWig file for the IP and INPUT CLIPs specified in the manifest
+- *.norm.pos.bw : the RPM-normalized BigWig file for the IP and INPUT CLIPs specified in the manifest
+- *.norm.neg.bw : the RPM-normalized BigWig file for the IP and INPUT CLIPs specified in the manifest
 - *.bam : the bam file for the IP and INPUT CLIPs specified in the manifest
+
 These files must all be in the same folder as the bams specified in the input norm manifest, by default this is already the case for yeolab's processing pipeline. May change when the new eCLIP pipeline is implemented, but probably won't.
 
 - annotation_dir : directory to find annotations for all RBPs specified in the manifest
