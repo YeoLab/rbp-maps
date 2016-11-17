@@ -4,15 +4,17 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import misc
 import seaborn as sns
 from gscripts.general import dataviz
 from matplotlib import rc
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 import numpy as np
+import pandas as pd
+import os
+import misc
+import matplotlib.patches as patches
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
@@ -672,5 +674,3 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     plt.clf()
     plt.cla()
     plt.close()
-
-    

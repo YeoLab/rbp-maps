@@ -22,7 +22,7 @@ import os
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import ReadDensity
-import Plot
+from plot import Plot
 import logging
 import sys
 import normalization_functions as norm
