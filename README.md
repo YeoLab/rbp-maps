@@ -96,3 +96,18 @@ Create RBP maps for skipped exon events from input-normalized peak bedfiles with
 ```python
 python plot_peak.py -i /peak_manifest.txt -m /annotation_dir/miso_se_to_ensembl.tsv -t SE -p 5 -f 0 -o /output_dir
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
