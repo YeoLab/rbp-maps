@@ -6,7 +6,6 @@ Created on Jun 18, 2016
 import pandas as pd
 import numpy as np
 import intervals
-import misc
 import Feature
 import logging
 logger = logging.getLogger('plot_features')

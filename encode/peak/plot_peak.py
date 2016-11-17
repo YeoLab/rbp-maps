@@ -95,7 +95,7 @@ USAGE
     parser.add_argument('-t', "--eventtype", dest="event",help="event type", default="SE", required=False)
     # Process arguments
     args = parser.parse_args()
-        
+
     miso = args.miso
     outdir = args.output
     infile = args.input

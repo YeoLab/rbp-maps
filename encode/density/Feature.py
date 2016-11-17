@@ -91,7 +91,7 @@ class SkippedExonFeature(Feature):
                 return -1
         return up, se, down
 
-class A5ssFeature():
+class A5ssFeature(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)
 
@@ -126,7 +126,7 @@ class A5ssFeature():
             
         return splice1, splice2, downstream
     
-class A3ssFeature():
+class A3ssFeature(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)
 
@@ -175,7 +175,7 @@ class A3ssFeature():
         return upstream, splice1, splice2
 
 
-class RIFeature():
+class RIFeature(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)
 
@@ -224,7 +224,7 @@ class RIFeature():
                 print("strand not correct")
                 return -1
         return upstream, downstream
-class MXEFeature():
+class MXEFeature(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)
 

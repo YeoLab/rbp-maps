@@ -60,7 +60,7 @@ def plot_err(ax, region, inclusion, exclusion, both,
             linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
     ax.plot((exclusion[region]-exclusion_err[region]), 
             linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
-    return max(max(inclusion[region]),max(exclusion[region])), min(min(inclusion[region]),min(exclusion[region]))
+    return min(min(inclusion[region]),min(exclusion[region])), max(max(inclusion[region]),max(exclusion[region]))
 def single_frame(means, title, output_file, color='red'):
     """Plots a single frame given a set of points, 
     in this case the means of densities across a predescribed
@@ -124,14 +124,14 @@ def single_frame_with_up_down_events_error(up, down, both,
                                            bglab = 'All significant events'):
     ax = plt.gca()
     
-    plot_err(ax, 'region1', up, down, both, uperr, downerr, upcolor, downcolor, bgcolor)
+    min1, max1 = plot_err(ax, 'region1', up, down, both, uperr, downerr, upcolor, downcolor, bgcolor)
     
     ax.legend()
 
     ax.set_ylabel('Read Density')
     ax.set_title(title,y=1.03)
     plt.xticks([0,300,599],['upstream (300bp)','feature','downstream (300bp)'])
-    
+    plt.ylim(min1+min1*0.1, max1+max1*0.1)
     plt.savefig(output_file)
     plt.clf()
     plt.cla()
@@ -158,7 +158,6 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
 
     num_rows = 1
     num_cols = 2
-    ax = plt.gca()
    
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
         
@@ -167,7 +166,7 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
                    'xtick.color':'.15'})
 
         ax1 = fig.add_subplot(1,2,1)
-        plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min1, max1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,51,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
@@ -175,7 +174,7 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,2,2, sharey=ax1)
-        plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min2, max2 = plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax2, left=True)
         ax2.set_yticklabels([])
         ax2.set_xticklabels(range(-50,51,50),rotation=90)
@@ -183,6 +182,15 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
 
         ax2.legend()
         plt.suptitle(title,y=1.03)
+    
+    mx = max(max1,max2)
+    mi = min(min1,min2)
+    plt.ylim(mi-mi*0.1,mx+mx*0.1)
+    increment = (mx)/6
+    ax1.set_yticks(range(mi,mx,increment))
+    ax1.set_yticklabels(range(mi,mx,increment))
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    
     plt.clf()
     plt.cla()
     plt.close()
@@ -191,7 +199,6 @@ def three_frame(region1, region2, region3,
     num_rows = 1
     num_cols = 4
     
-    ax = plt.gca()
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3))
@@ -226,7 +233,6 @@ def four_frame(region1, region2, region3, region4,
     num_rows = 1
     num_cols = 4
     
-    ax = plt.gca()
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3),min(region4))
@@ -296,7 +302,7 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
       
     # sns.set(font_scale=1)
     ax1 = fig.add_subplot(1,4,1)
-    max1, min1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    min1, max1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         
     ax1.set_ylabel("Normalized signal")
     ax1.set_xticklabels(labels=range(-50,351,50),rotation=90)
@@ -305,29 +311,33 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
     sns.set_style({'ytick.major.size':0})
 
     # sns.set(font_scale=0)
-        
+
     ax2 = fig.add_subplot(1,4,2,sharey=ax1)
-    max2, min2 = plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    min2, max2 = plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
     ax2.set_yticklabels([])
     ax2.set_xticklabels(range(-300,51,50),rotation=90, visible=True)
     # ax2.set_xticklabels(range(-50,351,50),visible=True,color="black",rotation=90)
     ax2.axvline(x=300,linestyle=':',alpha=0.5)
     sns.despine(ax=ax2, left=True)
     ax3 = fig.add_subplot(1,4,3,sharey=ax1)
-    max3, min3 = plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    min3, max3 = plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
     ax3.set_yticklabels([])
     ax3.set_xticklabels(labels=range(-50,351,50),rotation=90)
     ax3.axvline(x=50,linestyle=':',alpha=0.5)
     sns.despine(ax=ax3, left=True)
         
     ax4 = fig.add_subplot(1,4,4,sharey=ax1)
-    max4, min4 = plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    min4, max4 = plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
     ax4.axvline(x=300,linestyle=':',alpha=0.5)
     ax4.set_xticklabels(labels=range(-300,51,50),rotation=90)
     
     sns.despine(ax=ax4, left=True)
 
     ax4.legend()
+    
+    """
+    Set min/max for y-axis, hide y-axis labels for all but the first
+    """
     mx = max(max1,max2,max3,max4)
     mi = min(min1,min2,min3,min4)
     plt.ylim(mi-mi*0.1,mx+mx*0.1)
@@ -337,6 +347,7 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
     plt.setp(ax2.get_yticklabels(), visible=False)
     plt.setp(ax3.get_yticklabels(), visible=False)
     plt.setp(ax4.get_yticklabels(), visible=False)
+    
     plt.suptitle(title,y=1.03)
     plt.savefig(output_file)
     plt.clf()
@@ -363,7 +374,6 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
     """
     num_rows = 1
     num_cols = 6
-    ax = plt.gca()
     
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
         
@@ -372,7 +382,7 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
                    'xtick.color':'.15'})
         
         ax1 = fig.add_subplot(1,6,1)
-        plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min1, max1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
@@ -380,41 +390,54 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,6,2,sharey=ax1)
-        plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min2, max2 = plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax2.set_yticklabels([])
         ax2.set_xticklabels(range(-300,51,50),rotation=90)
         ax2.axvline(x=300,linestyle=':',alpha=0.5)
         sns.despine(ax=ax2, left=True)
         
         ax3 = fig.add_subplot(1,6,3,sharey=ax1)
-        plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min3, max3 = plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax3.set_yticklabels([])
         ax3.set_xticklabels(range(-50,351,50),rotation=90)
         ax3.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax3, left=True)
         
         ax4 = fig.add_subplot(1,6,4,sharey=ax1)
-        plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min4, max4 = plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax4.set_yticklabels([])
         ax4.axvline(x=300,linestyle=':',alpha=0.5)
         ax4.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax4, left=True)
         
         ax5 = fig.add_subplot(1,6,5,sharey=ax1)
-        plot_err(ax5, 'region5', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min5, max5 = plot_err(ax5, 'region5', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax5.set_yticklabels([])
         ax5.set_xticklabels(range(-50,351,50),rotation=90)
         ax5.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax5, left=True)
         
         ax6 = fig.add_subplot(1,6,6,sharey=ax1)
-        plot_err(ax6, 'region6', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min6, max6 = plot_err(ax6, 'region6', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         ax6.set_yticklabels([])
         ax6.axvline(x=300,linestyle=':',alpha=0.5)
         ax6.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax6, left=True)
         ax6.legend()
         plt.suptitle(title,y=1.03)
+        
+    mx = max(max1,max2,max3,max4,max5,max6)
+    mi = min(min1,min2,min3,min4,min5,min6)
+    plt.ylim(mi-mi*0.1,mx+mx*0.1)
+    increment = (mx)/6
+    ax1.set_yticks(range(mi,mx,increment))
+    ax1.set_yticklabels(range(mi,mx,increment))
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.setp(ax3.get_yticklabels(), visible=False)
+    plt.setp(ax4.get_yticklabels(), visible=False)
+    plt.setp(ax5.get_yticklabels(), visible=False)
+    plt.setp(ax6.get_yticklabels(), visible=False)
+    
     plt.clf()
     plt.cla()
     plt.close()
@@ -559,7 +582,6 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     """
     num_rows = 1
     num_cols = 3
-    ax = plt.gca()
 
     with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
         
@@ -568,7 +590,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
                    'xtick.color':'.15'})
         
         ax1 = fig.add_subplot(1,4,1)
-        plot_err(ax1, 'three_upstream', i, e, b, ie, ee, color1, color2, color3)
+        min1, max1 = plot_err(ax1, 'three_upstream', i, e, b, ie, ee, color1, color2, color3)
         sns.despine(ax=ax1)
         ax1.set_ylabel("Mean Read Density")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
@@ -577,7 +599,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,4,2, sharey=ax1)
-        plot_err(ax2, 'five_alt1', i, e, b, ie, ee, color1, color2, color3)
+        min2, max2 = plot_err(ax2, 'five_alt1', i, e, b, ie, ee, color1, color2, color3)
         
         sns.despine(ax=ax2, left=True)
         ax2.set_yticklabels([])
@@ -585,7 +607,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax2.axvline(x=300,linestyle=':',alpha=0.5)
             
         ax3 = fig.add_subplot(1,4,3, sharey=ax1)
-        plot_err(ax3, 'five_alt2', i, e, b, ie, ee, color1, color2, color3)
+        min3, max3 = plot_err(ax3, 'five_alt2', i, e, b, ie, ee, color1, color2, color3)
         
         sns.despine(ax=ax3, left=True)
         ax3.set_yticklabels([])
@@ -594,6 +616,16 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         
         ax3.legend()
         plt.suptitle(title,y=1.03)
+    
+    mx = max(max1,max2,max3)
+    mi = min(min1,min2,min3)
+    plt.ylim(mi-mi*0.1,mx+mx*0.1)
+    increment = (mx)/6
+    ax1.set_yticks(range(mi,mx,increment))
+    ax1.set_yticklabels(range(mi,mx,increment))
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.setp(ax3.get_yticklabels(), visible=False)
+    
     plt.clf()
     plt.cla()
     plt.close()
@@ -638,7 +670,6 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     """
     num_rows = 1
     num_cols = 3
-    ax = plt.gca()
     min_height = min(min(i['three_alt1']),min(e['three_alt1']),min(b['three_alt1']),
                      min(i['three_alt2']),min(e['three_alt2']),min(b['three_alt2']),
                      min(i['five_downstream']),min(e['five_downstream']),min(b['five_downstream']))
@@ -653,7 +684,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
                    'xtick.color':'.15'})
         
         ax1 = fig.add_subplot(1,4,1)
-        plot_err(ax1, 'three_alt1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min1, max1 = plot_err(ax1, 'three_alt1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax1)
         ax1.set_ylim(min_height, max_height)
         ax1.set_ylabel("Mean Read Density")
@@ -662,7 +693,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,4,2)
-        plot_err(ax2, 'three_alt2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min2, max2 = plot_err(ax2, 'three_alt2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax2, left=True)
         ax2.set_ylim(min_height, max_height)
         ax2.set_yticklabels([])
@@ -670,7 +701,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax2.axvline(x=50,linestyle=':',alpha=0.5)
             
         ax3 = fig.add_subplot(1,4,3)
-        plot_err(ax3, 'five_downstream', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min3, max3 = plot_err(ax3, 'five_downstream', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax3, left=True)
         ax3.set_ylim(min_height, max_height)
         ax3.set_yticklabels([])
@@ -679,6 +710,16 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         
         ax3.legend()
         plt.suptitle(title,y=1.03)
+    
+    mx = max(max1,max2,max3)
+    mi = min(min1,min2,min3)
+    plt.ylim(mi-mi*0.1,mx+mx*0.1)
+    increment = (mx)/6
+    ax1.set_yticks(range(mi,mx,increment))
+    ax1.set_yticklabels(range(mi,mx,increment))
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.setp(ax3.get_yticklabels(), visible=False)
+    
     plt.clf()
     plt.cla()
     plt.close()

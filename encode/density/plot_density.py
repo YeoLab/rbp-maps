@@ -68,7 +68,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-c", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
     parser.add_argument("-five", "--five", dest="five", help="look for .5 extension to prefix", default=False, action='store_true')
-    parser.add_argument("-sub", "--subtract", dest="subtract", help="normalize via subtraction method", default=False, action='store_true')
+    parser.add_argument("-subtract", "--subtract", dest="subtract", help="normalize via subtraction method", default=False, action='store_true')
     parser.add_argument("-entropy", "--entropy", dest="entropy", help="normalize via entropy method", default=False, action='store_true')
     parser.add_argument("-density", "--density", dest="density", help="plot raw density", default=False, action='store_true')
     parser.add_argument("-input", "--input", dest="input", help="plot input density", default=False, action='store_true')
