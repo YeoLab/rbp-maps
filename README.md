@@ -25,7 +25,10 @@ eg: ```FMR1-K562-CDSSTARTS.txt```
 - **annotation_file** : MISO-formatted file of events
 
 ## Example annotations:
-rMATS-style annotation: 
+> [Download Examples](https://drive.google.com/drive/folders/0B_Y_OsSC6HpOMkxJRDBGS2xHdm8?usp=sharing)
+> [rMATS-style annotation](https://drive.google.com/open?id=0B_Y_OsSC6HpOM094ZFE0OUhTT2s)
+> [MISO-style annotation](https://drive.google.com/open?id=0B_Y_OsSC6HpOaHhPTjdpOHNWMkU)
+...
 
 ## Usage:
 
