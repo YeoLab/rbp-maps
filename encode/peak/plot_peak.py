@@ -17,6 +17,7 @@
 import annotations
 import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import collections
 from plot import Plot
 
@@ -129,7 +130,7 @@ USAGE
                                                  intron_overhang)
             err = {'region1':[0]*((exon_overhang+intron_overhang+1)*4)}
             title = os.path.basename(line)
-            output_file = outfile.replace('compressed.txt','compressed.png')
+            output_file = outfile.replace('compressed.txt','compressed.svg')
             Plot.plot_se(counts, counts, counts, err, err, title, output_file)
     return 0
 

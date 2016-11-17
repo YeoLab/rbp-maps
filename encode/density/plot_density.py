@@ -18,13 +18,14 @@ It defines classes_and_methods
 '''
 
 import os
+import sys
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import ReadDensity
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from plot import Plot
 import logging
-import sys
 import normalization_functions as norm
 from Map import ClipWithInput
 

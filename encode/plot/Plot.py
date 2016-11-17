@@ -4,17 +4,16 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import seaborn as sns
 from gscripts.general import dataviz
+import seaborn as sns
+
 from matplotlib import rc
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 import numpy as np
-import pandas as pd
-import os
 import misc
-import matplotlib.patches as patches
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
@@ -53,8 +52,6 @@ def plot_err(ax, region, inclusion, exclusion, both,
             alpha=.8, color = inclusion_color, label = inclusion_label)
     ax.plot(exclusion[region], linewidth=linewidth, 
             alpha=.8, color = exclusion_color, label = exclusion_label)
-    
-    
     ax.plot((inclusion[region]+inclusion_err[region]), 
             linewidth=errorbar_linewidth, alpha=.5, color = inclusion_color, linestyle = ':')
     ax.plot((inclusion[region]-inclusion_err[region]), 
@@ -63,7 +60,7 @@ def plot_err(ax, region, inclusion, exclusion, both,
             linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
     ax.plot((exclusion[region]-exclusion_err[region]), 
             linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
-    
+    return max(max(inclusion[region]),max(exclusion[region])), min(min(inclusion[region]),min(exclusion[region]))
 def single_frame(means, title, output_file, color='red'):
     """Plots a single frame given a set of points, 
     in this case the means of densities across a predescribed
@@ -289,48 +286,59 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
     """
     num_rows = 1
     num_cols = 4
-    ax = plt.gca()
+    # ax = plt.gca()
+    # with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    fig = plt.figure(figsize=(2.5*num_cols, 2.5*num_rows)) 
     
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
-        
-        sns.set_style({'xtick.major.size':5,
+    sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
                    'xtick.color':'.15'})
+      
+    # sns.set(font_scale=1)
+    ax1 = fig.add_subplot(1,4,1)
+    max1, min1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         
-        sns.set(font_scale=1)
-        ax1 = fig.add_subplot(1,4,1)
-        plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    ax1.set_ylabel("Normalized signal")
+    ax1.set_xticklabels(labels=range(-50,351,50),rotation=90)
+    ax1.axvline(x=50,linestyle=':',alpha=0.5)
+    sns.despine(ax=ax1)
+    sns.set_style({'ytick.major.size':0})
+
+    # sns.set(font_scale=0)
         
-        ax1.set_ylabel("Mean Read Density")
-        ax1.set_xticklabels(range(-50,351,50),rotation=90)
-        ax1.axvline(x=50,linestyle=':',alpha=0.5)
-        sns.despine(ax=ax1)
-        sns.set_style({'ytick.major.size':0})
-        sns.set(font_scale=0)
+    ax2 = fig.add_subplot(1,4,2,sharey=ax1)
+    max2, min2 = plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    ax2.set_yticklabels([])
+    ax2.set_xticklabels(range(-300,51,50),rotation=90, visible=True)
+    # ax2.set_xticklabels(range(-50,351,50),visible=True,color="black",rotation=90)
+    ax2.axvline(x=300,linestyle=':',alpha=0.5)
+    sns.despine(ax=ax2, left=True)
+    ax3 = fig.add_subplot(1,4,3,sharey=ax1)
+    max3, min3 = plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    ax3.set_yticklabels([])
+    ax3.set_xticklabels(labels=range(-50,351,50),rotation=90)
+    ax3.axvline(x=50,linestyle=':',alpha=0.5)
+    sns.despine(ax=ax3, left=True)
         
-        ax2 = fig.add_subplot(1,4,2,sharey=ax1)
-        plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
-        ax2.set_yticklabels([])
-        ax2.set_xticklabels(range(-300,51,50),rotation=90)
-        ax2.axvline(x=300,linestyle=':',alpha=0.5)
-        sns.despine(ax=ax2, left=True)
-        
-        ax3 = fig.add_subplot(1,4,3,sharey=ax1)
-        plot_err(ax3, 'region3', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
-        ax3.set_yticklabels([])
-        ax3.set_xticklabels(range(-50,351,50),rotation=90)
-        ax3.axvline(x=50,linestyle=':',alpha=0.5)
-        sns.despine(ax=ax3, left=True)
-        
-        ax4 = fig.add_subplot(1,4,4,sharey=ax1)
-        plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
-        ax4.set_yticklabels([])
-        ax4.axvline(x=300,linestyle=':',alpha=0.5)
-        ax4.set_xticklabels(range(-300,51,50),rotation=90)
-        sns.despine(ax=ax4, left=True)
-        
-        ax4.legend()
-        plt.suptitle(title,y=1.03)
+    ax4 = fig.add_subplot(1,4,4,sharey=ax1)
+    max4, min4 = plot_err(ax4, 'region4', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+    ax4.axvline(x=300,linestyle=':',alpha=0.5)
+    ax4.set_xticklabels(labels=range(-300,51,50),rotation=90)
+    
+    sns.despine(ax=ax4, left=True)
+
+    ax4.legend()
+    mx = max(max1,max2,max3,max4)
+    mi = min(min1,min2,min3,min4)
+    plt.ylim(mi-mi*0.1,mx+mx*0.1)
+    increment = (mx)/6
+    ax1.set_yticks(range(mi,mx,increment))
+    ax1.set_yticklabels(range(mi,mx,increment))
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.setp(ax3.get_yticklabels(), visible=False)
+    plt.setp(ax4.get_yticklabels(), visible=False)
+    plt.suptitle(title,y=1.03)
+    plt.savefig(output_file)
     plt.clf()
     plt.cla()
     plt.close()
