@@ -30,7 +30,7 @@ def create_matrix(annotation, density,
     """
     count = 0
     densities = {}
-    logger.info("Start matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+    logger.debug("Start matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
                                                                                                             annotation,
                                                                                                             density.name,
                                                                                                             upstream_offset,
@@ -61,14 +61,14 @@ def create_matrix(annotation, density,
                         wiggle = intervals.get_scale(wiggle)
                     densities[intervals.rename_index(interval)] = wiggle
                 """
-    logger.info("Finished matrix creation: {}".format(len(densities)))
+    logger.debug("Finished matrix creation: {}".format(len(densities)))
     return pd.DataFrame(densities).T
 
 def create_mxe_matrix(annotation, density, 
                       exon_offset, intron_offset, 
                       is_scaled = False, combine_regions = True, 
                       annotation_type="rmats"):
-    logger.info("Starting MXE matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+    logger.debug("Starting MXE matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
                                                                                                             annotation,
                                                                                                             density.name,
                                                                                                             exon_offset,
@@ -205,7 +205,7 @@ def create_mxe_matrix(annotation, density,
         five_down_mxe = pd.DataFrame(five_down_mxe).T
         three_down_mxe = pd.DataFrame(three_down_mxe).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation: 3'up:{}, 5'up_mxe:{}, 3'up_mxe:{}, \
+    logger.debug("Finished matrix creation: 3'up:{}, 5'up_mxe:{}, 3'up_mxe:{}, \
                  5'down_mxe:{}, 3'down_mxe:{}, 5'down{}".format(three_upstream.shape[0],
                                                                 five_up_mxe.shape[0],
                                                                 three_up_mxe.shape[0],
@@ -213,9 +213,11 @@ def create_mxe_matrix(annotation, density,
                                                                 three_down_mxe.shape[0],
                                                                 five_downstream.shape[0]))
     if combine_regions == False:
+        logger.debug("Returning separate dataframe (combine_regions = FALSE)")
         return three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream
     else:
         ra = pd.concat([three_upstream, five_up_mxe, three_up_mxe, five_down_mxe, three_down_mxe, five_downstream],axis=1)
+        logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
         ra.columns = range(0,ra.shape[1])
         return ra
 def create_ri_matrix(annotation, density, 
@@ -243,7 +245,7 @@ def create_ri_matrix(annotation, density,
     Returns:
         pandas.DataFrame : a dataframe of r events for an MXE feature.
     """
-    logger.info("Starting RI matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+    logger.debug("Starting RI matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
                                                                                                             annotation,
                                                                                                             density.name,
                                                                                                             exon_offset,
@@ -288,13 +290,14 @@ def create_ri_matrix(annotation, density,
         
         three_upstream = pd.DataFrame(three_upstream).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation: up:{}, down:{}".format(three_upstream.shape[0],
+    logger.debug("Finished matrix creation: up:{}, down:{}".format(three_upstream.shape[0],
                                                                   five_downstream.shape[0]))
     if combine_regions == False:
         return three_upstream, five_downstream
     else:
         ra = pd.concat([three_upstream,five_downstream],axis=1)
         ra.columns = range(0,ra.shape[1])
+        logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
         # print("TYPE OF MATRIX: {}".format(type(ra)))
         return ra
     
@@ -326,7 +329,7 @@ def create_a5ss_matrix(annotation, density,
     Returns:
         pandas.DataFrame : a dataframe of r events for an A5SS feature.
     """
-    logger.info("Starting A5SS matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+    logger.debug("Starting A5SS matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
                                                                                                             annotation,
                                                                                                             density.name,
                                                                                                             exon_offset,
@@ -392,13 +395,14 @@ def create_a5ss_matrix(annotation, density,
         three_alt1 = pd.DataFrame(three_alt1).T
         three_alt2 = pd.DataFrame(three_alt2).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation: alt1:{}, alt2:{}, 5'down{}".format(three_alt1.shape[0],
+    logger.debug("Finished matrix creation: alt1:{}, alt2:{}, 5'down{}".format(three_alt1.shape[0],
                                                                               three_alt2.shape[0],
                                                                               five_downstream.shape[0]))
     if combine_regions == False:
         return three_alt1, three_alt2, five_downstream
     else:
         ra = pd.concat([three_alt1,three_alt2,five_downstream],axis=1)
+        logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
         ra.columns = range(0,ra.shape[1])
         return ra      
 def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scaled, combine_regions=True, annotation_type="rmats"):
@@ -427,7 +431,7 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
     Returns:
         pandas.DataFrame : a dataframe of r events for an A3SS feature.
     """
-    logger.info("Starting a3ss matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+    logger.debug("Starting a3ss matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
                                                                                                             annotation,
                                                                                                             density.name,
                                                                                                             exon_offset,
@@ -496,13 +500,14 @@ def create_a3ss_matrix(annotation, density, exon_offset, intron_offset, is_scale
         three_upstream = pd.DataFrame(three_upstream).T
         five_alt1 = pd.DataFrame(five_alt1).T
         five_alt2 = pd.DataFrame(five_alt2).T
-    logger.info("Finished matrix creation: alt1:{}, alt2:{}, 3'Up{}".format(five_alt1.shape[0],
+    logger.debug("Finished matrix creation: alt1:{}, alt2:{}, 3'Up{}".format(five_alt1.shape[0],
                                                                             five_alt2.shape[0],
                                                                             three_upstream.shape[0]))
     if combine_regions == False:
         return three_upstream, five_alt1, five_alt2
     else:
         ra = pd.concat([three_upstream,five_alt1,five_alt2],axis=1)
+        logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
         ra.columns = range(0,ra.shape[1])
         return ra                           
                         
@@ -530,7 +535,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
     Returns:
         pandas.DataFrame : a dataframe of r events for an SE feature.
     """
-    logger.info("Starting SE matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+    logger.debug("Starting SE matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
                                                                                                             annotation,
                                                                                                             density.name,
                                                                                                             exon_offset,
@@ -600,7 +605,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         five_skipped = pd.DataFrame(five_skipped).T
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
-    logger.info("Finished matrix creation: {}, {}, {}, {}".format(three_upstream.shape[0],
+    logger.debug("Finished matrix creation: {}, {}, {}, {}".format(three_upstream.shape[0],
                                                                   five_skipped.shape[0],
                                                                   three_skipped.shape[0],
                                                                   five_downstream.shape[0]))
@@ -608,5 +613,6 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         return three_upstream, five_skipped, three_skipped, five_downstream
     else:
         ra = pd.concat([three_upstream,five_skipped,three_skipped,five_downstream],axis=1)
+        logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
         ra.columns = range(0,ra.shape[1])
         return ra

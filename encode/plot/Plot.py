@@ -724,7 +724,6 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax3.set_xticklabels(range(-300,51,50),rotation=90)
         
         ax3.legend()
-        plt.suptitle(title,y=1.10)
     
         mx = max(max1,max2,max3)
         mi = min(min1,min2,min3)

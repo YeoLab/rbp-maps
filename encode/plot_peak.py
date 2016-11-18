@@ -14,18 +14,13 @@
 @deffield    updated: Updated
 '''
 
-import annotations
+import peak.annotations
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import collections
 from plot import Plot
 
-import seaborn as sns
-import pandas as pd
-import datetime
-import thread
-import matrix_functions as mtx
+import peak.matrix_functions as mtx
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -109,7 +104,7 @@ USAGE
     """
     all exons for now... this may change depending on the annotation we use.
     """
-    all_exons = annotations.read_four_region_miso(miso, 
+    all_exons = peak.annotations.read_four_region_miso(miso, 
                                                   hashing_val, 
                                                   event_type,
                                                   exon_overhang, 

@@ -22,12 +22,14 @@ import sys
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import ReadDensity
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from density.Map import ClipWithInput
 from plot import Plot
+import density.ReadDensity
 import logging
-import normalization_functions as norm
-from Map import ClipWithInput
+import density.normalization_functions as norm
+
+
+logger = logging.getLogger('plot_features')
 
 __all__ = []
 __version__ = 0.1
@@ -223,8 +225,8 @@ def main(argv=None): # IGNORE:C0111
                            os.path.isfile(inputneg)):
                         logger.error('BigWigs dont exist for RBP: {}'.format(rbp_name))                        
                     
-                    rbp = ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i], bam = bams[i])
-                    inp = ReadDensity.ReadDensity(pos=inputpos, neg=inputneg, bam = inp1)
+                    rbp = density.ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i], bam = bams[i])
+                    inp = density.ReadDensity.ReadDensity(pos=inputpos, neg=inputneg, bam = inp1)
                     
                     
                     """
