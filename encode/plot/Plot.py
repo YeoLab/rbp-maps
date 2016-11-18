@@ -76,11 +76,11 @@ def single_frame(means, title, output_file, color='red'):
     """
     ax = plt.gca()
         
-    ax.plot(means, color = color, label = 'Mean Read Density')
+    ax.plot(means, color = color, label = 'Normalized Signal')
     ax.legend()
 
     ax.set_ylabel('Read Density')
-    ax.set_title(title,y=1.03)
+    ax.set_title(title,y=1.10)
         
     ymax = max(means) * 1.1
     ymin = min(means) * 0.9
@@ -129,7 +129,7 @@ def single_frame_with_up_down_events_error(up, down, both,
     ax.legend()
 
     ax.set_ylabel('Read Density')
-    ax.set_title(title,y=1.03)
+    ax.set_title(title,y=1.10)
     plt.xticks([0,300,599],['upstream (300bp)','feature','downstream (300bp)'])
     plt.ylim(min1+min1*0.1, max1+max1*0.1)
     plt.savefig(output_file)
@@ -159,7 +159,7 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
     num_rows = 1
     num_cols = 2
    
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
         
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
@@ -167,8 +167,8 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
 
         ax1 = fig.add_subplot(1,2,1)
         min1, max1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
-        ax1.set_ylabel("Mean Read Density")
-        ax1.set_xticklabels(range(-50,51,50),rotation=90)
+        ax1.set_ylabel("Normalized Signal")
+        ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax1)
         sns.set_style({'ytick.major.size':0})
@@ -177,20 +177,26 @@ def two_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         min2, max2 = plot_err(ax2, 'region2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax2, left=True)
         ax2.set_yticklabels([])
-        ax2.set_xticklabels(range(-50,51,50),rotation=90)
-        ax2.axvline(x=50,linestyle=':',alpha=0.5)
+        ax2.set_xticklabels(range(-300,51,50),rotation=90)
+        ax2.axvline(x=300,linestyle=':',alpha=0.5)
 
         ax2.legend()
-        plt.suptitle(title,y=1.03)
+        
     
-    mx = max(max1,max2)
-    mi = min(min1,min2)
-    plt.ylim(mi-mi*0.1,mx+mx*0.1)
-    increment = (mx)/6
-    ax1.set_yticks(range(mi,mx,increment))
-    ax1.set_yticklabels(range(mi,mx,increment))
-    plt.setp(ax2.get_yticklabels(), visible=False)
-    
+        print(max1, max2)
+        print(min1, min2)
+        mx = max(max1,max2)
+        mi = min(min1,min2)
+        # print(mi,mx)
+        plt.ylim(mi-mi*0.1,mx+mx*0.1)
+        increment = (mx)/6
+        try:
+            ax1.set_yticks(range(mi,mx,increment))
+            ax1.set_yticklabels(range(mi,mx,increment))
+        except Exception as e:
+            title = title + "\ny-lim: {} - {}".format(mi,mx)
+        plt.setp(ax2.get_yticklabels(), visible=False)
+        plt.suptitle(title,y=1.10)
     plt.clf()
     plt.cla()
     plt.close()
@@ -199,7 +205,7 @@ def three_frame(region1, region2, region3,
     num_rows = 1
     num_cols = 4
     
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3))
         max_height = max(max(region1),max(region2),max(region3))
@@ -209,7 +215,7 @@ def three_frame(region1, region2, region3,
         ax.plot(region1, linewidth=linewidth, alpha=.7, color = color)
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
-        ax.set_ylabel("Mean Read Density")
+        ax.set_ylabel("Normalized Signal")
             
         ax = fig.add_subplot(1,4,2)
         ax.plot(region2, linewidth=linewidth, alpha=.7, color = color)
@@ -233,7 +239,7 @@ def four_frame(region1, region2, region3, region4,
     num_rows = 1
     num_cols = 4
     
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
             
         min_height = min(min(region1),min(region2),min(region3),min(region4))
         max_height = max(max(region1),max(region2),max(region3),max(region4))
@@ -243,7 +249,7 @@ def four_frame(region1, region2, region3, region4,
         ax.plot(region1, linewidth=linewidth, alpha=.7, color = color)
         sns.despine(ax=ax)
         ax.set_ylim(min_height, max_height)
-        ax.set_ylabel("Mean Read Density")
+        ax.set_ylabel("Normalized Signal")
             
         ax = fig.add_subplot(1,4,2)
         ax.plot(region2, linewidth=linewidth, alpha=.7, color = color)
@@ -265,7 +271,7 @@ def four_frame(region1, region2, region3, region4,
         sns.despine(ax=ax, left=True)
         ax.set_ylim(min_height, max_height)
         ax.set_yticklabels([])
-        plt.suptitle(title,y=1.03)
+        plt.suptitle(title,y=1.10)
     plt.clf()
     plt.cla()
     plt.close()
@@ -293,7 +299,7 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
     num_rows = 1
     num_cols = 4
     # ax = plt.gca()
-    # with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    # with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
     fig = plt.figure(figsize=(2.5*num_cols, 2.5*num_rows)) 
     
     sns.set_style({'xtick.major.size':5,
@@ -342,13 +348,16 @@ def four_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, 
     mi = min(min1,min2,min3,min4)
     plt.ylim(mi-mi*0.1,mx+mx*0.1)
     increment = (mx)/6
-    ax1.set_yticks(range(mi,mx,increment))
-    ax1.set_yticklabels(range(mi,mx,increment))
+    try:
+        ax1.set_yticks(range(mi,mx,increment))
+        ax1.set_yticklabels(range(mi,mx,increment))
+    except Exception as e:
+        title = title + "\ny-lim: {} - {}".format(mi,mx)
     plt.setp(ax2.get_yticklabels(), visible=False)
     plt.setp(ax3.get_yticklabels(), visible=False)
     plt.setp(ax4.get_yticklabels(), visible=False)
     
-    plt.suptitle(title,y=1.03)
+    plt.suptitle(title,y=1.10)
     plt.savefig(output_file)
     plt.clf()
     plt.cla()
@@ -375,7 +384,7 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
     num_rows = 1
     num_cols = 6
     
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
         
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
@@ -383,7 +392,7 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         
         ax1 = fig.add_subplot(1,6,1)
         min1, max1 = plot_err(ax1, 'region1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
-        ax1.set_ylabel("Mean Read Density")
+        ax1.set_ylabel("Normalized Signal")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
         sns.despine(ax=ax1)
@@ -424,20 +433,23 @@ def six_frame_with_inclusion_exclusion_events_with_error(inclusion, exclusion, b
         ax6.set_xticklabels(range(-300,51,50),rotation=90)
         sns.despine(ax=ax6, left=True)
         ax6.legend()
-        plt.suptitle(title,y=1.03)
         
-    mx = max(max1,max2,max3,max4,max5,max6)
-    mi = min(min1,min2,min3,min4,min5,min6)
-    plt.ylim(mi-mi*0.1,mx+mx*0.1)
-    increment = (mx)/6
-    ax1.set_yticks(range(mi,mx,increment))
-    ax1.set_yticklabels(range(mi,mx,increment))
-    plt.setp(ax2.get_yticklabels(), visible=False)
-    plt.setp(ax3.get_yticklabels(), visible=False)
-    plt.setp(ax4.get_yticklabels(), visible=False)
-    plt.setp(ax5.get_yticklabels(), visible=False)
-    plt.setp(ax6.get_yticklabels(), visible=False)
-    
+        
+        mx = max(max1,max2,max3,max4,max5,max6)
+        mi = min(min1,min2,min3,min4,min5,min6)
+        plt.ylim(mi-mi*0.1,mx+mx*0.1)
+        increment = (mx)/6
+        try:
+            ax1.set_yticks(range(mi,mx,increment))
+            ax1.set_yticklabels(range(mi,mx,increment))
+        except Exception as e:
+            title = title + "\ny-lim: {} - {}".format(mi,mx)
+        plt.setp(ax2.get_yticklabels(), visible=False)
+        plt.setp(ax3.get_yticklabels(), visible=False)
+        plt.setp(ax4.get_yticklabels(), visible=False)
+        plt.setp(ax5.get_yticklabels(), visible=False)
+        plt.setp(ax6.get_yticklabels(), visible=False)
+        plt.suptitle(title,y=1.10)
     plt.clf()
     plt.cla()
     plt.close()
@@ -583,7 +595,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     num_rows = 1
     num_cols = 3
 
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
         
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
@@ -592,7 +604,7 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax1 = fig.add_subplot(1,4,1)
         min1, max1 = plot_err(ax1, 'three_upstream', i, e, b, ie, ee, color1, color2, color3)
         sns.despine(ax=ax1)
-        ax1.set_ylabel("Mean Read Density")
+        ax1.set_ylabel("Normalized Signal")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
         
@@ -615,17 +627,20 @@ def plot_a3ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax3.set_xticklabels(range(-300,51,50),rotation=90)
         
         ax3.legend()
-        plt.suptitle(title,y=1.03)
+        
     
-    mx = max(max1,max2,max3)
-    mi = min(min1,min2,min3)
-    plt.ylim(mi-mi*0.1,mx+mx*0.1)
-    increment = (mx)/6
-    ax1.set_yticks(range(mi,mx,increment))
-    ax1.set_yticklabels(range(mi,mx,increment))
-    plt.setp(ax2.get_yticklabels(), visible=False)
-    plt.setp(ax3.get_yticklabels(), visible=False)
-    
+        mx = max(max1,max2,max3)
+        mi = min(min1,min2,min3)
+        plt.ylim(mi-mi*0.1,mx+mx*0.1)
+        increment = (mx)/6
+        try:
+            ax1.set_yticks(range(mi,mx,increment))
+            ax1.set_yticklabels(range(mi,mx,increment))
+        except Exception as e:
+            title = title + "\ny-lim: {} - {}".format(mi,mx)
+        plt.setp(ax2.get_yticklabels(), visible=False)
+        plt.setp(ax3.get_yticklabels(), visible=False)
+        plt.suptitle(title,y=1.10)
     plt.clf()
     plt.cla()
     plt.close()
@@ -677,7 +692,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
                      max(i['three_alt2']),max(e['three_alt2']),max(b['three_alt2']),
                      max(i['five_downstream']),max(e['five_downstream']),max(b['five_downstream']))
         
-    with dataviz.Figure(output_file, figsize=(num_cols * 2.5,num_rows * 2.5)) as fig:
+    with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
         
         sns.set_style({'xtick.major.size':5,
                    'ytick.major.size':5,
@@ -687,7 +702,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         min1, max1 = plot_err(ax1, 'three_alt1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
         sns.despine(ax=ax1)
         ax1.set_ylim(min_height, max_height)
-        ax1.set_ylabel("Mean Read Density")
+        ax1.set_ylabel("Normalized Signal")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
         sns.set_style({'ytick.major.size':0})
@@ -709,17 +724,20 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
         ax3.set_xticklabels(range(-300,51,50),rotation=90)
         
         ax3.legend()
-        plt.suptitle(title,y=1.03)
+        plt.suptitle(title,y=1.10)
     
-    mx = max(max1,max2,max3)
-    mi = min(min1,min2,min3)
-    plt.ylim(mi-mi*0.1,mx+mx*0.1)
-    increment = (mx)/6
-    ax1.set_yticks(range(mi,mx,increment))
-    ax1.set_yticklabels(range(mi,mx,increment))
-    plt.setp(ax2.get_yticklabels(), visible=False)
-    plt.setp(ax3.get_yticklabels(), visible=False)
-    
+        mx = max(max1,max2,max3)
+        mi = min(min1,min2,min3)
+        plt.ylim(mi-mi*0.1,mx+mx*0.1)
+        increment = (mx)/6
+        try: # for very small ranges, increments are too tiny?
+            ax1.set_yticks(range(mi,mx,increment))
+            ax1.set_yticklabels(range(mi,mx,increment))
+        except Exception as e:
+            title = title + "\ny-lim: {} - {}".format(mi,mx)
+        plt.setp(ax2.get_yticklabels(), visible=False)
+        plt.setp(ax3.get_yticklabels(), visible=False)
+        plt.suptitle(title,y=1.10)
     plt.clf()
     plt.cla()
     plt.close()
