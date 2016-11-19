@@ -685,13 +685,7 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
     """
     num_rows = 1
     num_cols = 3
-    min_height = min(min(i['three_alt1']),min(e['three_alt1']),min(b['three_alt1']),
-                     min(i['three_alt2']),min(e['three_alt2']),min(b['three_alt2']),
-                     min(i['five_downstream']),min(e['five_downstream']),min(b['five_downstream']))
-    max_height = max(max(i['three_alt1']),max(e['three_alt1']),max(b['three_alt1']),
-                     max(i['three_alt2']),max(e['three_alt2']),max(b['three_alt2']),
-                     max(i['five_downstream']),max(e['five_downstream']),max(b['five_downstream']))
-        
+
     with dataviz.Figure(output_file, figsize=(num_cols * 4,num_rows * 4)) as fig:
         
         sns.set_style({'xtick.major.size':5,
@@ -699,26 +693,23 @@ def plot_a5ss(inclusion, exclusion, both, inclusion_err, exclusion_err, title, o
                    'xtick.color':'.15'})
         
         ax1 = fig.add_subplot(1,4,1)
-        min1, max1 = plot_err(ax1, 'three_alt1', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min1, max1 = plot_err(ax1, 'three_alt1', i, e, b, ie, ee, color1, color2, color3)
         sns.despine(ax=ax1)
-        ax1.set_ylim(min_height, max_height)
         ax1.set_ylabel("Normalized Signal")
         ax1.set_xticklabels(range(-50,351,50),rotation=90)
         ax1.axvline(x=50,linestyle=':',alpha=0.5)
         sns.set_style({'ytick.major.size':0})
         
         ax2 = fig.add_subplot(1,4,2)
-        min2, max2 = plot_err(ax2, 'three_alt2', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min2, max2 = plot_err(ax2, 'three_alt2', i, e, b, ie, ee, color1, color2, color3)
         sns.despine(ax=ax2, left=True)
-        ax2.set_ylim(min_height, max_height)
         ax2.set_yticklabels([])
         ax2.set_xticklabels(range(-50,351,50),rotation=90)
         ax2.axvline(x=50,linestyle=':',alpha=0.5)
             
         ax3 = fig.add_subplot(1,4,3)
-        min3, max3 = plot_err(ax3, 'five_downstream', inclusion, exclusion, both, inclusion_err, exclusion_err, color1, color2, color3)
+        min3, max3 = plot_err(ax3, 'five_downstream', i, e, b, ie, ee, color1, color2, color3)
         sns.despine(ax=ax3, left=True)
-        ax3.set_ylim(min_height, max_height)
         ax3.set_yticklabels([])
         ax3.axvline(x=300,linestyle=':',alpha=0.5)
         ax3.set_xticklabels(range(-300,51,50),rotation=90)
