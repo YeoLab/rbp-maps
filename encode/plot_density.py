@@ -239,9 +239,9 @@ def main(argv=None): # IGNORE:C0111
                     
                     if (os.path.isfile(positive_annotation)==False):
                         logger.error("Positive annotation doesn't exist: {}".format(positive_annotation))
-                    if (os.path.isfile(positive_annotation)==False):
+                    if (os.path.isfile(negative_annotation)==False):
                         logger.error("Negative annotation doesn't exist: {}".format(negative_annotation))
-                    if (os.path.isfile(positive_annotation)==False):
+                    if (os.path.isfile(bg_annotation)==False):
                         logger.error("Background annotation doesn't exist: {}".format(bg_annotation))
                     
                     """

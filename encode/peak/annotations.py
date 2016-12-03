@@ -2,10 +2,11 @@ import collections
 import pandas as pd
 import sys
 
-def read_alt_exons(alt_file):
-    alt = open(alt_file)
-    
 def filter_summary(infile,included_outfile,excluded_outfile):
+    """
+    args:
+        infile (string) : input MISO-style file containing 
+    """
     oi = open(included_outfile,'w')
     oe = open(excluded_outfile,'w')
     with open(infile,'r') as f:
@@ -29,6 +30,9 @@ def filter_summary(infile,included_outfile,excluded_outfile):
                     oe.write("{0}\t{1}\n".format(event,"some_excluded_exon"))
 
 def read_region_from_miso(event_line, event_type):
+    """
+    Untested function for parsing a3ss/a5ss events 
+    """
     upchr = ''
     upstart = ''
     upstop = ''
