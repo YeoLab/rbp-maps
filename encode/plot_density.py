@@ -273,7 +273,7 @@ def main(argv=None): # IGNORE:C0111
                                                 InputReadDensity = inp,
                                                 name= prefix,
                                                 annotation = bg_annotation,
-                                                annotation_type = annotation_type,
+                                                annotation_type = 'eric',
                                                 output_file = "{}.svg".format(os.path.join(outdir,prefix)),
                                                 exon_offset = exon_offset,
                                                 intron_offset = intron_offset)
@@ -318,7 +318,7 @@ def main(argv=None): # IGNORE:C0111
                                 logger.error("Invalid event chosen: {}".format(event))
                                 sys.exit(1)
                             logger.info("Normalizing {} map".format(key))
-                            clip.normalize(normfunc=norm_func,label="{}.{}".format(prefix,norm_name),min_density_sum=0)
+                            clip.normalize(normfunc=norm_func,label="{}.{}".format(key,norm_name),min_density_sum=0)
                             clip.set_means_and_sems('feature',confidence)
                             clip.get_means().to_csv(output_filename.replace('.svg','.{}.txt'.format(key)))
                         

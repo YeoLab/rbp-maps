@@ -49,26 +49,20 @@ class SkippedExonFeature(Feature):
         elif(self.source == 'xintao'):
             pass
         elif(self.source == 'eric'):
-            name, se = self.annotation.split(';')
-            xintao, ericleft, ericright = se.split('||')
-            upstream_es = 1
-            downstream_es = 250000000
-            if("Not_found") not in ericleft:
-                upstream_es = ericleft.split(':')[2].split('-')[0]
-            if("Not_found") not in ericright:
-                downstream_ee = ericright.split(':')[2].split('-')[1]
+            pos, upstream, skipped, downstream = self.annotation.split('\t')
+            chrom, strand, up_junc, down_junc, se_region = pos.split('|')
             
-            event, chrom, upstream, downstream, strand = xintao.split(':')
-            upstream_ee, skipped_es = upstream.split('-')
-            skipped_ee, downstream_es = downstream.split('-')
+            if(strand == '-'): # because these are coord-based not *stream-based.
+                down_start, down_end = upstream.split('-')
+                up_start, up_end = downstream.split('-')
+            else:
+                up_start, up_end = upstream.split('-')
+                down_start, down_end = downstream.split('-')
+            se_start, se_end = skipped.split('-')
             
-            se = bt.create_interval_from_list([chrom, skipped_es, skipped_ee, '0', '0', strand])
-            if(strand == '+'):
-                up = bt.create_interval_from_list([chrom, upstream_es, upstream_ee, '0', '0', strand])
-                down = bt.create_interval_from_list([chrom, downstream_es, downstream_ee, '0', '0', strand])
-            elif(strand == '-'):
-                up = bt.create_interval_from_list([chrom, downstream_es, downstream_ee, '0', '0', strand])
-                down = bt.create_interval_from_list([chrom, upstream_es, upstream_ee, '0', '0', strand])
+            up = bt.create_interval_from_list([chrom, up_start, up_end, '0', '0', strand])
+            down = bt.create_interval_from_list([chrom, down_start, down_end, '0', '0', strand])
+            se = bt.create_interval_from_list([chrom, se_start, se_end, '0', '0', strand])
         elif(self.source == 'rmats'):
             id, GeneID, geneSymbol, chrom, strand, \
             exonStart_0base, exonEnd, \
