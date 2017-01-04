@@ -179,6 +179,7 @@ def main(argv=None): # IGNORE:C0111
                                  exon_offset = exon_offset,
                                  intron_offset = intron_offset)
         if(event == 'se'):
+            print('Creating SE RBP Map')
             clips[annotation_prefix].create_se_matrices(label="{}.{}".format(event, annotation_prefix))
         else:
             clips[annotation_prefix].create_matrices(label="{}.{}".format(event, annotation_prefix))
@@ -192,7 +193,7 @@ def main(argv=None): # IGNORE:C0111
         print('finished setting means')
         clips[annotation_prefix].get_means().to_csv(output_filename)
     
-    output_img_filename = os.path.join(outdir, ip_bam + '.svg')
+    output_img_filename = os.path.join(outdir, os.path.basename(ip_bam) + '.svg')
     
     conditions = []
     for key in clips.keys():
