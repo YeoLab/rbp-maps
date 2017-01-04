@@ -130,7 +130,7 @@ def single_frame_with_up_down_events_error(up, down, both,
 
     ax.set_ylabel('Read Density')
     ax.set_title(title,y=1.10)
-    plt.xticks([0,300,599],['upstream (300bp)','feature','downstream (300bp)'])
+    # plt.xticks([0,300,599],['upstream (300bp)','feature','downstream (300bp)'])
     plt.ylim(min1+min1*0.1, max1+max1*0.1)
     plt.savefig(output_file)
     plt.clf()

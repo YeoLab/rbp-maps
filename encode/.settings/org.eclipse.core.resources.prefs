@@ -2,4 +2,5 @@ eclipse.preferences.version=1
 encoding//density/intervals.py=utf-8
 encoding//rbpmaps/plot_features_from_xintao_using_erics_manifest_test.py=utf-8
 encoding/plot_density.py=utf-8
+encoding/plot_density_encode.py=utf-8
 encoding/plot_peak.py=utf-8
