@@ -91,7 +91,8 @@ def single_frame(means, title, output_file, color='red'):
     plt.cla()
     plt.close()
 
-def plot_bed(up, down, both, uperr, downerr, title, output_file):
+def plot_bed(up, down, both, uperr, downerr, title, output_file, 
+             cond1lab = 'cond1', cond2lab = 'cond2', bglab):
     """Plots a single frame feature of events. 
     Just array-ifies the dictionary of lists and calls
     single_frame_with_up_down_events_error
@@ -112,7 +113,10 @@ def plot_bed(up, down, both, uperr, downerr, title, output_file):
                                            misc.toarray(uperr),
                                            misc.toarray(downerr), 
                                            title, 
-                                           output_file)
+                                           output_file,
+                                           uplab = cond1lab,
+                                           downlab = cond2lab,
+                                           bglab = bglab)
 def single_frame_with_up_down_events_error(up, down, both,
                                            uperr, downerr, 
                                            title, output_file,
@@ -124,7 +128,7 @@ def single_frame_with_up_down_events_error(up, down, both,
                                            bglab = 'All significant events'):
     ax = plt.gca()
     
-    min1, max1 = plot_err(ax, 'region1', up, down, both, uperr, downerr, upcolor, downcolor, bgcolor)
+    min1, max1 = plot_err(ax, 'region1', up, down, both, uperr, downerr, upcolor, downcolor, bgcolor, uplab, downlab, bglab)
     
     ax.legend()
 

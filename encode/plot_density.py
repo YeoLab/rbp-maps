@@ -69,7 +69,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-conf", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
-    parser.add_argument("-norm", "--norm_level", dest="normalization_level", help="normalization_level 0: raw IP, [1]: subtraction, 2: entropy, 3: all", default=1)
+    # parser.add_argument("-norm", "--norm_level", dest="normalization_level", help="normalization_level 0: raw IP, [1]: subtraction, 2: entropy, 3: all", default=1)
     
     # Toplevel directory:
     topdir = os.path.dirname(os.path.realpath(__file__))
@@ -110,7 +110,7 @@ def main(argv=None): # IGNORE:C0111
     intron_offset = args.intron_offset
     
     # Process normalization options
-    norm_level = args.normalization_level
+    # norm_level = args.normalization_level
     
     # process ip args
     ip_bam = args.ipbam
@@ -192,18 +192,21 @@ def main(argv=None): # IGNORE:C0111
         print('finished setting means')
         clips[annotation_prefix].get_means().to_csv(output_filename)
     
-    output_img_filename = os.path.join(outdir, 'clip.svg')
+    output_img_filename = os.path.join(outdir, ip_bam + '.svg')
     
     conditions = []
     for key in clips.keys():
         conditions.append([clips[key].means, clips[key].sems])
     
-    
+        
     inc = {'region1':conditions[0][0]}
     exc = {'region1':conditions[1][0]}
-    bo = {'region1':conditions[1][0]}
     inc_e = {'region1':conditions[0][1]}
     exc_e = {'region1':conditions[1][1]}
+    bo = {'region1':conditions[1][0]}
+    if(len(conditions) == 3):
+        bo = {'region1':conditions[2][0]}
+    
     
     if event == 'se':
         Plot.plot_se(inc, exc, bo, inc_e, exc_e, "title", output_img_filename)

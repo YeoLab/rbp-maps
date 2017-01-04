@@ -564,6 +564,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 try:
                     upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,annotation_type).get_bedtools()
                 except Exception as e:
+                    print("Having trouble parsing event: {} (assumed type: {})".format(event,annotation_type))
                     logger.error("Having trouble parsing event: {} (assumed type: {})".format(event,annotation_type))
                     logger.error(e)
                 """three prime upstream region"""
