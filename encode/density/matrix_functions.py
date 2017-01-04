@@ -614,14 +614,6 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                 wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
                 wiggle = np.nan_to_num(wiggle) # convert all nans to 0
                 five_downstream[event] = wiggle
-        if(len(three_upstream)!=350): 
-            logger.error(event)
-        if(len(five_skipped)!=350): 
-            logger.error(event)
-        if(len(three_skipped)!=350): 
-            logger.error(event)
-        if(len(five_downstream)!=350): 
-            logger.error(event)
         
         three_upstream = pd.DataFrame(three_upstream).T
         five_skipped = pd.DataFrame(five_skipped).T
