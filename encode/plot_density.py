@@ -219,9 +219,9 @@ def main(argv=None): # IGNORE:C0111
     
     
     if event == 'se':
-        Plot.plot_se(inc, exc, bo, inc_e, exc_e, "title", output_img_filename)
+        Plot.plot_se(inc, exc, bo, inc_e, exc_e, os.path.basename(ip_bam), output_img_filename)
     else:
-        Plot.plot_bed(inc, exc, bo, inc_e, exc_e, "title", output_img_filename)
+        Plot.plot_bed(inc, exc, bo, inc_e, exc_e, os.path.basename(ip_bam), output_img_filename)
 if __name__ == "__main__":
     
     main()
