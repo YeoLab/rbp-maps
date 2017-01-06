@@ -61,31 +61,30 @@ def plot_err(ax, region, inclusion, exclusion, both,
     ax.plot((exclusion[region]-exclusion_err[region]), 
             linewidth=errorbar_linewidth, alpha=.5, color = exclusion_color, linestyle = ':')
     return min(min(inclusion[region]),min(exclusion[region])), max(max(inclusion[region]),max(exclusion[region]))
-def single_frame(means, title, output_file, color='red'):
+def single_frame(dic, title, output_file):
     """Plots a single frame given a set of points, 
     in this case the means of densities across a predescribed
     event.
     
     Parameters
     ----------
-    means (list) : list of mean density values to plot
+    dict (dictionary of lists) : list of mean density values to plot
     title (string) : plot title
     output_file (string) : output file including extension (.svg)
     color (string) : color of the means line (eg. 'red')
 
     """
+    colors = sns.color_palette("hls", len(dic))
     ax = plt.gca()
-        
-    ax.plot(means, color = color, label = 'Normalized Signal')
+    i = 0
+    for key, value in dic.iteritems():
+        ax.plot(value, color = colors[i], label = key)
+        i = i + 1
     ax.legend()
 
     ax.set_ylabel('Read Density')
     ax.set_title(title,y=1.10)
-        
-    ymax = max(means) * 1.1
-    ymin = min(means) * 0.9
-        
-    ax.set_ylim([ymin,ymax])
+    
     plt.savefig(output_file)
     plt.clf()
     plt.cla()

@@ -208,20 +208,22 @@ def main(argv=None): # IGNORE:C0111
     for key in clips.keys():
         conditions.append([clips[key].means, clips[key].sems])
     
-        
-    inc = {'region1':conditions[0][0]}
-    exc = {'region1':conditions[1][0]}
-    inc_e = {'region1':conditions[0][1]}
-    exc_e = {'region1':conditions[1][1]}
-    bo = {'region1':conditions[1][0]}
-    if(len(conditions) == 3):
-        bo = {'region1':conditions[2][0]}
+    print("Found {} features to plot.".format(len(conditions)))
     
     
     if event == 'se':
+        inc = {'region1':conditions[0][0]}
+        exc = {'region1':conditions[1][0]}
+        inc_e = {'region1':conditions[0][1]}
+        exc_e = {'region1':conditions[1][1]}
+        bo = {'region1':conditions[2][0]}
         Plot.plot_se(inc, exc, bo, inc_e, exc_e, os.path.basename(ip_bam), output_img_filename)
     else:
-        Plot.plot_bed(inc, exc, bo, inc_e, exc_e, os.path.basename(ip_bam), output_img_filename)
+        conditions = {}
+        for key in clips.keys():
+            conditions[key] = clips[key].means
+            
+        Plot.single_frame(conditions, os.path.basename(ip_bam), output_img_filename)
 if __name__ == "__main__":
     
     main()
