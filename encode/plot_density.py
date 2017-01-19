@@ -63,7 +63,7 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-ip", "--ip-bam", dest="ipbam",required=True)
     parser.add_argument("-input", "--input-bam", dest="inpbam",required=True)
     parser.add_argument("-o", "--output", dest="output",required=True)
-    parser.add_argument("-e", "--event", dest="event", help="event. Can be either: [se, a3ss, a5ss, ri, mxe, cdsstart, cdsend, txstart, txend]")
+    parser.add_argument("-e", "--event", dest="event", help="event. Can be either: se, unscaledbed, bed", required=True)
     parser.add_argument("-c", "--conditions", dest="annotations", help="annotation files", nargs = '+', required=True)
     parser.add_argument("-at", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao, bed)", default='miso')
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
@@ -181,8 +181,10 @@ def main(argv=None): # IGNORE:C0111
         if(event == 'se'):
             print('Creating SE RBP Map')
             clips[annotation_prefix].create_se_matrices(label="{}.{}".format(event, annotation_prefix))
-        else:
+        elif(event == 'unscaledbed'):
             clips[annotation_prefix].create_unscaled_exon_matrices(label="{}.{}".format(event, annotation_prefix))
+        else:
+            clips[annotation_prefix].create_matrix(label="{}.{}".format(event, annotation_prefix))
         print('finished creating matrix')
         if norm_level == 0:
             clips[annotation_prefix].normalize(normfunc=norm.get_density,
