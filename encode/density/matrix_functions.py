@@ -73,7 +73,66 @@ def create_matrix(annotation, density,
                 """
     logger.debug("Finished matrix creation: {}".format(len(densities)))
     return pd.DataFrame(densities).T
-
+def create_unscaled_exon_matrix(annotation, density,
+                                exon_offset, intron_offset,
+                                is_scaled = False, annotation_type = 'bed'):
+    logger.debug("Starting create_unscaled_exon_matrix [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
+                                                                                                            annotation,
+                                                                                                            density.name,
+                                                                                                            exon_offset,
+                                                                                                            intron_offset,
+                                                                                                            is_scaled,
+                                                                                                            annotation_type))
+    count = 0
+    up = {}
+    down = {}
+    with open(annotation) as f:
+        for line in f:
+            if not line.startswith('event_name') and not line.startswith('ID'):
+                count = count + 1
+                if count % 50000 == 0:
+                    logger.info('Processed {} features'.format(count))
+                event = line.rstrip() # .split('\t')[0]
+                interval = Feature.Feature(event, annotation_type).get_bedtool()
+                mock_upstream = Feature.MockUpstream(event, annotation_type).get_bedtool()
+                mock_downstream = Feature.MockDownstream(event, annotation_type).get_bedtool()
+                """five prime site of mxe1 (upstream mxe) region"""
+                left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
+                                                                        mock_upstream,
+                                                                        interval,
+                                                                        exon_offset,
+                                                                        intron_offset,
+                                                                        middle_stop = True)
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+        
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) 
+                
+                up[event] = wiggle
+                
+                left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
+                                                                        mock_downstream,
+                                                                        interval,
+                                                                        exon_offset,
+                                                                        intron_offset,
+                                                                        middle_stop = True)
+                wiggle = pd.Series(wiggle)
+                wiggle = abs(wiggle) # convert all values to positive
+        
+                wiggle = np.pad(wiggle,(left_pad,right_pad),'constant',constant_values=(-1))
+                wiggle = np.nan_to_num(wiggle) 
+                
+                down[event] = wiggle
+                
+    up = pd.DataFrame(up).T
+    down = pd.DataFrame(down).T
+    logger.debug("Finished matrix creation: up:{}, down:{}".format(up.shape[0],
+                                                                  down.shape[0]))
+    ra = pd.concat([up, down],axis=1)
+    ra.columns = range(0,ra.shape[1])
+    logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
+    return ra
 def create_mxe_matrix(annotation, density, 
                       exon_offset, intron_offset, 
                       is_scaled = False, combine_regions = True, 

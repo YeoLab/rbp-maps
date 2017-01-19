@@ -27,6 +27,54 @@ class Feature():
                                              score,
                                              strand])
 
+class MockUpstream(Feature):
+    def __init__(self, annotation, source):
+        Feature.__init__(self, annotation, source)
+
+    def get_bedtools(self):
+        mock_start = 0
+        mock_end = 1
+        if(self.source == 'bed'):
+            chrom, start, end, name, score, strand = self.annotation.split('\t')
+        if(strand == '-'):
+            mock_start = 249999999
+            mock_end = 250000000
+        elif(strand == '+'):
+            mock_start = 0
+            mock_end = 1
+        else:
+            print("Warning, strand not correct!")
+            return -1
+        return bt.create_interval_from_list([chrom,
+                                             mock_start,
+                                             mock_end,
+                                             name,
+                                             score,
+                                             strand])
+class MockDownstream(Feature):
+    def __init__(self, annotation, source):
+        Feature.__init__(self, annotation, source)
+
+    def get_bedtools(self):
+        mock_start = 249999999
+        mock_end = 250000000
+        if(self.source == 'bed'):
+            chrom, start, end, name, score, strand = self.annotation.split('\t')
+        if(strand == '+'):
+            mock_start = 249999999
+            mock_end = 250000000
+        elif(strand == '-'):
+            mock_start = 0
+            mock_end = 1
+        else:
+            print("Warning, strand not correct!")
+            return -1
+        return bt.create_interval_from_list([chrom,
+                                             mock_start,
+                                             mock_end,
+                                             name,
+                                             score,
+                                             strand])
 class SkippedExonFeature(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)

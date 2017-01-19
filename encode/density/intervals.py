@@ -72,7 +72,8 @@ def five_prime_site(rbp,                # type: ReadDensity
                     interval,           # type: BedTools.Interval
                     exon_offset,        # type: int
                     intron_offset,      # type: int
-                    trunc = True):      # type: boolean
+                    trunc = True,       # type: boolean
+                    middle_stop = False):    # type: boolean
     # type: (...) -> (int, list, int)
     '''
     Given an upstream exon and a focus exon, return a list of density 
@@ -112,27 +113,35 @@ def five_prime_site(rbp,                # type: ReadDensity
     if interval.strand == "+":
         if(trunc == True):
             if interval.start + exon_offset > interval.end:
-                # middle = int((interval.end + interval.start)/2)
-                # exon_offset = interval.end - middle
-                exon_offset = interval.end - interval.start
+                if(middle_stop == True):
+                    middle = int((interval.end + interval.start)/2)
+                    exon_offset = interval.end - middle
+                else:
+                    exon_offset = interval.end - interval.start
                 threep_pad = exon - exon_offset
             if interval.start - intron_offset < upstream_interval.end:
-                intron_offset = interval.start - upstream_interval.end
-                # middle = int((interval.start + upstream_interval.end)/2)
-                # intron_offset = interval.start - middle
+                if(middle_stop == True):
+                    middle = int((interval.start + upstream_interval.end)/2)
+                    intron_offset = interval.start - middle
+                else:
+                    intron_offset = interval.start - upstream_interval.end
                 fivep_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, (interval.start - intron_offset), (interval.start + exon_offset), interval.strand)
     elif interval.strand == "-":
         if(trunc == True):
             if interval.end - exon_offset < interval.start:
-                # middle = int((interval.start + interval.end)/2)
-                # exon_offset = interval.end - middle
-                exon_offset = interval.end - interval.start
+                if(middle_stop == True):
+                    middle = int((interval.start + interval.end)/2)
+                    exon_offset = interval.end - middle
+                else:
+                    exon_offset = interval.end - interval.start
                 threep_pad = exon - exon_offset
             if interval.end + intron_offset > upstream_interval.start:
-                intron_offset = upstream_interval.start - interval.end
-                # middle = int((upstream_interval.start + interval.end)/2)
-                # intron_offset = upstream_interval.start - middle
+                if(middle_stop == True):
+                    middle = int((upstream_interval.start + interval.end)/2)
+                    intron_offset = upstream_interval.start - middle
+                else:
+                    intron_offset = upstream_interval.start - interval.end
                 fivep_pad = intron - intron_offset
                 
         wiggle = rbp.values(interval.chrom, (interval.end - exon_offset), (interval.end + intron_offset), interval.strand)
@@ -143,7 +152,8 @@ def three_prime_site(rbp,                   # type: ReadDensity
                      interval,              # type: BedTools.Interval
                      exon_offset,           # type: int
                      intron_offset,         # type: int
-                     trunc = True):         # type: Boolean
+                     trunc = True,          # type: Boolean
+                     middle_stop = False):  # type: Boolean
     # [      ]-----|-----[   |   ]-----|----[   ]
     # type: (...) -> (int, list, int)
     '''
@@ -184,27 +194,35 @@ def three_prime_site(rbp,                   # type: ReadDensity
     if interval.strand == "+":
         if(trunc == True):
             if interval.end - exon_offset < interval.start:
-                # middle = int((interval.start + interval.end)/2)
-                # exon_offset = interval.end - middle
-                exon_offset = interval.end - interval.start
+                if(middle_stop == True):
+                    middle = int((interval.start + interval.end)/2)
+                    exon_offset = interval.end - middle
+                else:
+                    exon_offset = interval.end - interval.start
                 fivep_pad = exon - exon_offset
             if interval.end + intron_offset > downstream_interval.start:
-                # middle = int((interval.end + downstream_interval.start)/2)
-                # intron_offset = downstream_interval.start - middle
-                intron_offset = downstream_interval.start - interval.end
+                if(middle_stop == True):
+                    middle = int((interval.end + downstream_interval.start)/2)
+                    intron_offset = downstream_interval.start - middle
+                else:
+                    intron_offset = downstream_interval.start - interval.end
                 threep_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, interval.end - exon_offset, interval.end + intron_offset, interval.strand)
     elif interval.strand == "-":
         if(trunc == True):
             if interval.start + exon_offset > interval.end:
-                # middle = int((interval.start + interval.end)/2)
-                # exon_offset = interval.end - middle
-                exon_offset = interval.end - interval.start
+                if(middle_stop == True):
+                    middle = int((interval.start + interval.end)/2)
+                    exon_offset = interval.end - middle
+                else:
+                    exon_offset = interval.end - interval.start
                 fivep_pad = exon - exon_offset
             if interval.start - intron_offset < downstream_interval.end:
-                # middle = int((interval.start + downstream_interval.end)/2)
-                # intron_offset = interval.start - middle
-                intron_offset = interval.start - downstream_interval.end
+                if(middle_stop == True):
+                    middle = int((interval.start + downstream_interval.end)/2)
+                    intron_offset = interval.start - middle
+                else:
+                    intron_offset = interval.start - downstream_interval.end
                 threep_pad = intron - intron_offset
         wiggle = rbp.values(interval.chrom, interval.start - intron_offset, interval.start + exon_offset, interval.strand)
     return fivep_pad, wiggle, threep_pad

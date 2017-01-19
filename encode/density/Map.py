@@ -316,3 +316,13 @@ class ClipWithInput(Map):
         self.ip_raw_density['feature'].to_csv("{}.ip.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         self.input_raw_density['feature'].to_csv("{}.input.{}.{}.ri.raw_density_matrix.csv".format(self.output_base, label, 'feature'))
         self.maptype = 'ri'
+    def create_unscaled_exon_matrices(self, label=""):
+        densities = [self.ip_raw_density, self.input_raw_density]
+        rbps = [self.ip, self.inp]
+        self.logger.info("Start creating the unscaled Matrix - {}".format(self.name))
+        for i in range(0,len(densities)):
+            densities[i]['feature'] = mtx.create_unscaled_exon_matrix(annotation = self.annotation, 
+                                                             annotation_type = self.annotation_type,
+                                                             density = rbps[i], 
+                                                             exon_offset = self.exon_offset, 
+                                                             intron_offset = self.intron_offset)

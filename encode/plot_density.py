@@ -182,7 +182,7 @@ def main(argv=None): # IGNORE:C0111
             print('Creating SE RBP Map')
             clips[annotation_prefix].create_se_matrices(label="{}.{}".format(event, annotation_prefix))
         else:
-            clips[annotation_prefix].create_matrices(label="{}.{}".format(event, annotation_prefix))
+            clips[annotation_prefix].create_unscaled_exon_matrices(label="{}.{}".format(event, annotation_prefix))
         print('finished creating matrix')
         if norm_level == 0:
             clips[annotation_prefix].normalize(normfunc=norm.get_density,
