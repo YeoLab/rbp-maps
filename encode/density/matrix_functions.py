@@ -94,8 +94,10 @@ def create_unscaled_exon_matrix(annotation, density,
                     logger.info('Processed {} features'.format(count))
                 event = line.rstrip() # .split('\t')[0]
                 interval = Feature.Feature(event, annotation_type).get_bedtool()
+                # print(interval)
                 mock_upstream = Feature.MockUpstream(event, annotation_type).get_bedtool()
                 mock_downstream = Feature.MockDownstream(event, annotation_type).get_bedtool()
+                # print(mock_downstream)
                 """five prime site of mxe1 (upstream mxe) region"""
                 left_pad, wiggle, right_pad = intervals.five_prime_site(density, 
                                                                         mock_upstream,
@@ -110,7 +112,7 @@ def create_unscaled_exon_matrix(annotation, density,
                 wiggle = np.nan_to_num(wiggle) 
                 
                 up[event] = wiggle
-                
+                # print('event: {}'.format(event))
                 left_pad, wiggle, right_pad = intervals.three_prime_site(density, 
                                                                         mock_downstream,
                                                                         interval,
@@ -127,6 +129,7 @@ def create_unscaled_exon_matrix(annotation, density,
                 
     up = pd.DataFrame(up).T
     down = pd.DataFrame(down).T
+    # print(up.shape, down.shape)
     logger.debug("Finished matrix creation: up:{}, down:{}".format(up.shape[0],
                                                                   down.shape[0]))
     ra = pd.concat([up, down],axis=1)

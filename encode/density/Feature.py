@@ -31,17 +31,17 @@ class MockUpstream(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)
 
-    def get_bedtools(self):
-        mock_start = 0
-        mock_end = 1
+    def get_bedtool(self):
+        mock_start = "0"
+        mock_end = "1"
         if(self.source == 'bed'):
             chrom, start, end, name, score, strand = self.annotation.split('\t')
         if(strand == '-'):
-            mock_start = 249999999
-            mock_end = 250000000
+            mock_start = "249999999"
+            mock_end = "250000000"
         elif(strand == '+'):
-            mock_start = 0
-            mock_end = 1
+            mock_start = "0"
+            mock_end = "1"
         else:
             print("Warning, strand not correct!")
             return -1
@@ -55,17 +55,17 @@ class MockDownstream(Feature):
     def __init__(self, annotation, source):
         Feature.__init__(self, annotation, source)
 
-    def get_bedtools(self):
-        mock_start = 249999999
-        mock_end = 250000000
+    def get_bedtool(self):
+        mock_start = "249999999"
+        mock_end = "250000000"
         if(self.source == 'bed'):
             chrom, start, end, name, score, strand = self.annotation.split('\t')
         if(strand == '+'):
-            mock_start = 249999999
-            mock_end = 250000000
+            mock_start = "249999999"
+            mock_end = "250000000"
         elif(strand == '-'):
-            mock_start = 0
-            mock_end = 1
+            mock_start = "0"
+            mock_end = "1"
         else:
             print("Warning, strand not correct!")
             return -1
