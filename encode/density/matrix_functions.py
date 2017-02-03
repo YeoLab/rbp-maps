@@ -29,7 +29,6 @@ def create_matrix(annotation, density,
         pandas.DataFrame : a dataframe of r events for a feature of length c.
     """
     count = 0
-    standard_wiggle_length = 0
     autoscale = False
     densities = {}
     logger.debug("Start matrix creation [ANNOTATION:{},DENSITY:{},UP:{},DOWN:{},SCALED:{},TYPE:{}".format(
@@ -54,10 +53,6 @@ def create_matrix(annotation, density,
                 Sets the 'standard' length of feature to the length of the first feature.
                 If this length varies among features, autoscale to %-based 
                 """
-                if count == 1:
-                    standard_wiggle_length = len(wiggle)
-                elif len(wiggle) != standard_wiggle_length:
-                    autoscale = True
                 if(is_scaled == True or autoscale == True):
                     wiggle = intervals.get_scale(wiggle)
                 densities[intervals.rename_index(interval)] = wiggle

@@ -65,12 +65,12 @@ def main(argv=None): # IGNORE:C0111
     parser.add_argument("-o", "--output", dest="output",required=True)
     parser.add_argument("-e", "--event", dest="event", help="event. Can be either: se, unscaledbed, bed", required=True)
     parser.add_argument("-c", "--conditions", dest="annotations", help="annotation files", nargs = '+', required=True)
-    parser.add_argument("-at", "--annotation_type", dest="annotation_type", help="annotation type ([miso], xintao, bed)", default='miso')
+    parser.add_argument("-at", "--annotation_type", dest="annotation_type", help="annotation type (miso, xintao, [bed])", default='bed')
     parser.add_argument("-exon", "--exon_offset", dest="exon_offset", help="exon offset (default: 50)", default=50, type = int)
     parser.add_argument("-intron", "--intron_offset", dest="intron_offset", help="intron offset (default: 300)", default=300, type = int)
     parser.add_argument("-conf", "--confidence", dest="confidence", help="Keep only this percentage of events while removing others as outliers (default 0.95)", default=0.95, type=float)
     parser.add_argument("-norm", "--norm_level", dest="normalization_level", help="normalization_level 0: raw IP, [1]: subtraction, 2: entropy, 3: raw input", default=1, type=int)
-    
+    parser.add_argument("-s", "--scale", dest="scale", help="if the features are of different lengths, scale them to 100", default=False, action='store_true')
     # Toplevel directory:
     topdir = os.path.dirname(os.path.realpath(__file__))
     external_script_dir = os.path.join(topdir, 'external_scripts/')
@@ -121,11 +121,9 @@ def main(argv=None): # IGNORE:C0111
     
     input_pos_bw = input_bam.replace('.bam','.norm.neg.bw')
     input_neg_bw = input_bam.replace('.bam','.norm.pos.bw')
-    
-    # internal variables
-    max_conditions = 3
-    conditions = []
-    
+        
+    # process scaling
+    scale = args.scale
     """
     Check if bigwigs exist, otherwise make
     """
@@ -177,14 +175,15 @@ def main(argv=None): # IGNORE:C0111
                                  annotation_type = annotation_type,
                                  output_file = "{}.svg".format(os.path.join(outdir,annotation_prefix)), # not used
                                  exon_offset = exon_offset,
-                                 intron_offset = intron_offset)
+                                 intron_offset = intron_offset,
+                                 is_scaled = scale)
         if(event == 'se'):
             print('Creating SE RBP Map')
             clips[annotation_prefix].create_se_matrices(label="{}.{}".format(event, annotation_prefix))
-        elif(event == 'unscaledbed'):
+        elif(scale == False):
             clips[annotation_prefix].create_unscaled_exon_matrices(label="{}.{}".format(event, annotation_prefix))
         else:
-            clips[annotation_prefix].create_matrix(label="{}.{}".format(event, annotation_prefix))
+            clips[annotation_prefix].create_matrices(label="{}.{}".format(event, annotation_prefix))
         print('finished creating matrix')
         if norm_level == 0:
             clips[annotation_prefix].normalize(normfunc=norm.get_density,

@@ -220,18 +220,18 @@ class ClipWithInput(Map):
         self.means = means
         self.sems = sems
         self.logger.info("Finish removing outliers - {} (conf={})".format(self.name, conf))      
-    def create_matrices(self, label="", scaled=True):
+    def create_matrices(self, label=""):
         densities = [self.ip_raw_density, self.input_raw_density]
         rbps = [self.ip, self.inp]
-        self.logger.info("Start creating the Matrix - {} (scaled={})".format(self.name,scaled))
+        self.logger.info("Start creating the Matrix - {} (scaled={})".format(self.name,self.is_scaled))
         for i in range(0,len(densities)):
             densities[i]['feature'] = mtx.create_matrix(annotation = self.annotation, 
                                                        density = rbps[i], 
                                                        upstream_offset = 0, 
                                                        downstream_offset = 0, 
-                                                       is_scaled = False,
+                                                       is_scaled = self.is_scaled,
                                                        annotation_type = self.annotation_type)
-        self.logger.info("Finished creating the Matrix - {} (scaled={})".format(self.name,scaled))
+        self.logger.info("Finished creating the Matrix - {} (scaled={})".format(self.name,self.is_scaled))
         self.ip_raw_density['feature'].to_csv("{}.ip.{}_raw_density_matrix.csv".format(self.output_base,label))
         self.input_raw_density['feature'].to_csv("{}.input.{}_raw_density_matrix.csv".format(self.output_base,label))
         self.maptype = label
