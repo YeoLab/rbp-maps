@@ -7,6 +7,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 import Feature
 import intervals
@@ -719,10 +720,10 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
                      annotation_type="rmats"):
     """
     Creates an r x c pandas dataframe of r events for a skipped
-    exon feature. An SE matrix will contain four distinct regions: 
-    
+    exon feature. An SE matrix will contain four distinct regions:
+
     |_]----||----[__||__]----||----[_|
-    
+
     - the [..exon_offset]--intron_offset--... 3' site of an upstream exon
     - the ...--intron_offset--[exon_offset..] 5' site of the upstream skipped exon
     - the [..exon_offset]--intron_offset--... 3' site of the downstream skipped exon
@@ -736,7 +737,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             to resize all features to fit on a 0-100% scale.
         combine_regions (boolean) : if False, return four DataFrames instead of one.
         annotation_type (string) : may be rmats format or any additional defined format in Feature
-    
+
     Returns:
         pandas.DataFrame : a dataframe of r events for an SE feature.
     """
@@ -747,6 +748,7 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         intron_offset,
         is_scaled,
         annotation_type))
+
     three_upstream = {}
     five_skipped = {}
     three_skipped = {}
@@ -757,58 +759,52 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
             if not line.startswith('event_name') and not line.startswith('ID'):
                 event = line.rstrip()
                 try:
-                    upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(event,
-                                                                                                  annotation_type).get_bedtools()
+                    upstream_interval, interval, downstream_interval = Feature.SkippedExonFeature(
+                        event,annotation_type
+                    ).get_bedtools()
                 except Exception as e:
                     print("Having trouble parsing event: {} (assumed type: {})".format(event, annotation_type))
                     logger.error("Having trouble parsing event: {} (assumed type: {})".format(event, annotation_type))
                     logger.error(e)
                 """three prime upstream region"""
-                left_pad, wiggle, right_pad = intervals.three_prime_site(density,
-                                                                         interval,
-                                                                         upstream_interval,
-                                                                         exon_offset,
-                                                                         intron_offset)
-                wiggle = pd.Series(wiggle)
-                wiggle = abs(wiggle)  # convert all values to positive
-
-                wiggle = np.pad(wiggle, (left_pad, right_pad), 'constant', constant_values=(-1))
-                wiggle = np.nan_to_num(wiggle)
-
+                left_pad, wiggle, right_pad = intervals.three_prime_site(
+                    density,
+                    interval,
+                    upstream_interval,
+                    exon_offset,
+                    intron_offset
+                )
+                wiggle = clean_and_add_padding(wiggle, left_pad, right_pad)
                 three_upstream[event] = wiggle
                 """five prime site of skipped region"""
-                left_pad, wiggle, right_pad = intervals.five_prime_site(density,
-                                                                        upstream_interval,
-                                                                        interval,
-                                                                        exon_offset,
-                                                                        intron_offset)
-
-                wiggle = pd.Series(wiggle)
-                wiggle = abs(wiggle)  # convert all values to positive
-                wiggle = np.pad(wiggle, (left_pad, right_pad), 'constant', constant_values=(-1))
-                wiggle = np.nan_to_num(wiggle)
+                left_pad, wiggle, right_pad = intervals.five_prime_site(
+                    density,
+                    upstream_interval,
+                    interval,
+                    exon_offset,
+                    intron_offset
+                )
+                wiggle = clean_and_add_padding(wiggle, left_pad, right_pad)
                 five_skipped[event] = wiggle
                 """three prime site of skipped region"""
-                left_pad, wiggle, right_pad = intervals.three_prime_site(density,
-                                                                         downstream_interval,
-                                                                         interval,
-                                                                         exon_offset,
-                                                                         intron_offset)
-                wiggle = pd.Series(wiggle)
-                wiggle = abs(wiggle)  # convert all values to positive
-                wiggle = np.pad(wiggle, (left_pad, right_pad), 'constant', constant_values=(-1))
-                wiggle = np.nan_to_num(wiggle)  #
+                left_pad, wiggle, right_pad = intervals.three_prime_site(
+                    density,
+                    downstream_interval,
+                    interval,
+                    exon_offset,
+                    intron_offset
+                )
+                wiggle = clean_and_add_padding(wiggle, left_pad, right_pad)
                 three_skipped[event] = wiggle
                 """five prime site of downstream region"""
-                left_pad, wiggle, right_pad = intervals.five_prime_site(density,
-                                                                        interval,
-                                                                        downstream_interval,
-                                                                        exon_offset,
-                                                                        intron_offset)
-                wiggle = pd.Series(wiggle)
-                wiggle = abs(wiggle)  # convert all values to positive
-                wiggle = np.pad(wiggle, (left_pad, right_pad), 'constant', constant_values=(-1))
-                wiggle = np.nan_to_num(wiggle)  # convert all nans to 0
+                left_pad, wiggle, right_pad = intervals.five_prime_site(
+                    density,
+                    interval,
+                    downstream_interval,
+                    exon_offset,
+                    intron_offset
+                )
+                wiggle = clean_and_add_padding(wiggle, left_pad, right_pad)
                 five_downstream[event] = wiggle
 
         three_upstream = pd.DataFrame(three_upstream).T
@@ -816,14 +812,31 @@ def create_se_matrix(annotation, density, exon_offset, intron_offset, is_scaled,
         three_skipped = pd.DataFrame(three_skipped).T
         five_downstream = pd.DataFrame(five_downstream).T
 
-    logger.debug("Finished matrix creation: {}, {}, {}, {}".format(three_upstream.shape[0],
-                                                                   five_skipped.shape[0],
-                                                                   three_skipped.shape[0],
-                                                                   five_downstream.shape[0]))
-    if combine_regions == False:
-        return three_upstream, five_skipped, three_skipped, five_downstream
-    else:
-        ra = pd.concat([three_upstream, five_skipped, three_skipped, five_downstream], axis=1)
-        logger.debug("Returning one dataframe (shape:{}x{}) (combine_regions = TRUE)".format(ra.shape[0], ra.shape[1]))
-        ra.columns = range(0, ra.shape[1])
-        return ra
+    logger.debug(
+        "Finished matrix creation: {}, {}, {}, {}".format(
+            three_upstream.shape[0],
+            five_skipped.shape[0],
+            three_skipped.shape[0],
+            five_downstream.shape[0]
+        )
+    )
+    ra = pd.concat([three_upstream, five_skipped, three_skipped, five_downstream],
+        axis=1
+    )
+    ra.columns = range(0, ra.shape[1])
+    return ra
+
+
+def clean_and_add_padding(wiggle, left_pad, right_pad, fill_nans_with=-1):
+    """
+
+    """
+    wiggle = pd.Series(wiggle)
+    wiggle = abs(wiggle)
+    wiggle = np.pad(
+        wiggle,
+        (left_pad, right_pad),
+        'constant',
+        constant_values=(fill_nans_with))
+    wiggle = np.nan_to_num(wiggle)
+    return wiggle

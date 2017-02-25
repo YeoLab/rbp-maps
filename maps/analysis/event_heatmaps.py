@@ -18,6 +18,14 @@ import os
 import numpy as np
 import logging
 
+from matplotlib import rc
+
+rc('text', usetex=False)
+matplotlib.rcParams['svg.fonttype'] = 'none'
+import numpy as np
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+
 logger = logging.getLogger('plot_heatmap')
 
 __version__ = '0.0.1'

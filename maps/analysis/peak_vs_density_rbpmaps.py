@@ -14,24 +14,68 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import logging
+import pandas as pd
+
+from matplotlib import rc
+
+rc('text', usetex=False)
+matplotlib.rcParams['svg.fonttype'] = 'none'
+import numpy as np
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
 logger = logging.getLogger('plot_heatmap')
 
 __version__ = '0.0.1'
 
 
-def plot_avg_readdensity(df, ax=None, title='Average Density'):
+def plot_cassette(ax=None):
     if ax == None:
         ax = plt.gca()
-    ax.set_xlabel('Position')
-    ax.set_ylabel('Average density (outliers removed)')
-    ax.plot(df)
+    ax.add_patch(patches.Rectangle((650, 0), 100, .25, alpha=0.5))
+    ax.add_patch(patches.Rectangle((0, 0), 50, .25, alpha=0.5))
+    ax.add_patch(patches.Rectangle((1350, 0), 50, .25, alpha=0.5))
+    plt.plot([50, 650], [0.125, 0.125], 'k-')
+    plt.plot([750, 1350], [0.125, 0.125], 'k-')
+
+    plt.plot([50, 375], [0.125, 0.25], 'k-')
+    plt.plot([375, 650], [0.25, 0.125], 'k-')
+
+    plt.plot([750, 1075], [0.125, 0.25], 'k-')
+    plt.plot([1075, 1350], [0.25, 0.125], 'k-')
+    ax.set_ylim(0,0.25)
+    ax.set_title("Cassette Exon")
+    plt.setp(ax.get_xticklabels(), visible=False)
+    plt.setp(ax.get_yticklabels(), visible=False)
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    ax.axis('off')
+
+
+def plot(pos,neg,ax=None,title=''):
+    # TODO add ticks to indicate where in the middle of intron/exons we stop at
+    """
+
+    Parameters
+    ----------
+    pos : pandas.Series
+    neg : pandas.Series
+    ax : axes
+
+    Returns
+    -------
+
+    """
+    if ax == None:
+        ax = plt.gca()
+
+    ax.plot(pos,label='positive', color='red')
+    ax.plot(neg,label='negative', color='blue')
     ax.set_title(title)
-    ax.add_patch(patches.Rectangle((650, -1), 100, 2, alpha=0.1))
-    ax.add_patch(patches.Rectangle((0, -1), 50, 2, alpha=0.1))
-    ax.add_patch(patches.Rectangle((1350, -1), 50, 2, alpha=0.1))
-
-
+    #ax.add_patch(patches.Rectangle((650, -1), 100, 2000, alpha=0.1))
+    #ax.add_patch(patches.Rectangle((0, -1), 50, 2000, alpha=0.1))
+    #ax.add_patch(patches.Rectangle((1350, -1), 50, 2000, alpha=0.1))
+    ax.set_xlim(0, 1400)
 def get_prefix(filename):
     """
     Customized 'prettifying' of filenames to remove extraneous stuff.
@@ -95,14 +139,25 @@ def main(argv=None):  # IGNORE:C0111
     # Process arguments
     args = parser.parse_args()
 
-    input_matrices_files = args.i
-    if (len(input_matrices_files) != 4):
+    input_files = args.i
+    if (len(input_files) != 4):
         logger.error(
             "Does not have 4 plots to plot! {}".format(
-                ' '.join(input_matrices_files)
+                ' '.join(input_files)
             )
         )
         exit(1)
+
+    pos_density_file = input_files[0]
+    neg_density_file = input_files[1]
+    pos_peak_file = input_files[2]
+    neg_peak_file = input_files[3]
+
+    pos_density = pd.read_table(pos_density_file,sep=',',names=['value'],index_col=0)
+    neg_density = pd.read_table(neg_density_file,sep=',',names=['value'],index_col=0)
+
+    pos_peak = pd.read_table(pos_peak_file,sep=',',names=['value'])
+    neg_peak = pd.read_table(neg_peak_file,sep=',',names=['value'])
 
     output_file = args.o
 
@@ -130,42 +185,12 @@ def main(argv=None):  # IGNORE:C0111
     # normed matrix for Remove dup - calculate separately.
 
     """ plot stuff """
-    heatmaps = []
     logger.info("************************************************************")
-    try:
-        for arg in args:
-            f, (ax1, ax2) = plt.subplots(2, 1, figsize=(20, 10))
-        axes = [ax1, ax2, ax3, ax4]
-        heatmap(
-            clean(heatmaps[0]),
-            ax1,
-            title=get_prefix(input_matrices_files[0])
-        )
-        heatmap(
-            clean(heatmaps[1]),
-            ax2,
-            title=get_prefix(input_matrices_files[1])
-        )
-        heatmap(
-            clean(heatmaps[2]),
-            ax3,
-            title=get_prefix(input_matrices_files[2])
-        )
-        plot_avg_readdensity(
-            heatmaps[3],
-            ax=axes[3],
-            title='Image output'
-        )
-        plt.suptitle(
-            '{} - N Events={}'.format(
-                os.path.basename(output_file),
-                heatmaps[0].shape[0]
-            ),
-            fontsize=18
-        )
-        plt.savefig(output_file)
-    except Exception as e:
-        logger.error(e)
+    f, axarr = plt.subplots(3, sharex=True, gridspec_kw = {'height_ratios':[3, 3, 0.5]})
+    plot(pos_density['value'],neg_density['value'],ax=axarr[0],title='(RPM+subtraction) normalized density')
+    plot(pos_peak['value'],neg_peak['value'],ax=axarr[1],title='Input normalized peak')
+    plot_cassette(ax=axarr[2])
+    f.savefig(output_file)
     logger.info("************************************************************")
 
 

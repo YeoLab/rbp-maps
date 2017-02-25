@@ -5,8 +5,9 @@ Created on May 3, 2016
 
 @author: brianyee
 '''
-import itertools
 
+import sys
+import itertools
 import pandas as pd
 
 
@@ -98,7 +99,29 @@ def get_scale(wiggle):
     return (pd.Series(dist))
 
 
-def some_range(rbp, interval, left_flank=0, right_flank=0):
+def flip_strand(strand):
+    """
+
+    Parameters
+    ----------
+    strand : str
+        either '+' or '-' indicating strand
+    Returns
+    -------
+    rstrand : str
+        the opposite strand ('-' if '+' and vice versa).
+
+    """
+    if strand == '+':
+        return '-'
+    elif strand == '-':
+        return '+'
+    else:
+        print("strand neither + or -")
+        return 1
+
+
+def some_range(rbp, interval, upstream_offset=0, downstream_offset=0):
     """
 
     Parameters
@@ -115,19 +138,18 @@ def some_range(rbp, interval, left_flank=0, right_flank=0):
     -------
     list of densities corresponding the specified interval.
     """
-    # TODO refactor or deprecate left_flank, right_flank
     if interval.strand == "+":
         wiggle = rbp.values(
             interval.chrom,
-            interval.start - left_flank,
-            interval.end + right_flank,
+            interval.start - upstream_offset,
+            interval.end + downstream_offset,
             interval.strand
         )
     elif interval.strand == "-":
         wiggle = rbp.values(
             interval.chrom,
-            interval.start - left_flank,
-            interval.end + right_flank,
+            interval.start - upstream_offset,
+            interval.end + downstream_offset,
             interval.strand
         )
     else:
@@ -136,208 +158,213 @@ def some_range(rbp, interval, left_flank=0, right_flank=0):
     return wiggle
 
 
-def five_prime_site(
-        rbp,
-        upstream_interval,
-        interval,
-        exon_offset,
-        intron_offset,
-        trunc=True,
-        middle_stop=False):
+def too_far(anchor, offset, boundary, direction=1):
     """
-    Given an upstream exon and a focus exon, return a list of density
-    values of the surrounding 5' intron/exon boundary given
-    exon_offset and intron_offset parameters. Also returns the
-    list of padded values which can be appended to either end of
-    the returned list in order to conform to a uniform length.
+    Returns dist if we're either too far forward (1) or too far backward (-1)
+
+    Parameters
+    ----------
+    anchor : int
+        absolute coordinate (center)
+    offset : int
+        number of bases from the anchor to look
+    boundary : int
+        absolute coordinate describing boundary of next interval
+    direction : int
+        1 if looking forward (boundary > anchor)
+        -1 if looking back (boundary < anchor
+
+    Returns
+    -------
+
+    """
+    if direction == 1:
+        if (anchor + offset) > boundary:
+            return (anchor + offset) - boundary
+        else:
+            return 0
+    elif direction == -1:
+        if (anchor - offset) < boundary:
+            return boundary - (anchor - offset)
+        else:
+            return 0
+    else:
+        return 0
+
+
+def get_absolute_coords_and_pad(
+        anchor,
+        upper_boundary, upper_offset,
+        lower_boundary, lower_offset):
+    """
+    Given two boundaries (upper and lower genomic boundaries),
+    returns the area defined by anchor - lower_offset and
+    anchor + upper_offset. If the region bleeds over the boundaries,
+    this function will return the genomic left pad and
+    genomic right pad.
+
+    Parameters
+    ----------
+    anchor :
+
+    Returns
+    -------
+
+    """
+    left_pad = too_far(anchor,lower_offset,lower_boundary,-1)
+    right_pad = too_far(anchor,upper_offset,upper_boundary,1)
+
+    absolute_start = anchor - lower_offset + left_pad
+    absolute_end = anchor + upper_offset - right_pad
+
+    return left_pad, absolute_start, absolute_end, right_pad
+
+
+def get_boundaries(next_interval, current_interval, left_offset, right_offset, exon_junction_site):
+    """
+    All variables are named with respect to a junction site at the 3' end of
+    the exon. So for getting the 5' exon end values, variables should be
+    flipped. This is done by flipping the strand (5' end of the exon on
+    the (-) strand is equal to the 3' end on the (+) strand).
+
+    ----------
+    next_interval : pybedtools.BedTool.Interval
+    current_interval : pybedtools.BedTool.Interval
+    left_offset : int
+    right_offset : int
+    exon_junction_site : basestring
+        specifies whether or not we're calculating 3p or 5p site
+
+    Returns
+    -------
+    anchor : int
+        absolute coordinate where offsets are counted from.
+    upper_boundary : int
+        absolute coordinate that anchor + right offset cannot exceed
+    lower_boundary : int
+        absolute coordinate that anchor - left offset cannot exceed
+    upper_offset : int
+        absolute upper genomic offset.
+        In 3p sites (+) this is the exon offset
+        In 5p sites (-) this is the exon offset
+        In 3p sites (-) this is the intron offset
+        In 5p sites (+) this is the intron offset
+    lower_offset : int
+        absolute upper genomic offset.
+        In 3p sites (+) this is the intron offset
+        In 5p sites (-) this is the intron offset
+        In 3p sites (-) this is the exon offset
+        In 5p sites (+) this is the exon offset
+    """
+    upper_boundary = sys.maxsize
+    lower_boundary = 0
+
+    if exon_junction_site == '5p': # exon is to the RIGHT of intron (+)
+        strand_or_5p = flip_strand(current_interval.strand)
+    else: # exon is to the LEFT of intron (+)
+        strand_or_5p = current_interval.strand
+
+    if strand_or_5p == '+': # + if 3p site and + or 5p site and -
+        anchor = current_interval.end
+        upper_boundary = next_interval.start if \
+            next_interval is not None else sys.maxsize
+        upper_offset = right_offset
+        lower_boundary = current_interval.start
+        lower_offset = left_offset
+    else:
+        anchor = current_interval.start
+        upper_boundary = current_interval.end
+        upper_offset = left_offset
+        lower_boundary = next_interval.end if \
+            next_interval is not None else 0
+        lower_offset = right_offset
+    return anchor, upper_boundary, upper_offset, lower_boundary, lower_offset
+
+
+def junction_site(rbp, other_interval, current_interval, exon_offset, intron_offset, exon_junction_site):
+    """
+    Returns the wiggle track associated with the strand.
+    If given a neighboring interval, this function also ensures
+    that the junction + offsets do not spill over into the next
+    interval. Instead, it will return the number of bases (padding)
+    missing from the wiggle.
 
     Parameters
     ----------
     rbp : density.ReadDensity
-        Object containing positive and negative density *.bw for a given rbp
-    upstream_interval : BedTools.Interval
-        If intron_offset > 0, we need to know whether or not intron_offset
-        runs into the upstream exon boundary (intron len between upstream and
-        current interval is less than intron_offset). This parameter defines
-        the upstream exon.
-    interval : BedTools.Interval
-        The current exon interval that serves as the basis for our relative
-        density calculations.
+    upstream_interval : pybedtools.BedTool.Interval
+    interval : pybedtools.BedTool.Interval
     exon_offset : int
-        number of bases into the exon from its 5' end to return
     intron_offset : int
-        number of bases into the intron, from the exon's 5' end to return
-    trunc : boolean
-        if True, stops intron offset at the described upstream interval
-        if True, stops exon offset at the 3' described interval
-    middle_stop : boolean
-        if True, stops counting at the midpoint of the interval.
-        ie.
-        Interval(chr1, 0, 10, "ex", 0, +),
-        exon_offset = 20, intron_offset = 0,
-        return densities for (chr1:0-5)
+    exon_junction_site : str
+        '3p' or '5p' depending on the orientation of the exon/intron junction.
 
     Returns
     -------
-    fivep_pad: int
-        if the desired wiggle length is X but the returned wiggle
-        does not span the entire length, return N where N is the number
-        of upstream positions that will need to be filled for len(wiggle)=X.
-        E.G. exon_offset+intron_offset = 10.
-            fivep_pad = 3: NNN1111111
-    wiggle: list
-        list of densities given a region.
-    threep_pad: int
-        if the desired wiggle length is X but the returned wiggle
-        does not span the entire length, return N where N is the number
-        of downstream positions that will need to be filled for len(wiggle)=X.
-        E.G. exon_offset+intron_offset = 10.
-            threep_pad = 3: 1111111NNN
+    left_pad : int
+        The upstream padding (+) or downstream padding (-)
+    wiggle : list
+        list of values (ordered by strand) corresponding to the given
+        interval and offset coordinates.
+    right_pad : int
+        The downstream padding (+) or upstream padding (-)
     """
-
-    exon = exon_offset
-    intron = intron_offset
-
-    fivep_pad = 0
-    threep_pad = 0
-    # [    ]-----|-----[2  |  |  8]-----|----[10   15]
-    if interval.strand == "+":
-        if (trunc == True):
-            if interval.start + exon_offset > interval.end:
-                if (middle_stop == True):
-                    middle = int((interval.end + interval.start) / 2)
-                    exon_offset = interval.end - middle
-                else:
-                    exon_offset = interval.end - interval.start
-                threep_pad = exon - exon_offset
-            if interval.start - intron_offset < upstream_interval.end:
-                if (middle_stop == True):
-                    middle = int((interval.start + upstream_interval.end) / 2)
-                    intron_offset = interval.start - middle
-                else:
-                    intron_offset = interval.start - upstream_interval.end
-                fivep_pad = intron - intron_offset
-        wiggle = rbp.values(interval.chrom, (interval.start - intron_offset), (interval.start + exon_offset),
-                            interval.strand)
-    elif interval.strand == "-":
-        if (trunc == True):
-            if interval.end - exon_offset < interval.start:
-                if (middle_stop == True):
-                    middle = int((interval.start + interval.end) / 2)
-                    exon_offset = interval.end - middle
-                else:
-                    exon_offset = interval.end - interval.start
-                threep_pad = exon - exon_offset
-            if interval.end + intron_offset > upstream_interval.start:
-                if (middle_stop == True):
-                    middle = int((upstream_interval.start + interval.end) / 2)
-                    intron_offset = upstream_interval.start - middle
-                else:
-                    intron_offset = upstream_interval.start - interval.end
-                fivep_pad = intron - intron_offset
-
-        wiggle = rbp.values(interval.chrom, (interval.end - exon_offset), (interval.end + intron_offset),
-                            interval.strand)
-    return fivep_pad, wiggle, threep_pad
-
-
-def three_prime_site(
-        rbp,
-        downstream_interval,
-        interval,
+    anchor, upper_boundary, upper_offset, lower_boundary, lower_offset = get_boundaries(
+        other_interval,
+        current_interval,
         exon_offset,
         intron_offset,
-        trunc=True,
-        middle_stop=False):
+        exon_junction_site
+    )
+
+    left_pad, start, end, right_pad = get_absolute_coords_and_pad(
+        anchor,
+        upper_boundary,
+        upper_offset,
+        lower_boundary,
+        lower_offset
+    )
+    wiggle = rbp.values(current_interval.chrom,start,end,current_interval.strand)
+
+    if current_interval.strand == '+':
+        return left_pad, wiggle, right_pad
+    else:
+        return right_pad, wiggle, left_pad
+
+
+def five_prime_site(rbp, upstream_interval, interval, exon_offset, intron_offset):
     """
-    Given an upstream exon and a focus exon, return a list of density
-    values of the surrounding 3' intron/exon boundary given
-    exon_offset and intron_offset parameters. Also returns the
-    list of padded values which can be appended to either end of
-    the returned list in order to conform to a uniform length.
 
     Parameters
     ----------
-    rbp : density.ReadDensity
-        Object containing positive and negative density *.bw for a given rbp
-    downstream_interval : BedTools.Interval
-        If intron_offset > 0, we need to know whether or not intron_offset
-        runs into the downstream exon boundary (intron len between downstream and
-        current interval is less than intron_offset). This parameter defines
-        the downstream exon.
-    interval : BedTools.Interval
-        The current exon interval that serves as the basis for our relative
-        density calculations.
-    exon_offset : int
-        number of bases into the exon from its 3' end to return
-    intron_offset : int
-        number of bases into the intron, from the exon's 3' end to return
-    trunc : boolean
-        if True, stops intron offset at the described upstream interval
-        if True, stops exon offset at the 3' described interval
-    middle_stop : boolean
-        if True, stops counting at the midpoint of the interval.
-        ie.
-        Interval(chr1, 0, 10, "ex", 0, +),
-        exon_offset = 20, intron_offset = 0,
-        return densities for (chr1:5-10)
+    rbp
+    upstream_interval
+    interval
+    exon_offset
+    intron_offset
 
     Returns
     -------
-    fivep_pad: int
-        if the desired wiggle length is X but the returned wiggle
-        does not span the entire length, return N where N is the number
-        of upstream positions that will need to be filled for len(wiggle)=X.
-        E.G. exon_offset+intron_offset = 10.
-            fivep_pad = 3: NNN1111111
-    wiggle: list
-        list of densities given a region.
-    threep_pad: int
-        if the desired wiggle length is X but the returned wiggle
-        does not span the entire length, return N where N is the number
-        of downstream positions that will need to be filled for len(wiggle)=X.
-        E.G. exon_offset+intron_offset = 10.
-            threep_pad = 3: 1111111NNN
+    Window describing the 5p exon-intron site.
+
     """
-    exon = exon_offset
-    intron = intron_offset
+    return junction_site(rbp, upstream_interval, interval, exon_offset, intron_offset, '5p')
 
-    fivep_pad = 0
-    threep_pad = 0
 
-    if interval.strand == "+":
-        if (trunc == True):
-            if interval.end - exon_offset < interval.start:
-                if (middle_stop == True):
-                    middle = int((interval.start + interval.end) / 2)
-                    exon_offset = interval.end - middle
-                else:
-                    exon_offset = interval.end - interval.start
-                fivep_pad = exon - exon_offset
-            if interval.end + intron_offset > downstream_interval.start:
-                if (middle_stop == True):
-                    middle = int((interval.end + downstream_interval.start) / 2)
-                    intron_offset = downstream_interval.start - middle
-                else:
-                    intron_offset = downstream_interval.start - interval.end
-                threep_pad = intron - intron_offset
-        wiggle = rbp.values(interval.chrom, interval.end - exon_offset, interval.end + intron_offset, interval.strand)
-    elif interval.strand == "-":
-        if (trunc == True):
-            if interval.start + exon_offset > interval.end:
-                if (middle_stop == True):
-                    middle = int((interval.start + interval.end) / 2)
-                    exon_offset = interval.end - middle
-                else:
-                    exon_offset = interval.end - interval.start
-                fivep_pad = exon - exon_offset
-            if interval.start - intron_offset < downstream_interval.end:
-                if (middle_stop == True):
-                    middle = int((interval.start + downstream_interval.end) / 2)
-                    intron_offset = interval.start - middle
-                else:
-                    intron_offset = interval.start - downstream_interval.end
-                threep_pad = intron - intron_offset
-        wiggle = rbp.values(interval.chrom, interval.start - intron_offset, interval.start + exon_offset,
-                            interval.strand)
-    return fivep_pad, wiggle, threep_pad
+def three_prime_site(rbp, downstream_interval, interval, exon_offset, intron_offset):
+    """
+
+    Parameters
+    ----------
+    rbp
+    downstream_interval
+    interval
+    exon_offset
+    intron_offset
+
+    Returns
+    -------
+    Window describing the 3p exon-intron site.
+    """
+    return junction_site(rbp, downstream_interval, interval, exon_offset, intron_offset, '3p')
+

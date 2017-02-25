@@ -267,7 +267,7 @@ def main(argv=None):  # IGNORE:C0111
         annotation_basename = os.path.basename(annotations[i])
         annotation_prefix = os.path.splitext(annotation_basename)[0]
         output_filename = os.path.join(outdir, '{}.{}.txt'.format(bam_prefix, annotation_prefix))
-
+        print("")
         logger.info("Creating clip map: {}".format(annotation_prefix))
         clips[annotation_prefix] = ClipWithInput(
             ReadDensity=rbp,

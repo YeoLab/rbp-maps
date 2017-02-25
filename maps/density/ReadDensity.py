@@ -35,18 +35,28 @@ class ReadDensity():
     def rpm_to_r(self, rpm):
         return (rpm * 1000000.0) / self.bam.count()
 
+    # TODO: get_relative_values(abs_pos, rel_start, rel_end, strand)
+
     def values(self, chrom, start, end, strand):
         """
-        Given a chromosome coordinate, return a list of values
-        pertaining to the density over each nucleotide position.
-        Reverse the list if going in the negative strand.
-        
-        Args:
-            chrom (str): (eg. chr1)
-            start (int): 0-based start (first position in chromosome is 0)
-            end (int): 1-based end (last position is not included)
-            strand (char): either '+' or '-'
+
+        Parameters
+        ----------
+        chrom : basestring
+            (eg. chr1)
+        start : int
+            0-based start (first position in chromosome is 0)
+        end : int
+            1-based end (last position is not included)
+        strand : str
+            either '+' or '-'
+
+        Returns
+        -------
+        densites : list
+            values corresponding to density over specified positions.
         """
+
         try:
             if strand == "+":
                 return self.pos.values(chrom, start, end)
