@@ -1,10 +1,11 @@
-'''
+"""
 Created on Jun 20, 2016
 
 @author: brianyee
-'''
+"""
 
 import numpy as np
+import os
 
 
 def toarray(dic):
@@ -43,3 +44,8 @@ def ini(dictionary, *args):
         # if 499 in args and 'upex' in args:
         #    print("initializing position")
         return 1
+
+
+def sane(filename):
+    base = os.path.basename(filename)
+    return os.path.splitext(base)[0]

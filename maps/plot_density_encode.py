@@ -25,7 +25,7 @@ from argparse import RawDescriptionHelpFormatter
 
 import density.ReadDensity
 import density.normalization_functions as norm
-from density.Map import ClipWithInput
+from density.deprecated_Map import ClipWithInput
 from plot import Plot
 
 logger = logging.getLogger('plot_features')

@@ -26,7 +26,7 @@ from argparse import RawDescriptionHelpFormatter
 
 import density.ReadDensity
 import density.normalization_functions as norm
-from density.Map import ClipWithInput
+from density import Map
 from plot import Plot
 
 logger = logging.getLogger('plot_features')
@@ -101,7 +101,8 @@ def main(argv=None):  # IGNORE:C0111
         "--annotation_type",
         dest="annotation_type",
         help="annotation type (miso, xintao, [bed])",
-        default='bed'
+        nargs='+',
+        required=True
     )
     parser.add_argument(
         "-exon",
@@ -160,22 +161,9 @@ def main(argv=None):  # IGNORE:C0111
     os.environ["PATH"] += os.pathsep + external_script_dir
     # Process arguments
     args = parser.parse_args()
-    outdir = args.output
+    outfile = args.output
     event = args.event.lower()
 
-    # Process logging info
-    logger = logging.getLogger('plot_features')
-    logger.setLevel(logging.INFO)
-    ih = logging.FileHandler(os.path.join(outdir, 'log.txt'))
-    eh = logging.FileHandler(os.path.join(outdir, 'log.err'))
-    ih.setLevel(logging.INFO)
-    eh.setLevel(logging.ERROR)
-    logger.addHandler(ih)
-    logger.addHandler(eh)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ih.setFormatter(formatter)
-    eh.setFormatter(formatter)
-    logger.info("starting program")
 
     # Process outlier removal
     confidence = args.confidence
@@ -196,7 +184,6 @@ def main(argv=None):  # IGNORE:C0111
     ip_bam = args.ipbam
     input_bam = args.inpbam
 
-    bam_prefix = os.path.splitext(os.path.basename(ip_bam))[0]
 
     """ be aware this is flipped by default """
     ip_pos_bw = ip_bam.replace('.bam', '.norm.neg.bw')
@@ -218,11 +205,11 @@ def main(argv=None):  # IGNORE:C0111
     required_input_files = [ip_bam, ip_pos_bw, ip_neg_bw,
                             input_bam, input_pos_bw, input_neg_bw]
     for i in required_input_files:
-        if (os.path.isfile(i) == False):
+        if not os.path.isfile(i):
             print("Warning: {} does not exist".format(i))
             logger.error("Warning: {} does not exist".format(i))
             call_bigwig_script = True
-    if (call_bigwig_script):
+    if call_bigwig_script:
 
         cmd = 'python {} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
             make_bigwigs_script,
@@ -259,114 +246,35 @@ def main(argv=None):  # IGNORE:C0111
             pos=input_neg_bw, neg=input_pos_bw, bam=input_bam
         )
     """
-    Create the Maps (one for each condition)
+    Create annotations - turn annotation, type into annotation:type dicts
     """
-    clips = collections.OrderedDict()
-    for i in range(0, len(annotations)):
+    annotation_files = {}
 
-        annotation_basename = os.path.basename(annotations[i])
-        annotation_prefix = os.path.splitext(annotation_basename)[0]
-        output_filename = os.path.join(outdir, '{}.{}.txt'.format(bam_prefix, annotation_prefix))
-        print("")
-        logger.info("Creating clip map: {}".format(annotation_prefix))
-        clips[annotation_prefix] = ClipWithInput(
-            ReadDensity=rbp,
-            InputReadDensity=inp,
-            name=rbp.name,
-            annotation=annotations[i],
-            annotation_type=annotation_type,
-            output_file="{}.svg".format(os.path.join(
-                outdir,
-                bam_prefix)
-            ),  # not used
-            exon_offset=exon_offset,
-            intron_offset=intron_offset,
-            is_scaled=scale
-        )
-        if (event == 'se'):
-            print('Creating SE RBP Map')
-            clips[annotation_prefix].create_se_matrices(
-                label="{}.{}".format(
-                    event,
-                    annotation_prefix
-                )
-            )
-        elif (scale == False):
-            clips[annotation_prefix].create_unscaled_exon_matrices(
-                label="{}.{}".format(
-                    event,
-                    annotation_prefix
-                )
-            )
-        else:
-            clips[annotation_prefix].create_matrices(
-                label="{}.{}".format(
-                    event,
-                    annotation_prefix
-                )
-            )
-        print('finished creating matrix')
-        if norm_level == 0:
-            clips[annotation_prefix].normalize(
-                normfunc=norm.get_density,
-                label=annotation_prefix
-            )
-        elif norm_level == 2:
-            clips[annotation_prefix].normalize(
-                normfunc=norm.read_entropy,
-                label=annotation_prefix
-            )
-        elif norm_level == 3:
-            clips[annotation_prefix].normalize(
-                normfunc=norm.get_input,
-                label=annotation_prefix
-            )
-        else:
-            clips[annotation_prefix].normalize(
-                normfunc=norm.normalize_and_per_region_subtract,
-                label=annotation_prefix
-            )
-        print('finished normalizing')
-
-        clips[annotation_prefix].set_means_and_sems('feature', confidence)
-        print('finished setting means')
-        clips[annotation_prefix].get_means().to_csv(output_filename)
-
-    output_img_filename = os.path.join(
-        outdir,
-        os.path.basename(ip_bam) + '.svg'
-    )
-
-    conditions = []
-    for key in clips.keys():
-        conditions.append(
-            [clips[key].means,
-             clips[key].sems]
-        )
-
-    print("Found {} features to plot.".format(len(conditions)))
-
-    if event == 'se':
-        inc = {'region1': conditions[0][0]}
-        exc = {'region1': conditions[1][0]}
-        inc_e = {'region1': conditions[0][1]}
-        exc_e = {'region1': conditions[1][1]}
-        bo = {'region1': conditions[2][0]}
-        Plot.plot_se(inc, exc, bo, inc_e, exc_e,
-                     os.path.basename(ip_bam),
-                     output_img_filename
-                     )
+    if len(annotations) != len(annotation_type):
+        print(
+        "We have a different number of annotation types than annotations.")
+        exit(1)
     else:
-        conditions = {}
-        for key in clips.keys():
-            conditions[key] = clips[key].means
+        for i in range(0, len(annotations)):
+            annotation_files[annotations[i]] = annotation_type[i]
 
-        Plot.single_frame(
-            conditions,
-            os.path.basename(ip_bam),
-            output_img_filename
-        )
-
-
+    """
+    Create objects
+    """
+    if event == 'se':
+        se = Map.SkippedExon(rbp, inp, outfile,
+                             norm.normalize_and_per_region_subtract,
+                             annotation_files, exon_offset=50,
+                             intron_offset=300, min_density_threshold=0,
+                             conf=0.95)
+        print('se')
+        se.create_matrices()
+        print('create')
+        se.normalize_matrix()
+        print('norm')
+        se.set_means_and_sems()
+        print('meansandsems')
+        se.write_intermediates_to_csv()
+        se.plot()
 if __name__ == "__main__":
     main()

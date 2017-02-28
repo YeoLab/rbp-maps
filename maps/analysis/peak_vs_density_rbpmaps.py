@@ -76,6 +76,8 @@ def plot(pos,neg,ax=None,title=''):
     #ax.add_patch(patches.Rectangle((0, -1), 50, 2000, alpha=0.1))
     #ax.add_patch(patches.Rectangle((1350, -1), 50, 2000, alpha=0.1))
     ax.set_xlim(0, 1400)
+
+
 def get_prefix(filename):
     """
     Customized 'prettifying' of filenames to remove extraneous stuff.
