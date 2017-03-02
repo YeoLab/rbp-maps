@@ -1,7 +1,9 @@
 """
 Created on May 3, 2016
 
-@author: Gabe
+Module that helps containerize the CLIP density information.
+
+@author: Gabe, Brian
 """
 
 import numpy as np

@@ -1,17 +1,19 @@
 import matplotlib
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
-import seaborn as sns
+matplotlib.use('Agg')
+
 from matplotlib import rc
-
-import intervals
-import misc
-
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 COLOR_PALETTE = sns.color_palette("hls", 8)
+
+import intervals
+import misc
 
 
 class _Plotter:
@@ -124,12 +126,43 @@ def plot_se(means, sems, axs):
 
 
 def plot_bed(means, sems, ax):
+    """
+
+    Parameters
+    ----------
+    means : list
+        list of mean read densities
+    sems : list
+        list of standard error of means
+    ax : matplotlib axes
+        axes
+
+    Returns
+    -------
+
+    _Plotter
+    """
     plotter = _Plotter(means, sems)
     plotter.plot(ax)
     return plotter
 
 
 def plot_exon(means, sems, axs):
+    """
+
+    Parameters
+    ----------
+    means : dict
+
+    sems : dict
+        std error for each annotation file
+    axs : list
+        list of 2 axes subplots
+
+    Returns
+    -------
+
+    """
     plotter = _SingleExonPlotter(means, sems)
     plotter.plot(axs)
     return plotter

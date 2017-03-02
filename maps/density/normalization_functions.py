@@ -1,9 +1,30 @@
 '''
 Created on Jun 27, 2016
 
+This module contains functions for normalizing two dataframes containing
+event features into a single normalized dataframe. Each dataframe coming
+from matrix.py will be coded in a way such that NaN values = regions of zero
+density, and -1 values = regions that overlap and should not be counted.
+
+Main Functions
+--------------
+clean : rather important function for handling -1 and NaN values.
+get_means_and_sems : returns the mean and std error over each column (position)
+    in a dataframe.
+normalize_and_subtract : subtract the average read densities of input
+    from ip
+normalize_and_per_region_subtract : subtract the read densities of input
+    from ip for each event
+pdf_entropy : untested method
+read_entropy : returns entropy values of ip over input
+pdf_read_entropy : returns read entropy values normalized per event (pdf)
+get_density : returns just the raw density
+get_input : returns just the raw input
+calculate_pdf : normalizes each event (row) to sum to 1
+
+
 @author: brianyee
 '''
-import logging
 
 import numpy as np
 import pandas as pd
@@ -30,25 +51,6 @@ def clean(density_df):
     # -1 are regions which should not be counted at all
     density_df = density_df.fillna(0)
     return density_df.replace(-1, np.nan)
-
-
-def remove_outliers(rbpdataframe, conf=0.95):
-    means = list()
-    sems = list()
-    for key, value in rbpdataframe.iteritems():
-        df = rbpdataframe[key].dropna()
-
-        nums = len(df)
-        drop_percent = (1 - conf) / 2.0
-        drop_num = int(nums * drop_percent)
-        df = df.sort_values()
-        if drop_num > 0:
-            df = df[drop_num:-drop_num]
-
-        means.append(df.mean())
-        sems.append(df.sem())
-    logger.info("Finished removing outliers (keep {})".format(conf))
-    return means, sems
 
 
 def pdf_entropy(density_df, input_density_df,

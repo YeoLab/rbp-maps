@@ -1,6 +1,22 @@
 """
 Created on Jun 18, 2016
 
+This module contains functions for creating a dataframe from a list of
+event features. Each function will require: 1) an annotation file to generate
+an event-specific Feature, 2) a ReadDensity object containing RPM-normalized
+read densities for a particular RBP, and call intervals functions to help
+determine over which intervals to overlap.
+
+Main Functions
+--------------
+scaled_region (untested)
+unscaled_region (untested)
+mutually_exc_exon (untested)
+retained_intron (untested)
+alt_5p_splice_site (untested)
+alt_3p_splice_site (untested)
+skipped_exon
+
 @author: brianyee
 """
 
@@ -161,7 +177,7 @@ def mutually_exc_exon(annotation, density, exon_offset, intron_offset,
             if not line.startswith('event_name') and not line.startswith('ID'):
                 event = line.rstrip()  # .split('\t')[0]
                 upstream_interval, upstream_mxe_interval, \
-                downstream_mxe_interval, downstream_interval = \
+                    downstream_mxe_interval, downstream_interval = \
                     Feature.Mutually_exclusive_exon(
                         event,
                         annotation_type

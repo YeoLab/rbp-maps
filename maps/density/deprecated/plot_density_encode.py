@@ -23,10 +23,10 @@ import sys
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-import density.ReadDensity
-import density.normalization_functions as norm
-from density.deprecated_Map import ClipWithInput
-from plot import Plot
+import maps.density.ReadDensity
+import maps.density.normalization_functions as norm
+from maps.density.deprecated import Plot
+from maps.density.deprecated.deprecated_Map import ClipWithInput
 
 logger = logging.getLogger('plot_features')
 
@@ -242,8 +242,8 @@ def main(argv=None):  # IGNORE:C0111
                                 os.path.isfile(inputneg)):
                         logger.error('BigWigs dont exist for RBP: {}'.format(rbp_name))
 
-                    rbp = density.ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i], bam=bams[i])
-                    inp = density.ReadDensity.ReadDensity(pos=inputpos, neg=inputneg, bam=inp1)
+                    rbp = maps.density.ReadDensity.ReadDensity(pos=reppos[i], neg=repneg[i], name=reps[i], bam=bams[i])
+                    inp = maps.density.ReadDensity.ReadDensity(pos=inputpos, neg=inputneg, bam=inp1)
 
                     """
                     Check if Annotations exist

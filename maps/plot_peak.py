@@ -20,7 +20,7 @@ import sys
 import peak.annotations
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from plot import Plot
+from maps.density.deprecated import Plot
 
 import peak.matrix_functions as mtx
 

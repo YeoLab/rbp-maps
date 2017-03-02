@@ -8,8 +8,8 @@ import logging
 import os
 import pandas as pd
 
-import matrix as mtx
-import normalization_functions as norm
+import maps.density.matrix as mtx
+import maps.density.normalization_functions as norm
 
 
 class Map():

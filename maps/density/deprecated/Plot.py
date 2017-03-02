@@ -4,10 +4,10 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import matplotlib
-
 matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
-from gscripts.general import dataviz
+# from gscripts.general import dataviz
 import seaborn as sns
 
 from matplotlib import rc
@@ -15,7 +15,7 @@ from matplotlib import rc
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 import numpy as np
-import misc
+import maps.plot.misc
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
@@ -112,11 +112,11 @@ def plot_bed(up, down, both, uperr, downerr, title, output_file,
     title : string
     output_file : string
     """
-    single_frame_with_up_down_events_error(misc.toarray(up),
-                                           misc.toarray(down),
-                                           misc.toarray(both),
-                                           misc.toarray(uperr),
-                                           misc.toarray(downerr),
+    single_frame_with_up_down_events_error(maps.plot.misc.toarray(up),
+                                           maps.plot.misc.toarray(down),
+                                           maps.plot.misc.toarray(both),
+                                           maps.plot.misc.toarray(uperr),
+                                           maps.plot.misc.toarray(downerr),
                                            title,
                                            output_file,
                                            uplab=cond1lab,

@@ -1,11 +1,8 @@
 #!/usr/local/bin/python2.7
 # encoding: utf-8
 '''
-density.plot_all_tss -- shortdesc
 
-density.plot_all_tss is a description
 
-It defines classes_and_methods
 
 @author:     brian
 
@@ -27,7 +24,7 @@ from argparse import RawDescriptionHelpFormatter
 import density.ReadDensity
 import density.normalization_functions as norm
 from density import Map
-from plot import Plot
+from maps.density.deprecated import Plot
 
 logger = logging.getLogger('plot_features')
 
@@ -89,8 +86,8 @@ def main(argv=None):  # IGNORE:C0111
         required=True
     )
     parser.add_argument(
-        "-c",
-        "--conditions",
+        "-a",
+        "--annotations",
         dest="annotations",
         help="annotation files",
         nargs='+',
@@ -105,7 +102,6 @@ def main(argv=None):  # IGNORE:C0111
         required=True
     )
     parser.add_argument(
-        "-exon",
         "--exon_offset",
         dest="exon_offset",
         help="exon offset (default: 50)",
@@ -113,7 +109,6 @@ def main(argv=None):  # IGNORE:C0111
         type=int
     )
     parser.add_argument(
-        "-intron",
         "--intron_offset",
         dest="intron_offset",
         help="intron offset (default: 300)",
@@ -121,7 +116,6 @@ def main(argv=None):  # IGNORE:C0111
         type=int
     )
     parser.add_argument(
-        "-conf",
         "--confidence",
         dest="confidence",
         help="Keep only this percentage of events while removing others " \
@@ -129,14 +123,12 @@ def main(argv=None):  # IGNORE:C0111
         default=0.95,
         type=float)
     parser.add_argument(
-        "-norm",
         "--norm_level",
         dest="normalization_level",
         help="normalization_level 0: raw IP, [1]: subtraction, 2: entropy, " \
              "3: raw input", default=1, type=int
     )
     parser.add_argument(
-        "-s",
         "--scale",
         dest="scale",
         help="if the features are of different lengths, scale them to 100",
@@ -144,7 +136,6 @@ def main(argv=None):  # IGNORE:C0111
         action='store_true'
     )
     parser.add_argument(
-        "-f",
         "--flip",
         dest="flip",
         help="legacy option for *.neg -> *.pos bw",
@@ -267,14 +258,16 @@ def main(argv=None):  # IGNORE:C0111
                              annotation_files, exon_offset=50,
                              intron_offset=300, min_density_threshold=0,
                              conf=0.95)
-        print('se')
         se.create_matrices()
-        print('create')
         se.normalize_matrix()
-        print('norm')
         se.set_means_and_sems()
-        print('meansandsems')
         se.write_intermediates_to_csv()
         se.plot()
+    elif event == 'bed':
+        Map.plot_feature(
+            rbp, inp, outfile, norm.normalize_and_per_region_subtract,
+            annotation_files, exon_offset, intron_offset,
+            min_density_threshold=0, conf=0.95
+        )
 if __name__ == "__main__":
     main()

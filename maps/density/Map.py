@@ -1,12 +1,16 @@
 """
 Created on Jun 27, 2016
 
-- Map:
-    Requires:
-        CLIP information
-        RNA-SEQ splicing and/or feature information
-    Calls:
-        ReadDensity : object that contains the CLIP information
+Modules that help containerize the rbp-map information, including:
+
+ip : CLIP IP density
+input : CLIP Input density
+output filename : name of the output file and base
+norm function : normalization to use (see normalization_functions.py)
+annotation : annotation file(s) to use
+offsets : either describing upstream/downstream or exon/intron bases to plot
+is_scaled : whether or not we want the map to 'scale' or keep nucleotide dims
+conf : percentage of scores to keep (outlier removal).
 
 @author: brianyee
 """
@@ -366,14 +370,32 @@ class SkippedExon(WithInput):
         f.savefig(self.output_filename)
 
 
-def plot_skipped_exon(ip, inp, output_filename, norm_function, annotation,
-                      exon_offset=50, intron_offset=300,
-                      min_density_threshold=0, conf=0.95):
-    se = SkippedExon(ip, inp, output_filename, norm_function, annotation,
-                     exon_offset, intron_offset, min_density_threshold,
-                     conf)
+def plot_skipped_exon(
+        ip, inp, output_filename, norm_function, annotation, exon_offset=50,
+        intron_offset=300, min_density_threshold=0, conf=0.95
+):
+    se = SkippedExon(
+        ip, inp, output_filename, norm_function, annotation, exon_offset,
+        intron_offset, min_density_threshold, conf
+    )
     se.create_matrices()
     se.normalize_matrix()
     se.set_means_and_sems()
     se.write_intermediates_to_csv()
     se.plot()
+
+
+def plot_feature(
+        ip, output_filename, norm_function, annotation, upstream_offset=300,
+        downstream_offset=300, min_density_threshold=0, is_scaled=True,
+        conf=0.95
+):
+    feature = WithInput(
+        ip, inp, output_filename, norm_function, annotation, upstream_offset,
+        downstream_offset, min_density_threshold, is_scaled, conf
+    )
+    feature.create_matrices()
+    feature.normalize_matrix()
+    feature.set_means_and_sems()
+    feature.write_intermediates_to_csv()
+    feature.plot()
