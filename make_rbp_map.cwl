@@ -60,7 +60,7 @@ arguments: [
 
 outputs:
 
-  output_sort_bam:
+  output_svg:
     type: File
     format: http://edamontology.org/format_3604
     outputBinding:
@@ -68,3 +68,7 @@ outputs:
     label: ""
     doc: "rbp map svg file"
     
+  output_raw_ip_density_map:
+    type: File
+    outputBinding:
+      glob: $(inputs.ip_bam.nameroot).

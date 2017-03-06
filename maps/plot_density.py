@@ -259,6 +259,7 @@ def main(argv=None):  # IGNORE:C0111
         se.create_matrices()
         se.normalize_matrix()
         se.set_means_and_sems()
+        print("outfile: {}".format(outfile))
         se.write_intermediates_to_csv()
         se.plot()
     elif event == 'bed':
