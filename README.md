@@ -9,11 +9,11 @@ seaborn + matplotlib
 
 usage:
 
-python plot_density.py -ip ip.bam \
--input input.bam \
--a rmats_annotation1 rmats_annotation2 rmats_annotation3 \
--at rmats rmats rmats \
--o rbfox2.svg \
+python plot_density.py --ip ip.bam
+--input input.bam
+-a rmats_annotation1 rmats_annotation2 rmats_annotation3
+-at rmats rmats rmats
+-o rbfox2.svg
 -e se
 
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)

@@ -93,10 +93,10 @@ if __name__ == "__main__":
     bamFile = args.bam
     genome = args.genome
 
-    check_for_index(bamFile)
+    check_for_index(bamFile) # make index if not exist
 
-    bedGraphFilePos = bamFile.replace(".bam", ".pos.bg")
-    bedGraphFilePosNorm = bedGraphFilePos.replace(".pos.bg", ".norm.pos.bg")
+    bedGraphFilePos = bamFile.replace(".bam", ".pos.bg") # makes bedgraph
+    bedGraphFilePosNorm = bedGraphFilePos.replace(".pos.bg", ".norm.pos.bg") # normalize
 
     bedGraphFileNeg = bamFile.replace(".bam", ".neg.bg")
     bedGraphFileNegNorm = bedGraphFileNeg.replace(".neg.bg", ".norm.neg.bg")

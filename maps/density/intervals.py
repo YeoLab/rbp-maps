@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/bin/env python
 # encoding: utf-8
 """
 

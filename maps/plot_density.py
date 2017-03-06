@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/bin/env python
 # encoding: utf-8
 '''
 
@@ -18,13 +18,13 @@ import collections
 import logging
 import os
 import subprocess
-from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
+import argparse
+# from argparse import ArgumentParser
+# from argparse import RawDescriptionHelpFormatter
 
 import density.ReadDensity
 import density.normalization_functions as norm
 from density import Map
-from maps.density.deprecated import Plot
 
 logger = logging.getLogger('plot_features')
 
@@ -53,22 +53,18 @@ class CLIError(Exception):
 
 
 def main(argv=None):  # IGNORE:C0111
-
-    # Setup argument parser
-    # USAGE: 
-    # python plot_features_from_xintao_using_erics_manifest.py -o /projects/ps-yeolab3/bay001/maps/se/xintao/8-15-2016 -f -m /home/elvannostrand/data/clip/CLIPseq_analysis/ENCODEclip_20160718/ALLDATASETS_submittedonly.txt -e se -r /projects/ps-yeolab3/bay001/maps/alt_splicing/8-5-2016/xintao-as-miso -s
-    # manifest file is taken from here: /home/gpratt/Dropbox/encode_integration/20160408_ENCODE_MASTER_ID_LIST_AllDatasets.csv
-    parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
+    # TODO pull arg parse out and make a new main function.
+    parser = argparse.ArgumentParser() # formatter_class=RawDescriptionHelpFormatter)
 
     parser.add_argument(
         "-ip",
-        "--ip-bam",
+        "--ip",
         dest="ipbam",
         required=True
     )
     parser.add_argument(
         "-input",
-        "--input-bam",
+        "--input",
         dest="inpbam",
         required=True
     )
@@ -87,15 +83,14 @@ def main(argv=None):  # IGNORE:C0111
     )
     parser.add_argument(
         "-a",
-        "--annotations",
+        "--annotation",
         dest="annotations",
         help="annotation files",
         nargs='+',
         required=True
     )
     parser.add_argument(
-        "-at",
-        "--annotation_type",
+        "-t",
         dest="annotation_type",
         help="annotation type (miso, xintao, [bed])",
         nargs='+',
@@ -136,16 +131,19 @@ def main(argv=None):  # IGNORE:C0111
         action='store_true'
     )
     parser.add_argument(
-        "--flip",
-        dest="flip",
-        help="legacy option for *.neg -> *.pos bw",
+        "-u",
+        "--unflip",
+        dest="unflip",
+        help="option for correcting *.neg -> *.pos bw",
         default=False,
         action='store_true'
     )
 
     # Toplevel directory:
-    topdir = os.path.dirname(os.path.realpath(__file__))
-    external_script_dir = os.path.join(topdir, 'external_scripts/')
+    curdir = os.path.dirname(__file__)
+    topdir = os.path.abspath(os.path.join(curdir, os.pardir))
+    # topdir = os.path.dirname(os.path.realpath(__file__))
+    external_script_dir = os.path.join(topdir, 'bin/')
     make_bigwigs_script = os.path.join(external_script_dir, 'make_bigwig_files.py')
     chrom_sizes = os.path.join(external_script_dir, 'hg19.chrom.sizes')
     # sys.path.append(external_script_dir)
@@ -187,7 +185,7 @@ def main(argv=None):  # IGNORE:C0111
     scale = args.scale
 
     # process flip
-    is_flipped = args.flip
+    is_unflipped = args.unflip
 
     """
     Check if bigwigs exist, otherwise make
@@ -222,7 +220,7 @@ def main(argv=None):  # IGNORE:C0111
     """
     Create ReadDensity objects. Note! This will effectively "flip back" bws
     """
-    if not is_flipped:
+    if not is_unflipped:
         rbp = density.ReadDensity.ReadDensity(
             pos=ip_pos_bw, neg=ip_neg_bw, bam=ip_bam
         )

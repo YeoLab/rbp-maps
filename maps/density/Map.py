@@ -1,3 +1,5 @@
+#!/bin/env python
+
 """
 Created on Jun 27, 2016
 
@@ -14,13 +16,20 @@ conf : percentage of scores to keep (outlier removal).
 
 @author: brianyee
 """
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import rc
 
-import logging
-import matplotlib.pyplot as plt
+rc('text', usetex=False)
+matplotlib.rcParams['svg.fonttype'] = 'none'
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+
 import os
+import logging
 import pandas as pd
-from collections import defaultdict
+import matplotlib.pyplot as plt
 
+from collections import defaultdict
 import RDPlotter
 import matrix as mtx
 import misc

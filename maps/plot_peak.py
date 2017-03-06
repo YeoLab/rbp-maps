@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/bin/env python
 # encoding: utf-8
 '''
      up_ex       ex_up     ex_dn       dn_ex
@@ -20,7 +20,6 @@ import sys
 import peak.annotations
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from maps.density.deprecated import Plot
 
 import peak.matrix_functions as mtx
 
