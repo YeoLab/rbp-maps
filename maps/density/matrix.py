@@ -32,14 +32,29 @@ import Feature
 import intervals
 
 
+def region(
+    annotation, density, annotation_type,
+    is_scaled=True, upstream_offset=300, downstream_offset=300
+):
+    if is_scaled:
+        return scaled_region(
+            annotation, density, annotation_type,
+            upstream_offset, downstream_offset
+        )
+    else:
+        return unscaled_region(
+            annotation, density, annotation_type,
+            upstream_offset, downstream_offset
+        )
+
+
 def scaled_region(
         annotation, density, annotation_type,
         upstream_offset, downstream_offset
 ):
-    # TODO deprecate upstream and downstream offset... leave up to user.
     count = 0
     densities = {}
-
+    # TODO: add a try block around this to autoscale if regions are different lengths.
     with open(annotation) as f:
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
@@ -56,9 +71,15 @@ def scaled_region(
                     upstream_offset,
                     downstream_offset
                 )
-                wiggle = intervals.get_scale(wiggle)
+                # wiggle = intervals.get_scale(wiggle)
                 densities[intervals.rename_index(interval)] = wiggle
-    return pd.DataFrame(densities).T
+    try:
+        return pd.DataFrame(densities).T
+    except Exception:
+        print("found different length features")
+        for key, value in densities.iteritems():
+            densities[key] = intervals.get_scale(value)
+        return pd.DataFrame(densities).T
 
 
 def unscaled_region(
@@ -204,7 +225,7 @@ def mutually_exc_exon(annotation, density, exon_offset, intron_offset,
                 )
                 three_up_mxe[event] = wiggle
                 """five prime site of mxe2 (downstream mxe) region"""
-                left_pad, wiggle, right_pad = intervals.five_prime_site(
+                wiggle = intervals.five_prime_site(
                     density, upstream_mxe_interval, downstream_mxe_interval,
                     exon_offset, intron_offset
                 )

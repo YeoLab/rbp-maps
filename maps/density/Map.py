@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 """
 Created on Jun 27, 2016
@@ -255,11 +255,14 @@ class WithInput(Map):
         matrices = defaultdict(dict)
 
         for filename, filetype in self.annotation.iteritems():
-            matrices['ip'][filename] = mtx.exon(
-                filename, self.ip, self.is_scaled, filetype
+            matrices['ip'][filename] = mtx.region(
+                filename, self.ip, filetype, self.is_scaled,
+                self.upstream_offset, self.downstream_offset
+
             )
-            matrices['input'][filename] = mtx.exon(
-                filename, self.inp, self.is_scaled, filetype
+            matrices['input'][filename] = mtx.region(
+                filename, self.inp, filetype, self.is_scaled,
+                self.upstream_offset, self.downstream_offset
             )
         self.raw_matrices = matrices
 
@@ -284,6 +287,19 @@ class WithInput(Map):
             )
         self.means = means
         self.sems = sems
+
+    def plot(self):
+        """
+        Determines whether or not to plot a 1 or 2-window map.
+
+        Returns
+        -------
+
+        """
+        if self.is_scaled:
+            self.plot_as_bed()
+        else:
+            self.plot_as_exon()
 
     def plot_as_bed(self):
         """
@@ -371,14 +387,285 @@ class SkippedExon(WithInput):
 
     def plot(self):
         f, (ax1, ax2, ax3, ax4) = plt.subplots(
-            1, 4, sharey=True, figsize=(16, 4)
+            1, 4, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2, ax3, ax4]
-        RDPlotter.plot_se(self.means, self.sems, axs)
+        RDPlotter.plot_splice(self.means, self.sems, axs)
+        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
 
+class MutuallyExclusiveExon(WithInput):
+    def __init__(self, ip, inp, output_filename,
+                 norm_function, annotation=None, exon_offset=50,
+                 intron_offset=300, min_density_threshold=0, conf=0.95):
+        """
+
+        Parameters
+        ----------
+        ip : density.ReadDensity
+        inp : density.ReadDensity
+        output_filename :
+        norm_function
+        annotation
+        exon_offset
+        intron_offset
+        min_density_threshold
+        conf
+        """
+        WithInput.__init__(self, ip=ip, inp=inp,
+                           output_filename=output_filename,
+                           norm_function=norm_function, annotation=annotation,
+                           upstream_offset=0, downstream_offset=0,
+                           min_density_threshold=min_density_threshold,
+                           is_scaled=False, conf=conf)
+
+        self.exon_offset = exon_offset
+        self.intron_offset = intron_offset
+
+    def create_matrices(self):
+        """
+        Creates a stacked density matrix for each event in each annotation file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+
+        Returns
+        -------
+
+        """
+        matrices = defaultdict(dict)
+        for filename, filetype in self.annotation.iteritems():
+            matrices['ip'][filename] = mtx.mutually_exc_exon(
+                annotation=filename, density=self.ip,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+            matrices['input'][filename] = mtx.mutually_exc_exon(
+                annotation=filename, density=self.inp,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+        self.raw_matrices = matrices
+
+    def plot(self):
+        f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(
+            1, 6, sharey=True, figsize=(16, 8)
+        )
+        axs = [ax1, ax2, ax3, ax4, ax5, ax6]
+        RDPlotter.plot_splice(self.means, self.sems, axs)
+        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        f.suptitle(misc.sane(self.output_filename))
+        f.savefig(self.output_filename)
+
+
+class Alt3PSpliceSite(WithInput):
+    def __init__(self, ip, inp, output_filename,
+                 norm_function, annotation=None, exon_offset=50,
+                 intron_offset=300, min_density_threshold=0, conf=0.95):
+        """
+
+        Parameters
+        ----------
+        ip : density.ReadDensity
+        inp : density.ReadDensity
+        output_filename :
+        norm_function
+        annotation
+        exon_offset
+        intron_offset
+        min_density_threshold
+        conf
+        """
+        WithInput.__init__(self, ip=ip, inp=inp,
+                           output_filename=output_filename,
+                           norm_function=norm_function, annotation=annotation,
+                           upstream_offset=0, downstream_offset=0,
+                           min_density_threshold=min_density_threshold,
+                           is_scaled=False, conf=conf)
+
+        self.exon_offset = exon_offset
+        self.intron_offset = intron_offset
+
+    def create_matrices(self):
+        """
+        Creates a stacked density matrix for each event in each annotation file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+
+        Returns
+        -------
+
+        """
+        matrices = defaultdict(dict)
+        for filename, filetype in self.annotation.iteritems():
+            matrices['ip'][filename] = mtx.alt_3p_splice_site(
+                annotation=filename, density=self.ip,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+            matrices['input'][filename] = mtx.alt_3p_splice_site(
+                annotation=filename, density=self.inp,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+        self.raw_matrices = matrices
+
+    def plot(self):
+        f, (ax1, ax2, ax3) = plt.subplots(
+            1, 3, sharey=True, figsize=(16, 8)
+        )
+        axs = [ax1, ax2, ax3]
+        RDPlotter.plot_splice(self.means, self.sems, axs)
+        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        f.suptitle(misc.sane(self.output_filename))
+        f.savefig(self.output_filename)
+
+
+class Alt5PSpliceSite(WithInput):
+    def __init__(self, ip, inp, output_filename,
+                 norm_function, annotation=None, exon_offset=50,
+                 intron_offset=300, min_density_threshold=0, conf=0.95):
+        """
+
+        Parameters
+        ----------
+        ip : density.ReadDensity
+        inp : density.ReadDensity
+        output_filename :
+        norm_function
+        annotation
+        exon_offset
+        intron_offset
+        min_density_threshold
+        conf
+        """
+        WithInput.__init__(self, ip=ip, inp=inp,
+                           output_filename=output_filename,
+                           norm_function=norm_function, annotation=annotation,
+                           upstream_offset=0, downstream_offset=0,
+                           min_density_threshold=min_density_threshold,
+                           is_scaled=False, conf=conf)
+
+        self.exon_offset = exon_offset
+        self.intron_offset = intron_offset
+
+    def create_matrices(self):
+        """
+        Creates a stacked density matrix for each event in each annotation file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+
+        Returns
+        -------
+
+        """
+        matrices = defaultdict(dict)
+        for filename, filetype in self.annotation.iteritems():
+            matrices['ip'][filename] = mtx.alt_5p_splice_site(
+                annotation=filename, density=self.ip,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+            matrices['input'][filename] = mtx.alt_5p_splice_site(
+                annotation=filename, density=self.inp,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+        self.raw_matrices = matrices
+
+    def plot(self):
+        f, (ax1, ax2, ax3) = plt.subplots(
+            1, 3, sharey=True, figsize=(16, 8)
+        )
+        axs = [ax1, ax2, ax3]
+        RDPlotter.plot_splice(self.means, self.sems, axs)
+        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        f.suptitle(misc.sane(self.output_filename))
+        f.savefig(self.output_filename)
+
+
+class RetainedIntron(WithInput):
+    def __init__(self, ip, inp, output_filename,
+                 norm_function, annotation=None, exon_offset=50,
+                 intron_offset=300, min_density_threshold=0, conf=0.95):
+        """
+
+        Parameters
+        ----------
+        ip : density.ReadDensity
+        inp : density.ReadDensity
+        output_filename :
+        norm_function
+        annotation
+        exon_offset
+        intron_offset
+        min_density_threshold
+        conf
+        """
+        WithInput.__init__(self, ip=ip, inp=inp,
+                           output_filename=output_filename,
+                           norm_function=norm_function, annotation=annotation,
+                           upstream_offset=0, downstream_offset=0,
+                           min_density_threshold=min_density_threshold,
+                           is_scaled=False, conf=conf)
+
+        self.exon_offset = exon_offset
+        self.intron_offset = intron_offset
+
+    def create_matrices(self):
+        """
+        Creates a stacked density matrix for each event in each annotation file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+
+        Returns
+        -------
+
+        """
+        matrices = defaultdict(dict)
+        for filename, filetype in self.annotation.iteritems():
+            matrices['ip'][filename] = mtx.retained_intron(
+                annotation=filename, density=self.ip,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+            matrices['input'][filename] = mtx.retained_intron(
+                annotation=filename, density=self.inp,
+                exon_offset=self.exon_offset, intron_offset=self.intron_offset,
+                annotation_type=filetype
+            )
+        self.raw_matrices = matrices
+
+    def plot(self):
+        f, (ax1, ax2, ) = plt.subplots(
+            1, 2, sharey=True, figsize=(16, 8)
+        )
+        axs = [ax1, ax2]
+        RDPlotter.plot_splice(self.means, self.sems, axs)
+        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        f.suptitle(misc.sane(self.output_filename))
+        f.savefig(self.output_filename)
+
+
+# TODO: deprecate
+# do we need these anymore? Probably not
 def plot_skipped_exon(
         ip, inp, output_filename, norm_function, annotation, exon_offset=50,
         intron_offset=300, min_density_threshold=0, conf=0.95
@@ -395,7 +682,7 @@ def plot_skipped_exon(
 
 
 def plot_feature(
-        ip, output_filename, norm_function, annotation, upstream_offset=300,
+        ip, inp, output_filename, norm_function, annotation, upstream_offset=300,
         downstream_offset=300, min_density_threshold=0, is_scaled=True,
         conf=0.95
 ):

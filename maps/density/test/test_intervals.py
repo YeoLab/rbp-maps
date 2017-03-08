@@ -2,126 +2,117 @@
 
 import os
 import pytest
-import pybedtools as bt
+import pybedtools
+from density import intervals
 
-import ReadDensity
-import intervals
-import Feature
-
-# Fixtures
-
-
-wd = '/home/bay001/projects/codebase/rbfox2/'
-
-regions = os.path.join(
-    wd,
-    'RBFOX2-BGHLV26-HepG2-SE.MATS.JunctionCountOnly.txt'
-)
-
-ip_bam = os.path.join(
-    wd,
-    '204_01_RBFOX2.merged.r2.bam'
-)
-input_bam = os.path.join(
-    wd,
-    'RBFOX2-204-INPUT_S2_R1.unassigned.adapterTrim.round2.rmRep.rmDup.sorted.r2.bam'
-)
-
-ip_pos_bw = os.path.join(
-    wd,
-    '204_01_RBFOX2.merged.r2.norm.neg.bw'
-) # flipped?
-ip_neg_bw = os.path.join(
-    wd,
-    '204_01_RBFOX2.merged.r2.norm.pos.bw'
-) # flipped?
-input_pos_bw = os.path.join(
-    wd,
-    'RBFOX2-204-INPUT_S2_R1.unassigned.adapterTrim.round2.rmRep.rmDup.sorted.r2.norm.neg.bw'
-) # flipped?
-input_neg_bw = os.path.join(
-    wd,
-    'RBFOX2-204-INPUT_S2_R1.unassigned.adapterTrim.round2.rmRep.rmDup.sorted.r2.norm.pos.bw'
-) # flipped?
-
-ip_read_density = ReadDensity.ReadDensity(
-    pos = ip_pos_bw,
-    neg = ip_neg_bw,
-    bam = ip_bam
-)
-
-input_read_density = ReadDensity.ReadDensity(
-    pos = input_pos_bw,
-    neg = input_neg_bw,
-    bam = input_bam
-)
+### Fixtures ###
 
 @pytest.fixture()
-def get_full_upstream_region(regions=regions):
+def current_pos_interval():
+    return pybedtools.create_interval_from_list(
+        ['chr1','0','10','current','0','+']
+    )
 
-    with open(regions,'r') as f:
-        next(f)
-        for line in f: # skip first line due to comment/header
-            line = line.strip()
-            up, skip, down = Feature.SkippedExonFeature(
-                line, 'rmats'
-            ).get_bedtools()
-            if up.end - up.start > 100:
-                print up
-                return up
+@pytest.fixture()
+def downstream_pos_interval():
+    return pybedtools.create_interval_from_list(
+        ['chr1','15','20','current','0','+']
+    )
+
+@pytest.mark.parametrize(("input","expected"), [
+    ([current_pos_interval, downstream_pos_interval, 0, 0, '3p', False],[10, 15, 0, 0, 0]),
+])
 
 ### Tests ###
 
-def test__five_prime_site_full_length():
-    """
-    five_prime_site(
-        rbp,
-        upstream_interval,
-        interval,
-        exon_offset,
-        intron_offset,
-        trunc=True,
-        middle_stop=False)
 
-    Returns
-    -------
+def test_too_far_1():
+    direction = 1
+    anchor = 10
+    offset = 5
+    boundary = 16
+    ref = 0
+    test = intervals._too_far(anchor, offset, boundary, direction)
+    assert test == ref
 
-    """
-    expect_fivep_pad = 0
-    with open('test_intervals/chr11-70266505-70266616-0-0-+_chr11-70266505-70266616-0-0-+.densities.txt','r') as f:
-        for line in f:
-            expect_wiggle_track.append(float(line.replace('nan',np.NaN)))
-    expect_threep_pad = 0
-    neg_strand_list = [u'chr5', u'140998364', u'140998566', u'0', u'0', u'-']
-    negative = bt.create_interval_from_list(neg_strand_list)
 
-    pos_strand_list = [u'chr11', u'70266505', u'70266616', u'0', u'0', u'+']
-    pos_strand_upstream_list = [u'chr11', u'70266105', u'70266205', u'0', u'0', u'+']
-    positive = bt.create_interval_from_list(pos_strand_list)
-    positive_upstream = bt.create_interval_from_list(pos_strand_upstream_list)
+def test_too_far_2():
+    direction = 1
+    anchor = 10
+    offset = 5
+    boundary = 15
+    ref = 0
+    test = intervals._too_far(anchor, offset, boundary, direction)
+    assert test == ref
 
-    obs_fivep_pad, obs_wiggle_track, obs_threep_pad = intervals.five_prime_site(
-        rbp=ip_read_density,
-        upstream_interval=positive_upstream,
-        interval=positive,
-        exon_offset=50,
-        intron_offset=300,
-        trunc=True,
-        middle_stop=False
+
+def test_too_far_3():
+    direction = 1
+    anchor = 10
+    offset = 5
+    boundary = 14
+    ref = 1
+    test = intervals._too_far(anchor, offset, boundary, direction)
+    assert test == ref
+
+
+def test_too_far_4():
+    direction = 1
+    anchor = 10
+    offset = 5
+    boundary = 10
+    ref = 5
+    test = intervals._too_far(anchor, offset, boundary, direction)
+    assert test == ref
+
+
+def test_too_far_5():
+    direction = -1
+    anchor = 10
+    offset = 5
+    boundary = 9
+    ref = 4
+    test = intervals._too_far(anchor, offset, boundary, direction)
+    assert test == ref
+
+
+def test_too_far_6():
+    direction = -1
+    anchor = 10
+    offset = 5
+    boundary = 11
+    ref = 6
+    test = intervals._too_far(anchor, offset, boundary, direction)
+    assert test == ref
+
+
+def test_get_boundaries_1(downstream_pos_interval, current_pos_interval):
+    left_offset = 0
+    right_offset = 0
+    exon_junction_site = '3p'
+    stop_at_mid = False
+
+    test_anchor, test_upper_boundary, test_upper_offset, \
+    test_lower_boundary, test_lower_offset = intervals._get_boundaries(
+        downstream_pos_interval,
+        current_pos_interval,
+        left_offset,
+        right_offset,
+        exon_junction_site,
+        stop_at_mid
     )
 
-def test__five_prime_site_short_intron():
-    pass
+    ref_anchor = 10
+    ref_upper_boundary = 15
+    ref_upper_offset = 0
+    ref_lower_boundary = 0
+    ref_lower_offset = 0
+    assert test_anchor == ref_anchor
+    assert test_upper_offset == ref_upper_offset
+    assert test_lower_offset == ref_lower_offset
+    assert test_upper_boundary == ref_upper_boundary
+    assert test_lower_boundary == ref_lower_boundary
 
-def test__five_prime_site_short_exon():
-    pass
-
-
-five_prime_site(
-        rbp,
-        upstream_interval,
-        interval,
-        exon_offset,
-        intron_offset,
-        trunc=True,
-        middle_stop=False
+def test_get_boundaries_2(input, expected):
+    print(input)
+    # assert intervals._get_boundaries(input) == expected

@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # encoding: utf-8
 '''
 
@@ -99,14 +99,16 @@ def main(argv=None):  # IGNORE:C0111
     parser.add_argument(
         "--exon_offset",
         dest="exon_offset",
-        help="exon offset (default: 50)",
+        help="exon offset (default: 50) for splice events OR " \
+             "upstream offset for singular events (ie. TSS).",
         default=50,
         type=int
     )
     parser.add_argument(
         "--intron_offset",
         dest="intron_offset",
-        help="intron offset (default: 300)",
+        help="intron offset (default: 300) for splice events OR " \
+             "downstream offset for singular events (ie. TSS).",
         default=300,
         type=int
     )
@@ -182,7 +184,7 @@ def main(argv=None):  # IGNORE:C0111
     input_neg_bw = input_bam.replace('.bam', '.norm.pos.bw')
 
     # process scaling
-    scale = args.scale
+    is_scaled = args.scale
 
     # process flip
     is_unflipped = args.unflip
@@ -191,8 +193,10 @@ def main(argv=None):  # IGNORE:C0111
     Check if bigwigs exist, otherwise make
     """
     call_bigwig_script = False
-    required_input_files = [ip_bam, ip_pos_bw, ip_neg_bw,
-                            input_bam, input_pos_bw, input_neg_bw]
+    required_input_files = [
+        ip_bam, ip_pos_bw, ip_neg_bw,
+        input_bam, input_pos_bw, input_neg_bw
+    ]
     for i in required_input_files:
         if not os.path.isfile(i):
             print("Warning: {} does not exist".format(i))
@@ -241,32 +245,90 @@ def main(argv=None):  # IGNORE:C0111
 
     if len(annotations) != len(annotation_type):
         print(
-        "We have a different number of annotation types than annotations.")
-        exit(1)
+            "We have a different number of annotation types than annotations."
+        )
+        exit(1) # TODO: maybe we can just fallback to using the first one...?
     else:
         for i in range(0, len(annotations)):
             annotation_files[annotations[i]] = annotation_type[i]
 
     """
+    Determine norm func
+    """
+    norm_func = norm.normalize_and_per_region_subtract # initialize
+
+    if norm_level == 0:
+        norm_func = norm.get_density
+    elif norm_level == 1:
+        norm_func = norm.normalize_and_per_region_subtract
+    elif norm_level == 2:
+        norm_func = norm.read_entropy
+    elif norm_level == 3:
+        norm_func = norm.get_input
+
+    """
     Create objects
     """
     if event == 'se':
-        se = Map.SkippedExon(rbp, inp, outfile,
-                             norm.normalize_and_per_region_subtract,
-                             annotation_files, exon_offset=50,
-                             intron_offset=300, min_density_threshold=0,
-                             conf=0.95)
-        se.create_matrices()
-        se.normalize_matrix()
-        se.set_means_and_sems()
-        print("outfile: {}".format(outfile))
-        se.write_intermediates_to_csv()
-        se.plot()
-    elif event == 'bed':
-        Map.plot_feature(
-            rbp, inp, outfile, norm.normalize_and_per_region_subtract,
-            annotation_files, exon_offset, intron_offset,
-            min_density_threshold=0, conf=0.95
+        map_obj = Map.SkippedExon(
+            rbp, inp, outfile, norm_func,
+            annotation_files, exon_offset=exon_offset,
+            intron_offset=intron_offset, min_density_threshold=0,
+            conf=confidence
         )
+    elif event == 'mxe':
+        map_obj = Map.MutuallyExclusiveExon(
+            rbp, inp, outfile, norm_func,
+            annotation_files, exon_offset=exon_offset,
+            intron_offset=intron_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'a3ss':
+        map_obj = Map.Alt3PSpliceSite(
+            rbp, inp, outfile, norm_func,
+            annotation_files, exon_offset=exon_offset,
+            intron_offset=intron_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'a5ss':
+        map_obj = Map.Alt5PSpliceSite(
+            rbp, inp, outfile, norm_func,
+            annotation_files, exon_offset=exon_offset,
+            intron_offset=intron_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'ri':
+        map_obj = Map.RetainedIntron(
+            rbp, inp, outfile, norm_func,
+            annotation_files, exon_offset=exon_offset,
+            intron_offset=intron_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'bed':
+        map_obj = Map.WithInput(
+            rbp, inp, outfile, norm_func,
+            annotation_files, upstream_offset=exon_offset,
+            downstream_offset=intron_offset, min_density_threshold=0,
+            is_scaled=is_scaled, conf=confidence,
+        )
+    elif event == 'point':
+        map_obj = Map.WithInput(
+            rbp, inp, outfile, norm_func,
+            annotation_files, upstream_offset=exon_offset,
+            downstream_offset=intron_offset, min_density_threshold=0,
+            is_scaled=is_scaled, conf=confidence,
+        )
+    else:
+        print('invalid event option')
+        sys.exit(1)
+
+    map_obj.create_matrices()
+    map_obj.normalize_matrix()
+    map_obj.set_means_and_sems()
+    map_obj.write_intermediates_to_csv()
+    map_obj.plot()
+
+
+
 if __name__ == "__main__":
     main()
