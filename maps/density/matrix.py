@@ -30,7 +30,7 @@ from collections import defaultdict
 
 import Feature
 import intervals
-
+import sys
 
 def region(
     annotation, density, annotation_type,
@@ -54,17 +54,15 @@ def scaled_region(
 ):
     count = 0
     densities = {}
-    # TODO: add a try block around this to autoscale if regions are different lengths.
+    # TODO: pd.DataFrame.from_dict(dic, orient="index")
     with open(annotation) as f:
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
-                count = count + 1
-                if count % 50000 == 0:  # counter, some of these are large.
-                    logger.info('Processed {} features'.format(count))
                 event = line.rstrip()
                 interval = Feature.Feature(
                     event, annotation_type
                 ).get_bedtool()
+
                 wiggle = intervals.generic_site(
                     density,
                     interval,
@@ -114,15 +112,11 @@ def unscaled_region(
     r = intron_offset + exon_offset + exon_offset + intron_offset
     c = number of annotations in annotation_file
     """
-    count = 0  # event counter
     up = {}  # describes for every event the upstream region
     down = {}  # describes for every event the downstream region
     with open(annotation) as f:
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
-                count = count + 1
-                if count % 50000 == 0:
-                    logger.info('Processed {} features'.format(count))
                 event = line.rstrip()  # .split('\t')[0]
 
                 interval = Feature.Feature(
@@ -505,13 +499,6 @@ def skipped_exon(annotation, density, exon_offset, intron_offset,
                 except Exception as e:
                     print("Having trouble parsing event: \
                     {} (assumed type: {})".format(event, annotation_type))
-                    logger.error(
-                        "Having trouble parsing event: "
-                        "{} (assumed type: {})".format(
-                            event, annotation_type
-                        )
-                    )
-                    logger.error(e)
 
                 """three prime upstream region"""
                 wiggle = intervals.three_prime_site(
@@ -548,4 +535,72 @@ def skipped_exon(annotation, density, exon_offset, intron_offset,
         axis=1
     )
     ra.columns = range(0, ra.shape[1])
+    return ra
+
+
+def unscaled_cds(annotation, density, upstream_offset,
+                 downstream_offset, annotation_type="twobeds"):
+    """
+    Given an exon, return a dataframe of densities
+    Parameters
+    ----------
+    annotation : basestring
+        filename of the annotation file to use
+    density : density.ReadDensity
+        object that contains positive and negative normalized density *.bw
+    upstream_offset : int
+        number of bases into the exon to return densities for. NOTE: this
+        nomenclature assumes we're plotting (+) exon|intron junctions, so
+        exons are 'upstream'. However 'upstream_offset' still refers to
+        exons in (-) intron|exon features.
+    downstream_offset : int
+        number of bases from the exon boundary to return. NOTE: this
+        nomenclature assumes we're plotting (+) exon|intron junctions, so
+        introns are 'downstream'. However 'downstream_offset' still refers to
+        introns in (-) intron|exon features.
+    annotation_type : basestring
+        name of the annotation feature described by density.Feature
+
+    Returns
+    -------
+    dataframe with (r rows and c cols) describing the density values across
+    a list of exons defined by annotation_file.
+    c = upstream offset + length of feature + downstream offset
+    r = number of annotations in annotation_file
+    """
+    count = 0  # event counter
+    up = {}  # describes for every event the upstream region
+    down = {}  # describes for every event the downstream region
+    with open(annotation) as f:
+        for line in f:
+            if not line.startswith('event_name') and not line.startswith(
+                    'ID'):
+                event = line.rstrip()  # .split('\t')[0]
+
+                upstream_interval, downstream_interval = Feature.UnscaledCDS(
+                    event,
+                    annotation_type
+                ).get_bedtools()
+
+                """ calculate five prime site region """
+                # [      ]---|----[  |     ]
+                wiggle = intervals.three_prime_site(
+                    density, None, upstream_interval, upstream_offset,
+                    0, stop_at_midpoint=False
+                )
+                up[event] = wiggle
+                """ calculate the three prime site region """
+                wiggle = intervals.five_prime_site(
+                    density, None, downstream_interval, downstream_offset,
+                    0, stop_at_midpoint=False
+                )
+                down[event] = wiggle
+
+    up = pd.DataFrame(up).T
+    down = pd.DataFrame(down).T
+
+    # combine both regions in order to normalize together.
+    ra = pd.concat([up, down], axis=1)
+    ra.columns = range(0, ra.shape[1])
+
     return ra

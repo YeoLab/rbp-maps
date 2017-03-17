@@ -17,6 +17,7 @@ conf : percentage of scores to keep (outlier removal).
 @author: brianyee
 """
 import matplotlib
+import matplotlib.patches as patches
 matplotlib.use('Agg')
 from matplotlib import rc
 
@@ -281,7 +282,8 @@ class WithInput(Map):
         means = defaultdict()
         sems = defaultdict()
         for filename, filetype in self.annotation.iteritems():
-            means[filename], sems[filename] = norm.get_means_and_sems(
+            name = "{} ({} events)".format(filename, self.norm_matrices[filename].shape[0])
+            means[name], sems[name] = norm.get_means_and_sems(
                 self.norm_matrices[filename],
                 self.conf
             )
@@ -325,6 +327,20 @@ class WithInput(Map):
         f, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10, 5))
         axs = [ax1, ax2]
         RDPlotter.plot_exon(self.means, self.sems, axs)
+        exon1 = patches.Rectangle(
+            (self.downstream_offset,-1),
+            self.upstream_offset,
+            2,
+            alpha = 0.2
+        )
+        exon2 = patches.Rectangle(
+            (0, -1),
+            self.upstream_offset,
+            2,
+            alpha=0.2
+        )
+        ax1.add_patch(exon1)
+        ax2.add_patch(exon2)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -392,7 +408,13 @@ class SkippedExon(WithInput):
         axs = [ax1, ax2, ax3, ax4]
         RDPlotter.plot_splice(self.means, self.sems, axs)
         plt.tight_layout(pad=8, w_pad=3, h_pad=5)
-        f.suptitle(misc.sane(self.output_filename))
+        """ Disable the title for now... we don't need it.
+        f.suptitle(
+            misc.sane(self.output_filename).replace(
+                '.merged.r2',''
+            ).split('_')[-1]
+        )
+        """
         f.savefig(self.output_filename)
 
 
@@ -660,6 +682,78 @@ class RetainedIntron(WithInput):
         axs = [ax1, ax2]
         RDPlotter.plot_splice(self.means, self.sems, axs)
         plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        f.suptitle(misc.sane(self.output_filename))
+        f.savefig(self.output_filename)
+
+
+class UnscaledCDS(WithInput):
+    def __init__(self, ip, inp, output_filename,
+                 norm_function, annotation=None, upstream_offset=50,
+                 downstream_offset=50, min_density_threshold=0, conf=0.95):
+        """
+
+        Parameters
+        ----------
+        ip : density.ReadDensity
+        inp : density.ReadDensity
+        output_filename :
+        norm_function
+        annotation
+        exon_offset
+        intron_offset
+        min_density_threshold
+        conf
+        """
+        WithInput.__init__(self, ip=ip, inp=inp,
+                           output_filename=output_filename,
+                           norm_function=norm_function,
+                           annotation=annotation,
+                           upstream_offset=upstream_offset,
+                           downstream_offset=downstream_offset,
+                           min_density_threshold=min_density_threshold,
+                           is_scaled=False, conf=conf)
+
+    def create_matrices(self):
+        """
+        Creates a stacked density matrix for each event in each annotation file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+
+        Returns
+        -------
+
+        """
+        matrices = defaultdict(dict)
+        for filename, filetype in self.annotation.iteritems():
+            matrices['ip'][filename] = mtx.unscaled_cds(
+                annotation=filename, density=self.ip,
+                upstream_offset=self.upstream_offset,
+                downstream_offset=self.downstream_offset,
+                annotation_type=filetype
+            )
+            matrices['input'][filename] = mtx.unscaled_cds(
+                annotation=filename, density=self.inp,
+                upstream_offset=self.upstream_offset,
+                downstream_offset=self.downstream_offset,
+                annotation_type=filetype
+            )
+        self.raw_matrices = matrices
+
+    def plot(self):
+        f, (ax1, ax2,) = plt.subplots(
+            1, 2, sharey=True, figsize=(16, 8)
+        )
+        axs = [ax1, ax2]
+        RDPlotter.plot_unscaled_cds(
+            self.means, self.sems, axs,
+            self.upstream_offset, self.downstream_offset
+        )
+        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        f.subplots_adjust(wspace=0)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 

@@ -10,6 +10,8 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+sns.set_style("whitegrid")
+
 COLOR_PALETTE = sns.color_palette("hls", 8)
 
 import intervals
@@ -52,19 +54,28 @@ class _GenericPlotter(_Plotter):
             {filename:pandas.Series}
         """
         _Plotter.__init__(self, means, sems, num_regions)
+        sns.despine(left=True, right=True)
 
     def plot(self, axs):
         c = 0
         for filename, mean in self.means.iteritems():
+            # TODO: turn this into an option
+            """
+            if "INCLUDED" in filename.upper():
+                color = self.cols[0]
+            elif "EXCLUDED" in filename.upper():
+                color = self.cols[5]
+            else:
+                color = 'black'
+            """
             total_len = len(mean)
 
             region_len = total_len / self.num_regions
             regions = intervals.split(mean, self.num_regions)
-            print(total_len, region_len)
             for i in range(0, self.num_regions):
                 axs[i].plot(
-                    regions[i], label=misc.sane(filename)
-                    # regions[i], color=self.cols[c], label=misc.sane(filename)
+                    # regions[i], color=color, label=misc.sane(filename)
+                    regions[i], color=self.cols[c], label=misc.sane(filename)
                 )
                 if i % 2 == 1:
                     axs[i].set_xticklabels(xrange(-region_len, 1, 50))
@@ -72,6 +83,7 @@ class _GenericPlotter(_Plotter):
                     tick.set_rotation(90)
 
             c += 1
+        axs[0].set_ylabel("Normalized Density")
         axs[0].legend(
             bbox_to_anchor=(0., 1.1, 1., .102), loc=1, mode="expand",
             borderaxespad=0.
@@ -88,6 +100,38 @@ class _SEPlotter(_GenericPlotter):
         """
         _GenericPlotter.__init__(self, means, sems, num_regions)
 
+
+class _UnscaledCDSPlotter(_Plotter):
+    def __init__(self, means, sems, num_regions,
+                 upstream_offset, downstream_offset):
+        """
+        means : dict
+            {filename:pandas.Series}
+        sems : dict
+            {filename:pandas.Series}
+        """
+        _Plotter.__init__(self, means, sems, num_regions)
+        self.upstream_offset = upstream_offset
+        self.downstream_offset = downstream_offset
+
+    def plot(self, axs):
+        for filename, mean in self.means.iteritems():
+            region_1_len = self.upstream_offset
+            region1 = mean[:region_1_len]
+            region2 = mean[region_1_len:]
+
+            axs[0].plot(
+                region1, label=misc.sane(filename)
+            )
+            axs[1].plot(
+                region2, label=misc.sane(filename)
+            )
+            axs[1].axvline(0)
+
+        axs[0].legend(
+            bbox_to_anchor=(0., 1.1, 1., .102), loc=1, mode="expand",
+            borderaxespad=0.
+        )
 
 def plot_across_multiple_axes(means, sems, axs):
     """
@@ -226,5 +270,28 @@ def plot_a5ss(means, sems, axs):
 
     """
     plotter = _GenericPlotter(means, sems, len(axs))
+    plotter.plot(axs)
+    return plotter
+
+
+def plot_unscaled_cds(means, sems, axs, upstream_offset, downstream_offset):
+    """
+
+    Parameters
+    ----------
+    means : dict
+
+    sems : dict
+        std error for each annotation file
+    axs : list
+        list of 2 axes subplots
+
+    Returns
+    -------
+
+    """
+    plotter = _UnscaledCDSPlotter(
+        means, sems, len(axs), upstream_offset, downstream_offset
+    )
     plotter.plot(axs)
     return plotter

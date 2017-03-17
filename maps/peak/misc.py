@@ -4,6 +4,12 @@ Created on Jun 20, 2016
 @author: brianyee
 '''
 import pybedtools as bt
+import os
+
+
+def sane(filename):
+    base = os.path.basename(filename)
+    return os.path.splitext(base)[0]
 
 
 def isin(row, lst):

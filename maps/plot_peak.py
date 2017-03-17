@@ -1,6 +1,6 @@
-#!/bin/env python
+#!/usr/bin/env python
 # encoding: utf-8
-'''
+"""
      up_ex       ex_up     ex_dn       dn_ex
 ====[=----]-----[----=]===[=----]-----[----=]====
 
@@ -12,19 +12,25 @@
 
 @contact:    user_email
 @deffield    updated: Updated
-'''
-
-import os
-import sys
-
-import peak.annotations
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-import peak.matrix_functions as mtx
-
+"""
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
+import os
+import sys
+import matplotlib
+import pandas as pd
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import rc
+rc('text', usetex=False)
+matplotlib.rcParams['svg.fonttype'] = 'none'
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+import peak.intervals
+import peak.matrix as mtx
+import peak.PeakPlotter as Plot
+from collections import defaultdict
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 
 __all__ = []
 __version__ = 0.1
@@ -37,7 +43,6 @@ PROFILE = 0
 
 
 class CLIError(Exception):
-    '''Generic exception to raise and log different fatal errors.'''
 
     def __init__(self, msg):
         super(CLIError).__init__(type(self))
@@ -50,15 +55,8 @@ class CLIError(Exception):
         return self.msg
 
 
-def main(argv=None):  # IGNORE:C0111
-    '''Command line options.'''
+def main():
 
-    if argv is None:
-        argv = sys.argv
-    else:
-        sys.argv.extend(argv)
-
-    program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
     program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
@@ -120,7 +118,7 @@ USAGE
         dest="pv",
         help="-log10(p-value) cutoff (default = 3)",
         type=float,
-        default=3,
+        default=0,
         required=False
     )
     parser.add_argument(
@@ -132,7 +130,7 @@ USAGE
         required=False
     )
     parser.add_argument(
-        '-eo', "--exonoverhang",
+        '-eo', "--exon_offset",
         dest="exonoverhang",
         help="exon offset overhang (default = 50)",
         type=int,
@@ -140,7 +138,7 @@ USAGE
         required=False
     )
     parser.add_argument(
-        '-io', "--intronoverhang",
+        '-io', "--intron_offset",
         dest="intronoverhang",
         help="intron offset overhange (default = 300)",
         type=int,
@@ -158,7 +156,7 @@ USAGE
     args = parser.parse_args()
 
     misos = args.miso
-    outdir = args.output
+    outfile = args.output
     infile = args.input
     l2fc_cutoff = args.fc
     l10p_cutoff = args.pv
@@ -172,9 +170,8 @@ USAGE
     """
     positive_miso = misos[0]
     negative_miso = misos[1]
-    bg_miso = misos[2]
 
-    positive = peak.annotations.read_four_region_miso(
+    positive = peak.intervals.read_four_region_miso(
         positive_miso,
         hashing_val,
         event_type,
@@ -182,7 +179,7 @@ USAGE
         intron_overhang
     )  # create teh dictionary
 
-    negative = peak.annotations.read_four_region_miso(
+    negative = peak.intervals.read_four_region_miso(
         negative_miso,
         hashing_val,
         event_type,
@@ -190,28 +187,17 @@ USAGE
         intron_overhang
     )  # create teh dictionary
 
-    bg = peak.annotations.read_four_region_miso(
-        bg_miso,
-        hashing_val,
-        event_type,
-        exon_overhang,
-        intron_overhang
-    )  # create teh dictionary
+    peaks = defaultdict()
+    outdir = os.path.splitext(outfile)[0]
+    # miso_names = ['miso','event']
+    # p = pd.read_table(positive_miso, names=miso_names)
+    # n = pd.read_table(negative_miso, names=miso_names)
 
-    positive_counts = {}
-    negative_counts = {}
-    bg_counts = {}
-
-    outfile = os.path.join(
-        outdir,
-        os.path.basename(infile).replace(
-            'compressed.bed',
-            'compressed'
-        )
-    )
-    positive_counts['region1'] = mtx.make_hist_se(
+    p = sum(1 for line in open(positive_miso))
+    n = sum(1 for line in open(negative_miso))
+    peaks['Included-upon-knockdown ({} Events)'.format(p)] = mtx.make_hist_se(
         infile,
-        outfile + '.positive.txt',
+        outdir + '.positive.txt',
         hashing_val,
         l10p_cutoff,
         l2fc_cutoff,
@@ -219,9 +205,9 @@ USAGE
         exon_overhang,
         intron_overhang
     )
-    negative_counts['region1'] = mtx.make_hist_se(
+    peaks['Excluded-upon-knockdown ({} Events)'.format(n)] = mtx.make_hist_se(
         infile,
-        outfile + '.negative.txt',
+        outdir + '.negative.txt',
         hashing_val,
         l10p_cutoff,
         l2fc_cutoff,
@@ -229,27 +215,14 @@ USAGE
         exon_overhang,
         intron_overhang
     )
-    bg_counts['region1'] = mtx.make_hist_se(
-        infile,
-        outfile + '.bg.txt',
-        hashing_val,
-        l10p_cutoff,
-        l2fc_cutoff,
-        bg,
-        exon_overhang,
-        intron_overhang
+
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(
+        1, 4, sharey=True, figsize=(16, 8)
     )
-    err = {'region1': [0] * ((exon_overhang + intron_overhang + 1) * 4)}
-    title = os.path.basename(infile)
-    output_file = outfile.replace('.compressed', '.compressed.svg')
-    Plot.plot_se(
-        positive_counts,
-        negative_counts,
-        bg_counts,
-        err,
-        err,
-        title,
-        output_file)
+    axs = [ax1, ax2, ax3, ax4]
+    Plot.plot_se(peaks, axs)
+    plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+    f.savefig(outfile)
     return 0
 
 

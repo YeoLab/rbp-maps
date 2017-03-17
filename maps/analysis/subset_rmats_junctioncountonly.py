@@ -37,7 +37,7 @@ def get_avg_inclusion_count(row):
     return (int(s1a) + int(s1b) + int(s2a) + int(s2b)) / 4.0
 
 
-def make_bedtools(row, x):
+def make_bedtools(row, x, event='se'):
     """
     returns a BedTools interval given an rmats annotation row spanning
     from the upstream-end to the downstream-start.
@@ -52,9 +52,33 @@ def make_bedtools(row, x):
     -------
     pybedtools.BedTool.Interval
     """
-    return bt.create_interval_from_list(
-        [row['chr'], row['upstreamEE'], row['downstreamES'], x, '0',
-         row['strand']])
+    if event == 'se' or event == 'mxe' or event == 'ri':
+        interval = bt.create_interval_from_list(
+            [row['chr'], row['upstreamEE'], row['downstreamES'], x, '0',
+             row['strand']])
+    elif event == 'a3ss':
+        if row['strand']== '+':
+            interval = bt.create_interval_from_list(
+                [row['chr'], row['flankingEE'], row['shortES'], x, '0',
+                 row['strand']])
+        else:
+            interval = bt.create_interval_from_list(
+                [row['chr'], row['shortEE'], row['flankingES'], x, '0',
+                 row['strand']]
+            )
+    elif event == 'a5ss':
+        if row['strand'] == '+':
+            interval = bt.create_interval_from_list(
+                [row['chr'], row['shortEE'], row['flankingES'], x, '0',
+                 row['strand']])
+        else:
+            interval = bt.create_interval_from_list(
+                [row['chr'], row['flankingEE'], row['shortES'], x, '0',
+                 row['strand']])
+    else:
+        print("Invalid event")
+        return -1
+    return interval
 
 
 def return_bedtool(l):
@@ -99,40 +123,30 @@ def determine_event_to_keep(df, indices):
     return max_idx
 
 
-def main(argv=None):  # IGNORE:C0111
-    '''Command line options.'''
+def run_subset_rmats_junctioncountonly(i, o, e):
+    """
+    Given a junctioncountsonly file (i) of events (e), returns a file (o)
+    containing unique non-overlapping events prioritized by inclusion junction
+    read count.
 
-    if argv is None:
-        argv = sys.argv
-    else:
-        sys.argv.extend(argv)
+    Parameters
+    ----------
+    i : basestring
+        input junctionCountsOnly file from rMATS
+    o : basestring
+        output junctionCountsOnly file with just the highest-IJC events
+    e : basetring
+        event string that specifies the area upon which to compare. For
+        example, 'se' will compare regions between the 5' and 3' splice site
+        of the upstream and downstream exons. 'a3ss' will compare regions
+        between the end of the flanking upstream exon and the splice site
+        between the long/short alternative exon boundary.
 
-    program_name = os.path.basename(sys.argv[0])
-    program_version = "v%s" % __version__
-    program_build_date = str(__updated__)
-    program_version_message = '%%(prog)s %s (%s)' % (
-        program_version,
-        program_build_date
-    )
-
-    # Setup argument parser
-    parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-i", "--input",
-                        dest="i",
-                        required=True,
-                        help='input rMATS junctioncountsonly txt file')
-    parser.add_argument("-o", "--output",
-                        dest="o",
-                        required=True,
-                        help='output rMATS junctioncountsonly nonoverlapping')
-
-    # Process arguments
-    args = parser.parse_args()
-
-    # io
-    i = args.i
-    o = args.o
-
+    Returns
+    -------
+    None :
+        writes to a file
+    """
     starting_df = pd.read_table(i)
 
     """ append average IJC column to dataframe """
@@ -141,7 +155,7 @@ def main(argv=None):  # IGNORE:C0111
     """ dataframe to bedtool conversion """
     bedtools = []
     for ix, row in starting_df.iterrows():
-        bedtools.append(make_bedtools(row, ix))
+        bedtools.append(make_bedtools(row, ix, e))
     df_as_bedtool = bt.BedTool(bedtools)
     df_as_bedtool_sorted = df_as_bedtool.sort()
 
@@ -168,6 +182,48 @@ def main(argv=None):  # IGNORE:C0111
 
     final_subset.to_csv(o, sep=SEP, index=None)
 
+
+def main(argv=None):  # IGNORE:C0111
+    '''Command line options.'''
+
+    if argv is None:
+        argv = sys.argv
+    else:
+        sys.argv.extend(argv)
+
+    program_name = os.path.basename(sys.argv[0])
+    program_version = "v%s" % __version__
+    program_build_date = str(__updated__)
+    program_version_message = '%%(prog)s %s (%s)' % (
+        program_version,
+        program_build_date
+    )
+
+    # Setup argument parser
+    parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter)
+    parser.add_argument("-i", "--input",
+                        dest="i",
+                        required=True,
+                        help='input rMATS junctioncountsonly txt file')
+    parser.add_argument("-o", "--output",
+                        dest="o",
+                        required=True,
+                        help='output rMATS junctioncountsonly nonoverlapping')
+    parser.add_argument("-e", "--event",
+                        dest="e",
+                        required=False,
+                        default='se',
+                        help='splice type event: [se]/a3ss/a5ss/ri/mxe'
+                        )
+    # Process arguments
+    args = parser.parse_args()
+
+    # io
+    i = args.i
+    o = args.o
+    e = args.e
+
+    run_subset_rmats_junctioncountonly(i, o, e)
 
 if __name__ == "__main__":
     if DEBUG:

@@ -1,0 +1,22 @@
+#!/usr/bin/env make_rbp_map.cwl
+
+
+ip_bam:
+  class: File
+  path: ./data/204_01_RBFOX2.merged.r2.bam
+  
+input_bam:
+  class: File
+  path: ./data/RBFOX2-204-INPUT_S2_R1.unassigned.adapterTrim.round2.rmRep.rmDup.sorted.r2.bam
+
+annotation:
+  - class: File
+    path: ./data/RBFOX2-BGHLV26-HepG2-A3SS.MATS.JunctionCountOnly.txt
+
+annotation_type: [rmats]
+
+exon_offset: 50
+
+intron_offset: 300
+
+event: a3ss
