@@ -227,8 +227,8 @@ def _get_absolute_coords_and_pad(
 
 
 def _get_boundaries(
-        next_interval, current_interval, left_offset,
-        right_offset, exon_junction_site, stop_at_midpoint=False):
+        next_interval, current_interval, upstream_offset,
+        downstream_offset, exon_junction_site, stop_at_midpoint=False):
     """
     All variables are named with respect to a junction site at the 3' end of
     the exon. So for getting the 5' exon end values, variables should be
@@ -238,8 +238,10 @@ def _get_boundaries(
     ----------
     next_interval : pybedtools.BedTool.Interval
     current_interval : pybedtools.BedTool.Interval
-    left_offset : int
-    right_offset : int
+    upstream_offset : int
+        for 3' sites (+), this is the number of bases into the upstream to return
+    downstream_offset : int
+        for 3' sites (+), this is the number of bases into the downstream to return
     exon_junction_site : basestring
         specifies whether or not we're calculating 3p or 5p site
 
@@ -272,12 +274,12 @@ def _get_boundaries(
 
     if strand_or_5p == '+':  # + if 3p site and + or 5p site and -
         anchor = current_interval.end
-        upper_offset = right_offset
-        lower_offset = left_offset
+        upper_offset = downstream_offset
+        lower_offset = upstream_offset
     else:  # - if 3p site and - or 5p site and +
         anchor = current_interval.start
-        upper_offset = left_offset
-        lower_offset = right_offset
+        upper_offset = upstream_offset
+        lower_offset = downstream_offset
 
     lower_boundary = _get_lower_boundary(
         current_interval,

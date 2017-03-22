@@ -29,6 +29,7 @@ import os
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
+import gzip
 
 from collections import defaultdict
 import RDPlotter
@@ -198,6 +199,7 @@ class Map:
         self.write_intermediate_means_to_csv()
         self.write_intermediate_sems_to_csv()
 
+
     def compute_num_events(self):
         """
         Prints the number of events for each annotation used.
@@ -238,6 +240,7 @@ class WithInput(Map):
         self.write_intermediate_norm_matrices_to_csv()
         self.write_intermediate_means_to_csv()
         self.write_intermediate_sems_to_csv()
+        self.export_as_deeptool_matrix()
 
     def create_matrices(self):
         """
@@ -343,6 +346,26 @@ class WithInput(Map):
         ax2.add_patch(exon2)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
+
+    def export_as_deeptool_matrix(self):
+        for filename, matrix in self.norm_matrices.iteritems():
+            df = misc.deeptoolify(norm.mask(matrix), self.annotation[filename])
+            header = misc.create_deeptool_header(
+                sample_labels=[self.output_base],
+                downstream=matrix.shape[0]/2,
+                upstream=matrix.shape[0]/2,
+                group_boundaries=[0, matrix.shape[0]],
+                sample_boundaries=[0, matrix.shape[1]],
+                ref_point="BED",
+                group_labels=[misc.sane(filename)],
+                min_threshold=self.min_density_threshold,
+            )
+            o = gzip.open(self.output_base + SEP +
+                os.path.splitext(os.path.basename(filename))[0] + SEP +
+                '{}.deeptools.tsv.gz'.format(self.norm_function.__name__), 'wb')
+            o.write(header+'\n')
+            df.to_csv(o, sep='\t', index=None, header=None, compression='gzip')
+            o.close()
 
 
 class SkippedExon(WithInput):

@@ -1,7 +1,0 @@
-#!/usr/bin/env samtools_sort.cwl
-
-
-input_sort_bam:
-  class: File
-  path: ./data/my_sam_example.sam
-  

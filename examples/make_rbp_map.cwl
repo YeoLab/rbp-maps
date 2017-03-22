@@ -1,10 +1,10 @@
-#!/usr/bin/env cwl-runner
+#!/usr/bin/env cwltool
 
 cwlVersion: v1.0
 
 class: CommandLineTool
 
-baseCommand: [python, /home/bay001/projects/codebase/rbp-maps/maps/plot_density.py]
+baseCommand: [plot_density.py]
 
 inputs:
 
@@ -13,7 +13,7 @@ inputs:
     format: http://edamontology.org/format_2572
     inputBinding:
       position: 1
-      prefix: --ip
+      prefix: --ipbam
     label: "ip bam"
     doc: "ip bam"
 
@@ -22,34 +22,34 @@ inputs:
     format: http://edamontology.org/format_2572
     inputBinding:
       position: 2
-      prefix: --input
+      prefix: --inputbam
     label: "input bam"
     doc: "input bam"
 
-  annotation:
+  annotations:
     type: File[]
     format: http://edamontology.org/???
     inputBinding:
       position: 3
-      prefix: -a
-    label: "annotation"
-    doc: "annotation bed rmats or miso file"
+      prefix: --annotations
+    label: "annotations"
+    doc: "annotation bed rmats or miso file(s)"
 
   annotation_type:
     type: string[]
     format: http://edamontology.org/???
     inputBinding:
       position: 4
-      prefix: -t
+      prefix: --annotation_type
     label: "annotation type"
-    doc: "specify one of: bed rmats or miso"
+    doc: "specify one of: bed rmats or miso for each annotation"
 
   event:
     type: string
     format: http://edamontology.org/format_3320
     inputBinding:
       position: 5
-      prefix: -e
+      prefix: --event
     label: "event type"
     doc: "specify the type of splicing map to make (default se)"
 
@@ -80,8 +80,26 @@ inputs:
     label: "scaled"
     doc: "specify if events should be scaled"
 
+  chrom_sizes:
+    type: File
+    format: http://edamontology.org/???
+    inputBinding:
+      position: 9
+      prefix: --chrom_sizes
+    label: "chrom sizes"
+    doc: "chrom sizes file from ucsc"
+
+  unflipped:
+    type: boolean
+    default: False
+    inputBinding:
+      position: 10
+      prefix: --unflipped
+    label: "unflipped"
+    doc: "specify if the *pos.bw and *neg.bw are actually flipped strands"
+
 arguments: [
-  "-o",
+  "--output",
   $(inputs.ip_bam.nameroot).$(inputs.event).svg
   ]
 

@@ -279,14 +279,14 @@ def main():
             call_bigwig_script = True
     if call_bigwig_script:
 
-        cmd = 'python {} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
+        cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
             make_bigwigs_script,
             ip_bam,
             chrom_sizes,
             ip_pos_bw, ip_neg_bw
         )
         subprocess.call(cmd, shell=True)
-        cmd = 'python {} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
+        cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
             make_bigwigs_script,
             input_bam,
             chrom_sizes,

@@ -32,6 +32,21 @@ import numpy as np
 import pandas as pd
 
 
+def mask(density_df, fillna=0):
+    """
+    Masks the NaNs in a dataframe with a fillnumber
+
+    Parameters
+    ----------
+    density_df : pandas.DataFrame
+
+    Returns
+    -------
+    masked_df : pandas.DataFrame
+    """
+
+    return density_df.fillna(fillna)
+
 def clean(density_df):
     """
     These functions expect a dataframe with density values (columns)

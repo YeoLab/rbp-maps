@@ -204,7 +204,24 @@ class Alt_5p_splice_site(Feature):
             splice2 = bt.create_interval_from_list(
                 [chrom, shortES, shortEE, '0', '0', strand]
             )
+        elif self.source == 'eric':
+            junctions, short_isoform, long_isoform, downstream_exon = \
+                self.annotation.split('\t')
+            chrom, strand, _, _, _ = junctions.split('|')
 
+            splice1_start, splice1_end = long_isoform.split('-')
+            splice2_start, splice2_end = short_isoform.split('-')
+            downstream_start, downstream_end = downstream_exon.split('-')
+
+            splice1 = bt.create_interval_from_list(
+                [chrom, splice1_start, splice1_end, '0', '0', strand]
+            )
+            splice2 = bt.create_interval_from_list(
+                [chrom, splice2_start, splice2_end, '0', '0', strand]
+            )
+            downstream = bt.create_interval_from_list(
+                [chrom, downstream_start, downstream_end, '0', '0', strand]
+            )
         return splice1, splice2, downstream
 
 
@@ -275,6 +292,24 @@ class Alt_3p_splice_site(Feature):
             )
             splice2 = bt.create_interval_from_list(
                 [chrom, shortES, shortEE, '0', '0', strand]
+            )
+        elif self.source == 'eric':
+            junctions, upstream_exon, long_isoform, short_isoform = \
+                self.annotation.split('\t')
+            chrom, strand, _, _, _ = junctions.split('|')
+
+            splice1_start, splice1_end = long_isoform.split('-')
+            splice2_start, splice2_end = short_isoform.split('-')
+            upstream_start, upstream_end = upstream_exon.split('-')
+
+            upstream = bt.create_interval_from_list(
+                [chrom, upstream_start, upstream_end, '0', '0', strand]
+            )
+            splice1 = bt.create_interval_from_list(
+                [chrom, splice1_start, splice1_end, '0', '0', strand]
+            )
+            splice2 = bt.create_interval_from_list(
+                [chrom, splice2_start, splice2_end, '0', '0', strand]
             )
         return upstream, splice1, splice2
 
