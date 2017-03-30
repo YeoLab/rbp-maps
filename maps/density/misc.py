@@ -120,7 +120,7 @@ def ini(dictionary, *args):
         return 1
 
 
-def sane(filename):
+def sane(filename, keep_ext=True):
     """
     Returns a 'sane' label given a filename.
     Most of the time, we don't need the entire filename to label
@@ -137,7 +137,10 @@ def sane(filename):
 
     """
     base = os.path.basename(filename)
-    return os.path.splitext(base)[0]
+    if keep_ext:
+        return base
+    else:
+        return os.path.splitext(base)[0]
 
 
 def read_file(file_name, sep=',', index_col=0):

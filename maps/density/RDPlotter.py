@@ -9,10 +9,19 @@ rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import seaborn as sns
+from collections import OrderedDict, defaultdict
 
 sns.set_style("whitegrid")
 
 COLOR_PALETTE = sns.color_palette("hls", 8)
+BG1_COLOR = 'black' # COLOR_PALETTE['black']
+BG2_COLOR = COLOR_PALETTE[6]
+BG3_COLOR = COLOR_PALETTE[7]
+BG4_COLOR = COLOR_PALETTE[4]
+POS_COLOR = COLOR_PALETTE[0]
+NEG_COLOR = COLOR_PALETTE[5]
+
+COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
 
 import intervals
 import misc
@@ -29,7 +38,7 @@ class _Plotter:
         self.means = means
         self.sems = sems
         self.num_regions = num_regions
-        self.cols = COLOR_PALETTE  # TODO remove it
+        self.cols = COLORS  # TODO remove it
 
     def plot(self, ax):
         c = 0
@@ -58,6 +67,7 @@ class _GenericPlotter(_Plotter):
 
     def plot(self, axs):
         c = 0
+
         for filename, mean in self.means.iteritems():
             # TODO: turn this into an option
             """
@@ -68,17 +78,17 @@ class _GenericPlotter(_Plotter):
             else:
                 color = 'black'
             """
-            total_len = len(mean)
+            total_len = len(mean['means'])
 
             region_len = total_len / self.num_regions
-            regions = intervals.split(mean, self.num_regions)
+            regions = intervals.split(mean['means'], self.num_regions)
             for i in range(0, self.num_regions):
+                # print("filename: {}".format(filename))
                 axs[i].plot(
                     # regions[i], color=color, label=misc.sane(filename)
-                    regions[i], color=self.cols[c], label=misc.sane(filename)
+                    regions[i], color=self.cols[c], label=(filename + " ({} events)".format(mean['nums']))
                 )
-                if i % 2 == 1:
-                    axs[i].set_xticklabels(xrange(-region_len, 1, 50))
+                self.renumber_xaxis(i, region_len, axs)
                 for tick in axs[i].get_xticklabels():
                     tick.set_rotation(90)
 
@@ -89,6 +99,9 @@ class _GenericPlotter(_Plotter):
             borderaxespad=0.
         )
 
+    def renumber_xaxis(self, i, region_len, axs):
+        if i % 2 == 1:
+            axs[i].set_xticklabels(xrange(-region_len, 1, 50))
 
 class _SEPlotter(_GenericPlotter):
     def __init__(self, means, sems, num_regions):
@@ -99,6 +112,42 @@ class _SEPlotter(_GenericPlotter):
             {filename:pandas.Series}
         """
         _GenericPlotter.__init__(self, means, sems, num_regions)
+
+    def renumber_xaxis(self, i, region_len, axs):
+        if i % 2 == 1:
+            axs[i].set_xticklabels(xrange(-region_len+50, 51, 50))
+
+
+class _A3SSPlotter(_GenericPlotter):
+    def __init__(self, means, sems, num_regions):
+        """
+        means : dict
+            {filename:pandas.Series}
+        sems : dict
+            {filename:pandas.Series}
+        """
+        _GenericPlotter.__init__(self, means, sems, num_regions)
+
+    def renumber_xaxis(self, i, region_len, axs):
+        axs[0].set_xticklabels(xrange(-50, region_len+51, 50))
+        axs[1].set_xticklabels(xrange(-region_len+50, 51, 50))
+        axs[2].set_xticklabels(xrange(-region_len+50, 51, 50))
+
+
+class _A5SSPlotter(_GenericPlotter):
+    def __init__(self, means, sems, num_regions):
+        """
+        means : dict
+            {filename:pandas.Series}
+        sems : dict
+            {filename:pandas.Series}
+        """
+        _GenericPlotter.__init__(self, means, sems, num_regions)
+
+    def renumber_xaxis(self, i, region_len, axs):
+        axs[0].set_xticklabels(xrange(-50, region_len + 51, 50))
+        axs[1].set_xticklabels(xrange(-50, region_len + 51, 50))
+        axs[2].set_xticklabels(xrange(-region_len, 1, 50))
 
 
 class _UnscaledCDSPlotter(_Plotter):
@@ -248,7 +297,7 @@ def plot_a3ss(means, sems, axs):
     -------
 
     """
-    plotter = _GenericPlotter(means, sems, len(axs))
+    plotter = _A3SSPlotter(means, sems, len(axs))
     plotter.plot(axs)
     return plotter
 
@@ -269,7 +318,7 @@ def plot_a5ss(means, sems, axs):
     -------
 
     """
-    plotter = _GenericPlotter(means, sems, len(axs))
+    plotter = _A5SSPlotter(means, sems, len(axs))
     plotter.plot(axs)
     return plotter
 

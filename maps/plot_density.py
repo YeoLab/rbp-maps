@@ -19,6 +19,7 @@ import logging
 import os
 import subprocess
 import argparse
+from collections import OrderedDict
 # from argparse import ArgumentParser
 # from argparse import RawDescriptionHelpFormatter
 
@@ -314,7 +315,7 @@ def main():
     """
     Create annotations - turn annotation, type into annotation:type dicts
     """
-    annotation_dict = {}
+    annotation_dict = OrderedDict()
 
     if len(annotations) != len(annotation_type):
         print(

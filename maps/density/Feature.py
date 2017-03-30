@@ -350,6 +350,29 @@ class Retained_intron(Feature):
             downstream = bt.create_interval_from_list(
                 [chrom, downstream_start, downstream_end, '0', '0', strand]
             )
+        elif self.source == 'eric':
+            chrom, strand, low, high = self.annotation.split('|')
+            _, _, low_pos = low.split(':')
+            high_pos, _ = high.split(':')
+            low_start, low_end = low_pos.split('-')
+            high_start, high_end = high_pos.split('-')
+            if strand == '+':
+                upstream = bt.create_interval_from_list(
+                    [chrom, low_start, low_end, '0', '0', strand]
+                )
+                downstream = bt.create_interval_from_list(
+                    [chrom, high_start, high_end, '0', '0', strand]
+                )
+            elif strand == '-':
+                upstream = bt.create_interval_from_list(
+                    [chrom, high_start, high_end, '0', '0', strand]
+                )
+                downstream = bt.create_interval_from_list(
+                    [chrom, low_start, low_end, '0', '0', strand]
+                )
+            else:
+                print("strand not correct")
+                return -1
         elif self.source == 'rmats':
             ID, GeneID, geneSymbol, chrom, strand, \
             riExonStart_0base, riExonEnd, \

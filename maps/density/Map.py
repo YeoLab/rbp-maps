@@ -31,7 +31,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import gzip
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import RDPlotter
 import matrix as mtx
 import misc
@@ -163,7 +163,7 @@ class Map:
 
         """
         for filename, mean in self.means.iteritems():
-            pd.Series(mean).to_csv(
+            pd.Series(mean['means']).to_csv(
                 self.output_base + SEP +
                 os.path.splitext(os.path.basename(filename))[0] + SEP +
                 '{}'.format(self.norm_function.__name__) + SEP +
@@ -282,14 +282,20 @@ class WithInput(Map):
         self.norm_matrices = matrices
 
     def set_means_and_sems(self):
-        means = defaultdict()
-        sems = defaultdict()
+        means = OrderedDict()
+        sems = OrderedDict()
+        i = 0
+
         for filename, filetype in self.annotation.iteritems():
-            name = "{} ({} events)".format(filename, self.norm_matrices[filename].shape[0])
-            means[name], sems[name] = norm.get_means_and_sems(
+            i+=1
+            name = "{}".format(misc.sane(filename))
+            means[name] = defaultdict()
+
+            means[name]['means'], sems[name] = norm.get_means_and_sems(
                 self.norm_matrices[filename],
                 self.conf
             )
+            means[name]['nums'] = self.norm_matrices[filename].shape[0]
         self.means = means
         self.sems = sems
 
@@ -430,7 +436,7 @@ class SkippedExon(WithInput):
         )
         axs = [ax1, ax2, ax3, ax4]
         RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
         """ Disable the title for now... we don't need it.
         f.suptitle(
             misc.sane(self.output_filename).replace(
@@ -569,8 +575,8 @@ class Alt3PSpliceSite(WithInput):
             1, 3, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2, ax3]
-        RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        RDPlotter.plot_a3ss(self.means, self.sems, axs)
+        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -636,8 +642,8 @@ class Alt5PSpliceSite(WithInput):
             1, 3, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2, ax3]
-        RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        RDPlotter.plot_a5ss(self.means, self.sems, axs)
+        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -704,7 +710,7 @@ class RetainedIntron(WithInput):
         )
         axs = [ax1, ax2]
         RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 

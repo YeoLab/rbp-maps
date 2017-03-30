@@ -60,16 +60,38 @@ def heatmap(df, ax=None, title='event heatmap'):
     ax.set_title(title)
 
 
-def plot_avg_readdensity(df, ax=None, title='Average Density'):
+def plot_avg_se_readdensity(df, ax=None, title='Average Density', exon_offset=50, intron_offset=300):
     if ax == None:
         ax = plt.gca()
     ax.set_xlabel('Position')
     ax.set_ylabel('Average density (outliers removed)')
     ax.plot(df)
+    ymin, ymax = ax.get_ylim()
     ax.set_title(title)
-    ax.add_patch(patches.Rectangle((650, -1), 100, 2, alpha=0.1))
-    ax.add_patch(patches.Rectangle((0, -1), 50, 2, alpha=0.1))
-    ax.add_patch(patches.Rectangle((1350, -1), 50, 2, alpha=0.1))
+    ax.add_patch(
+        patches.Rectangle(
+            ((exon_offset + intron_offset + intron_offset), ymin),
+            (exon_offset + exon_offset),
+            ymax-ymin,
+            alpha=0.1
+        )
+    )
+    ax.add_patch(
+        patches.Rectangle(
+            (0, ymin),
+            exon_offset,
+            ymax-ymin,
+            alpha=0.1
+        )
+    )
+    ax.add_patch(
+        patches.Rectangle(
+            ((exon_offset * 3 + intron_offset * 4), ymin),
+            50,
+            ymax-ymin,
+            alpha=0.1
+        )
+    )
 
 
 def get_prefix(filename):
@@ -193,7 +215,7 @@ def main(argv=None):  # IGNORE:C0111
             ax3,
             title=get_prefix(input_matrices_files[2])
         )
-        plot_avg_readdensity(
+        plot_avg_se_readdensity(
             heatmaps[3],
             ax=axes[3],
             title='Image output'

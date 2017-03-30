@@ -360,16 +360,18 @@ def alt_5p_splice_site(annotation, density, exon_offset, intron_offset,
                 alt1, alt2, downstream = Feature.Alt_5p_splice_site(
                     event, annotation_type
                 ).get_bedtools()
-                """three prime alt1  (shorter) region"""
-                wiggle = intervals.three_prime_site(
-                    density, downstream, alt1, exon_offset, intron_offset
-                )
-                three_alt1[event] = wiggle
-                """three prime site of alt2 (longer) region"""
+                """three prime site of alt2 (shorter) region"""
                 wiggle = intervals.three_prime_site(
                     density, downstream, alt2, exon_offset, intron_offset
                 )
                 three_alt2[event] = wiggle
+
+                """three prime alt1  (longer) region"""
+                wiggle = intervals.three_prime_site(
+                    density, downstream, alt1, exon_offset, intron_offset
+                )
+                three_alt1[event] = wiggle
+
                 """five prime site of downstream region"""
                 wiggle = intervals.five_prime_site(
                     density, alt2, downstream, exon_offset, intron_offset
@@ -379,7 +381,7 @@ def alt_5p_splice_site(annotation, density, exon_offset, intron_offset,
         three_alt2 = pd.DataFrame(three_alt2).T
         five_downstream = pd.DataFrame(five_downstream).T
 
-    ra = pd.concat([three_alt1, three_alt2, five_downstream], axis=1)
+    ra = pd.concat([three_alt2, three_alt1, five_downstream], axis=1)
     ra.columns = range(0, ra.shape[1])
     return ra
 
@@ -573,14 +575,17 @@ def unscaled_cds(annotation, density, upstream_offset,
     down = {}  # describes for every event the downstream region
     with open(annotation) as f:
         for line in f:
+            count += 1
             if not line.startswith('event_name') and not line.startswith(
                     'ID'):
                 event = line.rstrip()  # .split('\t')[0]
-
-                upstream_interval, downstream_interval = Feature.UnscaledCDS(
-                    event,
-                    annotation_type
-                ).get_bedtools()
+                try:
+                    upstream_interval, downstream_interval = Feature.UnscaledCDS(
+                        event,
+                        annotation_type
+                    ).get_bedtools()
+                except ValueError as e:
+                    print(e, line, count)
 
                 """ calculate five prime site region """
                 # [      ]---|----[  |     ]
@@ -595,7 +600,7 @@ def unscaled_cds(annotation, density, upstream_offset,
                     0, stop_at_midpoint=False
                 )
                 down[event] = wiggle
-
+                # print(wiggle, upstream_offset, downstream_offset)
     up = pd.DataFrame(up).T
     down = pd.DataFrame(down).T
 

@@ -34,6 +34,30 @@ def pos_chr1_25_30():
 
 
 @pytest.fixture()
+def pos_chr1_90_95():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '90', '95', 'current', '0', '+']
+    )
+
+
+@pytest.fixture()
+def pos_chr1_95_105():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '95', '105', 'current', '0', '+']
+    )
+
+
+@pytest.fixture()
+def pos_chr1_105_115():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '105', '115', 'current', '0', '+']
+    )
+
+
+@pytest.fixture()
 def neg_chr1_25_30():
     """ upstream interval (negative) """
     return pybedtools.create_interval_from_list(
@@ -54,6 +78,38 @@ def neg_chr1_0_10():
     """ downstream interval (negative) """
     return pybedtools.create_interval_from_list(
         ['chr1', '0', '10', 'current', '0', '-']
+    )
+
+
+@pytest.fixture()
+def neg_chr1_90_95():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '90', '95', 'current', '0', '-']
+    )
+
+
+@pytest.fixture()
+def neg_chr1_95_100():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '95', '100', 'current', '0', '-']
+    )
+
+
+@pytest.fixture()
+def neg_chr1_95_105():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '95', '105', 'current', '0', '-']
+    )
+
+
+@pytest.fixture()
+def neg_chr1_105_115():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '105', '115', 'current', '0', '-']
     )
 
 
@@ -362,6 +418,32 @@ def test_junction_site_1(pos_chr1_0_10, pos_chr1_15_20, get_test_rbp):
     assert len(wiggle) == 10
     assert left == 0
     assert right == 0
+    assert wiggle == [3,3,3,3,3,3,3,3,3,3]
+
+
+def test_junction_site_2(neg_chr1_0_10, neg_chr1_15_20, get_test_rbp):
+    left, wiggle, right = intervals._junction_site(
+        # gets the wiggle range from 10 to 20
+        get_test_rbp, neg_chr1_0_10, neg_chr1_15_20, 5, 5, '3p', False
+    )
+    assert len(wiggle) == 10
+    assert left == 0
+    assert right == 0
+    assert wiggle == [-3, -3, -3, -3, -3, -3, -3, -3, -3, -3]
+
+
+def test_junction_site_3(neg_chr1_95_100, neg_chr1_105_115, get_test_rbp):
+    left, wiggle, right = intervals._junction_site(
+        # gets the wiggle range from 10 to 20
+        get_test_rbp, neg_chr1_95_100, neg_chr1_105_115, 2, 8, '3p', False
+    )
+    assert len(wiggle) == 7
+    assert left == 0
+    assert right == 3
+    assert wiggle == [-4, -4, -4, -4, -4, -4, -4]
+
+
+
 
 ### multiply by 100 tests ###
 
