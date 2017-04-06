@@ -435,15 +435,16 @@ class SkippedExon(WithInput):
             1, 4, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2, ax3, ax4]
-        RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
-        """ Disable the title for now... we don't need it.
+        RDPlotter.plot_se(self.means, self.sems, axs)
+
+        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
+        # plt.tight_layout(pad=5.5, w_pad=3, h_pad=6)
         f.suptitle(
             misc.sane(self.output_filename).replace(
                 '.merged.r2',''
             ).split('_')[-1]
         )
-        """
+
         f.savefig(self.output_filename)
 
 
@@ -509,7 +510,7 @@ class MutuallyExclusiveExon(WithInput):
         )
         axs = [ax1, ax2, ax3, ax4, ax5, ax6]
         RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -576,7 +577,7 @@ class Alt3PSpliceSite(WithInput):
         )
         axs = [ax1, ax2, ax3]
         RDPlotter.plot_a3ss(self.means, self.sems, axs)
-        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
+        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -643,7 +644,7 @@ class Alt5PSpliceSite(WithInput):
         )
         axs = [ax1, ax2, ax3]
         RDPlotter.plot_a5ss(self.means, self.sems, axs)
-        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
+        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -710,7 +711,7 @@ class RetainedIntron(WithInput):
         )
         axs = [ax1, ax2]
         RDPlotter.plot_splice(self.means, self.sems, axs)
-        plt.tight_layout(pad=6.5, w_pad=3, h_pad=6)
+        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 

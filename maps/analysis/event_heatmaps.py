@@ -26,7 +26,7 @@ import numpy as np
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
-logger = logging.getLogger('plot_heatmap')
+
 
 __version__ = '0.0.1'
 
@@ -40,14 +40,6 @@ def clean(density):
     """
     density = density.fillna(0)  # NaNs are regions which contain zero density
     return density.replace(-1, np.nan)  # -1 are regions which should not be counted at all
-
-
-def heatmap_all_events(infile, xlabel=False, ylabel=False):
-    df = pd.read_table(infile, index_col=0)
-    ax = sns.heatmap(df, xticklabels=xlabel, yticklabels=ylabel)
-    ax.set_xlabel('position')
-    ax.set_ylabel('event')
-    plt.savefig(outfile)
 
 
 def heatmap(df, ax=None, title='event heatmap'):
@@ -123,7 +115,7 @@ def get_prefix(filename):
 
 
 def main(argv=None):  # IGNORE:C0111
-
+    logger = logging.getLogger('plot_heatmap')
     '''Command line options.'''
 
     if argv is None:

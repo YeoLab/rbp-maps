@@ -43,7 +43,8 @@ class _Plotter:
     def plot(self, ax):
         c = 0
         for filename, mean in self.means.iteritems():
-            ax.plot(mean, color=self.cols[c], label=misc.sane(filename))
+            ax.plot(mean['means'], color=self.cols[c],
+                    label=misc.sane(filename))
             for tick in ax.get_xticklabels():
                 tick.set_rotation(90)
 
@@ -94,14 +95,17 @@ class _GenericPlotter(_Plotter):
 
             c += 1
         axs[0].set_ylabel("Normalized Density")
+
         axs[0].legend(
-            bbox_to_anchor=(0., 1.1, 1., .102), loc=1, mode="expand",
+            bbox_to_anchor=(0, -0.1), loc=1, mode="expand",
+            # bbox_to_anchor=(0., 1.1, 1., .102), loc=1, mode="expand",
             borderaxespad=0.
         )
 
     def renumber_xaxis(self, i, region_len, axs):
         if i % 2 == 1:
             axs[i].set_xticklabels(xrange(-region_len, 1, 50))
+
 
 class _SEPlotter(_GenericPlotter):
     def __init__(self, means, sems, num_regions):
@@ -166,8 +170,8 @@ class _UnscaledCDSPlotter(_Plotter):
     def plot(self, axs):
         for filename, mean in self.means.iteritems():
             region_1_len = self.upstream_offset
-            region1 = mean[:region_1_len]
-            region2 = mean[region_1_len:]
+            region1 = mean['means'][:region_1_len]
+            region2 = mean['means'][region_1_len:]
 
             axs[0].plot(
                 region1, label=misc.sane(filename)
@@ -255,7 +259,7 @@ def plot_se(means, sems, axs):
     -------
 
     """
-    plotter = _GenericPlotter(means, sems, len(axs))
+    plotter = _SEPlotter(means, sems, len(axs))
     plotter.plot(axs)
     return plotter
 

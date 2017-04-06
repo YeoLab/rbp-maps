@@ -26,11 +26,12 @@ import logging
 import numpy as np
 import os
 import pandas as pd
+import sys
 from collections import defaultdict
 
 import Feature
 import intervals
-import sys
+
 
 def region(
     annotation, density, annotation_type,
@@ -450,6 +451,7 @@ def alt_3p_splice_site(annotation, density, exon_offset, intron_offset,
 
     ra = pd.concat([three_upstream, five_alt1, five_alt2], axis=1)
     ra.columns = range(0, ra.shape[1])
+
     return ra
 
 
