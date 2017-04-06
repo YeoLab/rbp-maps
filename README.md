@@ -1,19 +1,29 @@
-# RBP Maps #
+# RBP Maps
 ENCODE RBP maps
 
-## Requires: ##
+## Requires:
 pandas
 pybedtools + bedtools(2.26.0)
 pysam + samtools(1.3)
 seaborn + matplotlib
 
-usage:
+### Install:
+```python
+cd rbp-maps
+conda env create -f conda_env.txt -n rbp-maps
+```
 
+### Usage:
+```python
 python plot_density.py --ip ip.bam
 --input input.bam
--a rmats_annotation1 rmats_annotation2 rmats_annotation3
--at rmats rmats rmats
--o rbfox2.svg
--e se
+--annotations rmats_annotation1 rmats_annotation2 rmats_annotation3
+--annotation_type rmats rmats rmats
+--output rbfox2.svg
+--event se
+```
+
+### See notebooks for examples of import/ other usage
 
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
+

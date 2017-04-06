@@ -13,12 +13,13 @@
 @contact:    user_email
 @deffield    updated: Updated
 """
+import matplotlib
+import os
+import pandas as pd
+import sys
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import os
-import sys
-import matplotlib
-import pandas as pd
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import rc
