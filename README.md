@@ -14,7 +14,7 @@ conda env create -f conda_env.txt -n rbp-maps
 ```
 
 ### Usage:
-```python
+```
 python plot_density.py --ip ip.bam
 --input input.bam
 --annotations rmats_annotation1 rmats_annotation2 rmats_annotation3
