@@ -1,3 +1,6 @@
 encode/
+examples/._.DS_Store
 .idea/
-
+.cache/
+.ipynb_checkpoints/
+._.DS_Store
