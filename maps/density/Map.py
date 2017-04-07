@@ -734,14 +734,14 @@ class UnscaledCDS(WithInput):
         min_density_threshold
         conf
         """
-        WithInput.__init__(self, ip=ip, inp=inp,
-                           output_filename=output_filename,
-                           norm_function=norm_function,
-                           annotation=annotation,
-                           upstream_offset=upstream_offset,
-                           downstream_offset=downstream_offset,
-                           min_density_threshold=min_density_threshold,
-                           is_scaled=False, conf=conf)
+        WithInput.__init__(
+            self, ip=ip, inp=inp, output_filename=output_filename,
+            norm_function=norm_function, annotation=annotation,
+            upstream_offset=upstream_offset,
+            downstream_offset=downstream_offset,
+            min_density_threshold=min_density_threshold,
+            is_scaled=False, conf=conf
+        )
 
     def create_matrices(self):
         """
@@ -786,36 +786,3 @@ class UnscaledCDS(WithInput):
         f.subplots_adjust(wspace=0)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
-
-
-# TODO: deprecate
-# do we need these anymore? Probably not
-def plot_skipped_exon(
-        ip, inp, output_filename, norm_function, annotation, exon_offset=50,
-        intron_offset=300, min_density_threshold=0, conf=0.95
-):
-    se = SkippedExon(
-        ip, inp, output_filename, norm_function, annotation, exon_offset,
-        intron_offset, min_density_threshold, conf
-    )
-    se.create_matrices()
-    se.normalize_matrix()
-    se.set_means_and_sems()
-    se.write_intermediates_to_csv()
-    se.plot()
-
-
-def plot_feature(
-        ip, inp, output_filename, norm_function, annotation, upstream_offset=300,
-        downstream_offset=300, min_density_threshold=0, is_scaled=True,
-        conf=0.95
-):
-    feature = WithInput(
-        ip, inp, output_filename, norm_function, annotation, upstream_offset,
-        downstream_offset, min_density_threshold, is_scaled, conf
-    )
-    feature.create_matrices()
-    feature.normalize_matrix()
-    feature.set_means_and_sems()
-    feature.write_intermediates_to_csv()
-    feature.plot()
