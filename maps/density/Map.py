@@ -710,7 +710,7 @@ class RetainedIntron(WithInput):
             1, 2, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2]
-        RDPlotter.plot_splice(self.means, self.sems, axs)
+        RDPlotter.plot_ri(self.means, self.sems, axs)
         plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)

@@ -104,6 +104,21 @@ class _GenericPlotter(_Plotter):
         )
 
     def renumber_xaxis(self, i, region_len, axs):
+        """
+        Renames x axis to fit up/downstream directionality.
+
+        Parameters
+        ----------
+        i : int
+            number of regions
+        region_len : int
+            length of the entire region
+        axs : matplotib axes[]
+            list of matplotlib subplot axes
+        Returns
+        -------
+
+        """
         if i % 2 == 1:
             axs[i].set_xticklabels(xrange(-region_len, 1, 50))
 
@@ -119,6 +134,21 @@ class _SEPlotter(_GenericPlotter):
         _GenericPlotter.__init__(self, means, sems, num_regions)
 
     def renumber_xaxis(self, i, region_len, axs):
+        """
+        Renames x axis to fit up/downstream directionality.
+
+        Parameters
+        ----------
+        i : int
+            number of regions
+        region_len : int
+            length of the entire region
+        axs : matplotib axes[]
+            list of matplotlib subplot axes
+        Returns
+        -------
+
+        """
         if i % 2 == 1:
             axs[i].set_xticklabels(xrange(-region_len+50, 51, 50))
 
@@ -155,6 +185,36 @@ class _A5SSPlotter(_GenericPlotter):
         axs[2].set_xticklabels(xrange(-region_len, 1, 50))
 
 
+class _RetainedIntronPlotter(_GenericPlotter):
+    def __init__(self, means, sems, num_regions):
+        """
+        means : dict
+            {filename:pandas.Series}
+        sems : dict
+            {filename:pandas.Series}
+        """
+        _GenericPlotter.__init__(self, means, sems, num_regions)
+
+    def renumber_xaxis(self, i, region_len, axs):
+        """
+        Renames x axis to fit up/downstream directionality.
+
+        Parameters
+        ----------
+        i : int
+            number of regions
+        region_len : int
+            length of the entire region
+        axs : matplotib axes[]
+            list of matplotlib subplot axes
+        Returns
+        -------
+
+        """
+        if i % 2 == 1:
+            axs[i].set_xticklabels(xrange(-region_len, 1, 50))
+
+
 class _UnscaledCDSPlotter(_Plotter):
     def __init__(self, means, sems, num_regions):
         """
@@ -166,6 +226,21 @@ class _UnscaledCDSPlotter(_Plotter):
         _GenericPlotter.__init__(self, means, sems, num_regions)
 
     def renumber_xaxis(self, i, region_len, axs):
+        """
+        Renames x axis to fit up/downstream directionality.
+
+        Parameters
+        ----------
+        i : int
+            number of regions
+        region_len : int
+            length of the entire region
+        axs : matplotib axes[]
+            list of matplotlib subplot axes
+        Returns
+        -------
+
+        """
         if i % 2 == 1:
             axs[i].set_xticklabels(xrange(-region_len, 1, 50))
 
@@ -220,10 +295,14 @@ def plot_exon(means, sems, axs):
 
 
 def plot_splice(means, sems, axs):
+    # TODO: deprecate
     return plot_across_multiple_axes(means, sems, axs)
 
 
-# Deprecated: to remove (or maybe we need to add exon pictures or something.)
+def plot_ri(means, sems, axs):
+    plotter = _RetainedIntronPlotter(means, sems, len(axs))
+    plotter.plot(axs)
+    return plotter
 
 
 def plot_se(means, sems, axs):

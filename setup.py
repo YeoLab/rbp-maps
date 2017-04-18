@@ -18,5 +18,11 @@ setup(
     package_dir={
         'peak': 'maps/peak', 'density': 'maps/density',
         'analysis': 'maps/analysis'
+    },
+    entry_points = {
+        'console_scripts': [
+            'plot_density = maps.plot_density:main',
+            'plot_peak = maps.plot_peak:main'
+        ]
     }
 )

@@ -25,16 +25,30 @@ python setup.py build
 python setup.py install
 ```
 
-### Usage:
+### Commandline Usage:
+
+##### Plotting density (*.bw files from the eCLIP bioinformatics pipeline)
 ```
-python plot_density.py --ip ip.bam
---input input.bam
---annotations rmats_annotation1 rmats_annotation2 rmats_annotation3
---annotation_type rmats rmats rmats
---output rbfox2.svg
---event se
+plot_density --ip ip.bam \
+ --input input.bam \
+ --annotations rmats_annotation1 rmats_annotation2 rmats_annotation3 \
+ --annotation_type rmats rmats rmats \
+ --output rbfox2.svg \
+ --event se
 ```
 
+##### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
+```
+plot_peak --input input.compressed.bed \
+ --output output.png \
+ --miso included.txt excluded.txt background.txt
+ --pvalue 3
+ --foldchange 3
+```
+
+### TSCC Usage:
+module load plotdensity
+plotdensity
 ### See notebooks for examples of import/ other usage
 
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)

@@ -1,6 +1,5 @@
-encode/
-examples/._.DS_Store
+build/
 .idea/
 .cache/
 .ipynb_checkpoints/
-._.DS_Store
+*.DS_Store
