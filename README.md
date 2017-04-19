@@ -10,6 +10,7 @@ RBP splice and feature maps
 | bedtools      | 2.26.0+
 | pysam         | 0.8.4+
 | samtools      | 1.3.1+
+| jupyter       | 4.2.0+ (if you want to import)
 
 ### Create the environment:
 ```python
