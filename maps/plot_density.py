@@ -14,46 +14,17 @@
 @deffield    updated: Updated
 '''
 
-import sys
 import logging
 import os
 import subprocess
 import argparse
 from collections import OrderedDict
-# from argparse import ArgumentParser
-# from argparse import RawDescriptionHelpFormatter
 
 import density.ReadDensity
 import density.normalization_functions as norm
 from density import Map
 
 logger = logging.getLogger('plot_features')
-
-__all__ = []
-__version__ = 0.1
-__date__ = '2016-05-06'
-__updated__ = '2016-05-06'
-
-DEBUG = 1
-TESTRUN = 0
-PROFILE = 0
-
-
-class CLIError(Exception):
-    """
-    Generic exception to raise and log different fatal errors.
-    """
-
-    def __init__(self, msg):
-        super(CLIError).__init__(type(self))
-        self.msg = "E: %s" % msg
-
-    def __str__(self):
-        return self.msg
-
-    def __unicode__(self):
-        return self.msg
-
 
 def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
                      input_pos_bw, input_neg_bw, input_bam,

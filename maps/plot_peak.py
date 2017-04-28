@@ -15,10 +15,8 @@
 """
 import matplotlib
 import os
-import pandas as pd
 import sys
 from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -30,31 +28,12 @@ import peak.intervals
 import peak.matrix as mtx
 import peak.PeakPlotter as Plot
 from collections import defaultdict
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-12-19'
 __updated__ = '2015-12-19'
-
-DEBUG = 0
-TESTRUN = 0
-PROFILE = 0
-
-
-class CLIError(Exception):
-
-    def __init__(self, msg):
-        super(CLIError).__init__(type(self))
-        self.msg = "E: %s" % msg
-
-    def __str__(self):
-        return self.msg
-
-    def __unicode__(self):
-        return self.msg
-
 
 def main():
     # Setup argument parser
@@ -79,11 +58,6 @@ def main():
         help="miso annotation files (positive, negative, background)",
         required=True,
         nargs='+'
-    )
-    parser.add_argument(
-        '-V', "--version",
-        action='version',
-        version=program_version_message
     )
     parser.add_argument(
         '-f', "--foldchange",
