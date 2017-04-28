@@ -29,7 +29,7 @@ class Feature():
         strand = None
         if self.source == 'bed':
             chrom, start, end, name, score, strand = \
-                self.annotation.split('\t')
+                self.annotation.split('\t')[:6]
         return bt.create_interval_from_list(
             [chrom, start, end, name, score, strand]
         )
