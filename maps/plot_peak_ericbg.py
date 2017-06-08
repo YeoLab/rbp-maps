@@ -35,9 +35,9 @@ __version__ = 0.1
 __date__ = '2015-12-19'
 __updated__ = '2015-12-19'
 
-def norm(some_list):
+def norm(some_list, num_events):
     some_list_ps = [x+1 for x in some_list]
-    normed_list = [float(x)/sum(some_list_ps) for x in some_list_ps]
+    normed_list = [float(x)/num_events for x in some_list_ps]
     return normed_list
 
 def main():
@@ -170,7 +170,7 @@ def main():
         event_dict['positive-miso'],
         exon_overhang,
         intron_overhang
-    ))
+    ), p)
     # peaks['Excluded upon knockdown ({} Events)'.format(n)] = norm(mtx.make_hist_se(
     peaks['hepg2 nSEcenter ({} Events)'.format(n)] = norm(mtx.make_hist_se(
         infile,
@@ -181,7 +181,7 @@ def main():
         event_dict['negative-miso'],
         exon_overhang,
         intron_overhang
-    ))
+    ), n)
     # peaks['Constitutive exons ({} Events)'.format(ce)] = norm(mtx.make_hist_se(
     peaks['hepg2 strict CE all ({} Events)'.format(ce)] = norm(mtx.make_hist_se(
         infile,
@@ -192,7 +192,7 @@ def main():
         event_dict['constitutive-exon'],
         exon_overhang,
         intron_overhang
-    ))
+    ), ce)
     # peaks['Native cassette exons ({} Events)'.format(nc)] = norm(mtx.make_hist_se(
     peaks['k562 nseAll ({} Events)'.format(nc)] = norm(mtx.make_hist_se(
         infile,
@@ -203,7 +203,7 @@ def main():
         event_dict['native-cassette'],
         exon_overhang,
         intron_overhang
-    ))
+    ), nc)
     # peaks['Natively included exons ({} Events)'.format(ni)] = norm(mtx.make_hist_se(
     peaks['k562 nSEcenter ({} Events)'.format(ni)] = norm(mtx.make_hist_se(
         infile,
@@ -214,7 +214,7 @@ def main():
         event_dict['native-included'],
         exon_overhang,
         intron_overhang
-    ))
+    ), ni)
     # peaks['Natively excluded exons ({} Events)'.format(ne)] = norm(mtx.make_hist_se(
     peaks['k562 strict CE all ({} Events)'.format(ne)] = norm(mtx.make_hist_se(
         infile,
@@ -225,7 +225,7 @@ def main():
         event_dict['native-excluded'],
         exon_overhang,
         intron_overhang
-    ))
+    ), ne)
 
     f, (ax1, ax2, ax3, ax4) = plt.subplots(
         1, 4, sharey=True, figsize=(16, 8)

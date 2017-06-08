@@ -124,7 +124,7 @@ def read_region_from_miso(event_line, event_type):
 def read_four_region_miso(infile, hashing_val, event_type, exon_overhang, intron_overhang):
     all_exons = collections.defaultdict(list)
     with open(infile, 'r') as f:
-        next(f)  # header
+        # next(f)  # header
         for line in f:
             upstream, excluded, downstream = read_region_from_miso(line, event_type)
             upchr, upstart, upstop, upstr = upstream

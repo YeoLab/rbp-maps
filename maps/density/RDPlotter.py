@@ -12,6 +12,9 @@ import seaborn as sns
 from collections import OrderedDict, defaultdict
 
 sns.set_style("whitegrid")
+sns.set_context("talk", font_scale=1.2)
+
+MIN_N_THRESHOLD = 100
 
 COLOR_PALETTE = sns.color_palette("hls", 8)
 BG1_COLOR = 'black' # COLOR_PALETTE['black']
@@ -62,6 +65,8 @@ class _GenericPlotter(_Plotter):
             {filename:pandas.Series}
         sems : dict
             {filename:pandas.Series}
+        ns : dict
+            {filename:int}
         """
         _Plotter.__init__(self, means, sems, num_regions)
         sns.despine(left=True, right=True)
@@ -70,6 +75,7 @@ class _GenericPlotter(_Plotter):
         c = 0
 
         for filename, mean in self.means.iteritems():
+            # print('filename: [{}]'.format(filename))
             # TODO: turn this into an option
             """
             if "INCLUDED" in filename.upper():
@@ -85,23 +91,34 @@ class _GenericPlotter(_Plotter):
             regions = intervals.split(mean['means'], self.num_regions)
             for i in range(0, self.num_regions):
                 # print("filename: {}".format(filename))
+                if mean['nums'] < MIN_N_THRESHOLD:
+                    alpha = 0.3
+                else:
+                    alpha = 1
+
                 axs[i].plot(
                     # regions[i], color=color, label=misc.sane(filename)
-                    regions[i], color=self.cols[c], label=(
-                        filename + " ({} events)".format(mean['nums'])
-                    )
+                    regions[i], color=self.cols[c], label=
+                        self.trim_filename(filename) + " ({} events)".format(mean['nums'],
+                    ),
+                    alpha=alpha,
+                    linewidth=0.8
                 )
                 self.renumber_xaxis(i, region_len, axs)
-                for tick in axs[i].get_xticklabels():
-                    tick.set_rotation(90)
 
             c += 1
         axs[0].set_ylabel("Normalized Density")
 
-        axs[0].legend(
-            bbox_to_anchor=(0, -0.1), loc=1, mode="expand",
-            borderaxespad=0.
+        leg = axs[0].legend(
+            bbox_to_anchor=(1.4, -0.2), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
         )
+        for legobj in leg.legendHandles:
+            legobj.set_label(legobj.get_label()[0])
+            legobj.set_linewidth(4.0)
+
+    def trim_filename(self, filename):
+        return filename.replace('-',' ').replace('_',' ').replace('HepG2','').replace('K562','')
 
     def renumber_xaxis(self, i, region_len, axs):
         """
@@ -133,24 +150,16 @@ class _SEPlotter(_GenericPlotter):
         """
         _GenericPlotter.__init__(self, means, sems, num_regions)
 
-    def renumber_xaxis(self, i, region_len, axs):
-        """
-        Renames x axis to fit up/downstream directionality.
-
-        Parameters
-        ----------
-        i : int
-            number of regions
-        region_len : int
-            length of the entire region
-        axs : matplotib axes[]
-            list of matplotlib subplot axes
-        Returns
-        -------
-
-        """
+    def renumber_xaxis(self, i, region_len, axs, stepper=50):
         if i % 2 == 1:
-            axs[i].set_xticklabels(xrange(-region_len+50, 51, 50))
+            axs[i].set_xticks(xrange(0, region_len+1, stepper))
+            axs[i].set_xticklabels(['-{}'.format(region_len-stepper), '', '', '', '', '', '-{}'.format(stepper), '0'])
+        else:
+            axs[i].set_xticks(xrange(0, region_len+1, stepper))
+            axs[i].set_xticklabels(['0', '{}'.format(stepper), '', '', '', '', '', '{}'.format(region_len-stepper)])
+
+        for tick in axs[i].get_xticklabels():
+            tick.set_rotation(90)
 
 
 class _A3SSPlotter(_GenericPlotter):
@@ -215,7 +224,7 @@ class _RetainedIntronPlotter(_GenericPlotter):
             axs[i].set_xticklabels(xrange(-region_len, 1, 50))
 
 
-class _UnscaledCDSPlotter(_Plotter):
+class _UnscaledCDSPlotter(_GenericPlotter):
     def __init__(self, means, sems, num_regions):
         """
         means : dict
@@ -291,11 +300,6 @@ def plot_bed(means, sems, ax):
 
 
 def plot_exon(means, sems, axs):
-    return plot_across_multiple_axes(means, sems, axs)
-
-
-def plot_splice(means, sems, axs):
-    # TODO: deprecate
     return plot_across_multiple_axes(means, sems, axs)
 
 

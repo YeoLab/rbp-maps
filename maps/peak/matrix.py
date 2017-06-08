@@ -1,5 +1,5 @@
 import misc
-
+from collections import defaultdict
 
 # makes a raw count histogram of rbp for each position in each region
 def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exons, exon_overhang, intron_overhang):
@@ -10,6 +10,13 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
                         "downstream_region_upstream_exon"]
         position_sum = {}
         count = []
+        event_dict = defaultdict(dict)
+
+        event_dict['downstream_region_upstream_exon'] = {}
+        event_dict['upstream_region_skipped_exon'] = {}
+        event_dict['downstream_region_skipped_exon'] = {}
+        event_dict['upstream_region_downstream_exon'] = {}
+
         with open(infile, 'r') as f:
             for line in f:
                 line = line.split('\t')
@@ -31,17 +38,19 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
                 x = int(pstart / hashing_val)
                 y = int(pstop / hashing_val)
 
+                p_str = '{}:{}-{}:{}'.format(chrom, pstart, pstop, stra)
                 # for each peak, find ALL regions that intersect it
                 for region_type in region_types:  # within a region
                     tmphash = {}
                     for i in range(x, y + 1):  # within a bin
                         for event in all_exons[chrom, stra, i, region_type]:
                             exchr, exregstart, exstart, exregstop, exstr = event.split(':')
-                            if pstop < int(exregstart):  # pass if peak stop occurs before exon region start
+                            if pstop < int(exregstart):
                                 continue
-                            if pstart > int(exregstop):  # pass if peak start occurs after exon region end
+                            if pstart > int(exregstop):  # pass if peak stop occurs before exon region start
                                 continue
                             tmphash[event] = 1  # otherwise peak falls within event region
+                    # event_dict[region_type][p_str] = tmphash
                     for event in tmphash:
                         if stra == "+":
                             exchr, exregstart, exstart, exregstop, exstr = event.split(':')
@@ -64,6 +73,7 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
                                                                                    relative_pos)
                         else:
                             print("strand error\n")
+        # print(event_dict['downstream_region_skipped_exon']['chr11:47237411-47237505:+'])
 
         # count from 0 to max
         current_pos = 0

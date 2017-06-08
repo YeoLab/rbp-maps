@@ -270,6 +270,7 @@ class WithInput(Map):
             )
         self.raw_matrices = matrices
 
+
     def normalize_matrix(self):
         matrices = defaultdict()
         for filename, filetype in self.annotation.iteritems():
@@ -437,7 +438,7 @@ class SkippedExon(WithInput):
         axs = [ax1, ax2, ax3, ax4]
         RDPlotter.plot_se(self.means, self.sems, axs)
 
-        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
+        plt.tight_layout(pad=1.3 * len(self.annotation.keys()), w_pad=1)
         # plt.tight_layout(pad=5.5, w_pad=3, h_pad=6)
         f.suptitle(
             misc.sane(self.output_filename).replace(
@@ -577,7 +578,7 @@ class Alt3PSpliceSite(WithInput):
         )
         axs = [ax1, ax2, ax3]
         RDPlotter.plot_a3ss(self.means, self.sems, axs)
-        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
+        plt.tight_layout()
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -644,7 +645,7 @@ class Alt5PSpliceSite(WithInput):
         )
         axs = [ax1, ax2, ax3]
         RDPlotter.plot_a5ss(self.means, self.sems, axs)
-        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
+        plt.tight_layout()
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -711,7 +712,7 @@ class RetainedIntron(WithInput):
         )
         axs = [ax1, ax2]
         RDPlotter.plot_ri(self.means, self.sems, axs)
-        plt.tight_layout(pad=1.5 * len(self.annotation.keys()), w_pad=1)
+        plt.tight_layout()
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 

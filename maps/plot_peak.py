@@ -26,14 +26,22 @@ matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 import peak.intervals
 import peak.matrix as mtx
+import peak.normalization_functions as norm
 import peak.PeakPlotter as Plot
-from collections import defaultdict
+from collections import OrderedDict
 
+THRESHOLD=100 # number of events required to not grey the line out
 
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-12-19'
 __updated__ = '2015-12-19'
+
+def enough_peaks(n):
+    if n < THRESHOLD:
+        return False
+    else:
+        return True
 
 def main():
     # Setup argument parser
@@ -122,9 +130,17 @@ def main():
     """
     all exons for now... this may change depending on the annotation we use.
     """
-    positive_miso = misos[0]
-    negative_miso = misos[1]
+    annotation_dict = {
+        'positive-miso':misos[0],'negative-miso':misos[1],'constitutive-exon':misos[2],
+        'native-cassette':misos[3],'native-included':misos[4],'native-excluded':misos[5]
+    }
+    event_dict = {}
 
+    for label, annotation in annotation_dict.iteritems():
+        event_dict[label] = peak.intervals.read_four_region_miso(
+            annotation, hashing_val, event_type, exon_overhang, intron_overhang
+        )
+    """
     positive = peak.intervals.read_four_region_miso(
         positive_miso,
         hashing_val,
@@ -132,50 +148,127 @@ def main():
         exon_overhang,
         intron_overhang
     )  # create teh dictionary
+    """
 
-    negative = peak.intervals.read_four_region_miso(
-        negative_miso,
-        hashing_val,
-        event_type,
-        exon_overhang,
-        intron_overhang
-    )  # create teh dictionary
-
-    peaks = defaultdict()
     outdir = os.path.splitext(outfile)[0]
     # miso_names = ['miso','event']
     # p = pd.read_table(positive_miso, names=miso_names)
     # n = pd.read_table(negative_miso, names=miso_names)
 
-    p = sum(1 for line in open(positive_miso))
-    n = sum(1 for line in open(negative_miso))
-    peaks['Included-upon-knockdown ({} Events)'.format(p)] = mtx.make_hist_se(
-        infile,
-        outdir + '.positive.txt',
-        hashing_val,
-        l10p_cutoff,
-        l2fc_cutoff,
-        positive,
-        exon_overhang,
-        intron_overhang
+    p = sum(1 for line in open(annotation_dict['positive-miso']))
+    n = sum(1 for line in open(annotation_dict['negative-miso']))
+    ce = sum(1 for line in open(annotation_dict['constitutive-exon']))
+    nc = sum(1 for line in open(annotation_dict['native-cassette']))
+    ni = sum(1 for line in open(annotation_dict['native-included']))
+    ne = sum(1 for line in open(annotation_dict['native-excluded']))
+
+    incl_upon_kd_hist = mtx.make_hist_se(
+        infile, outdir + '.positive.txt', hashing_val,
+        l10p_cutoff, l2fc_cutoff, event_dict['positive-miso'],
+        exon_overhang, intron_overhang
     )
-    peaks['Excluded-upon-knockdown ({} Events)'.format(n)] = mtx.make_hist_se(
-        infile,
-        outdir + '.negative.txt',
-        hashing_val,
-        l10p_cutoff,
-        l2fc_cutoff,
-        negative,
-        exon_overhang,
-        intron_overhang
+
+    excl_upon_kd_hist = mtx.make_hist_se(
+        infile, outdir + '.negative.txt', hashing_val,
+        l10p_cutoff, l2fc_cutoff, event_dict['negative-miso'],
+        exon_overhang, intron_overhang
     )
+
+    ce_exon_hist = mtx.make_hist_se(
+        infile, outdir + '.ce.txt', hashing_val,
+        l10p_cutoff, l2fc_cutoff, event_dict['constitutive-exon'],
+        exon_overhang, intron_overhang
+    )
+
+    native_cassette_hist = mtx.make_hist_se(
+        infile, outdir + '.nc.txt', hashing_val,
+        l10p_cutoff, l2fc_cutoff, event_dict['native-cassette'],
+        exon_overhang, intron_overhang
+    )
+
+    native_incl_hist = mtx.make_hist_se(
+        infile, outdir + '.ni.txt', hashing_val,
+        l10p_cutoff, l2fc_cutoff, event_dict['native-included'],
+        exon_overhang, intron_overhang
+    )
+
+    native_excl_hist = mtx.make_hist_se(
+        infile, outdir + '.ne.txt', hashing_val,
+        l10p_cutoff, l2fc_cutoff, event_dict['native-excluded'],
+        exon_overhang, intron_overhang
+    )
+
+
+    peaks = OrderedDict()
+    peaks['Included upon knockdown ({} Events)'.format(p)] = {'means':norm.norm(incl_upon_kd_hist, p), 'show':enough_peaks(p)}
+    peaks['Excluded upon knockdown ({} Events)'.format(n)] = {'means':norm.norm(excl_upon_kd_hist, n), 'show':enough_peaks(n)}
+    peaks['Constitutive exons ({} Events)'.format(ce)] = {'means':norm.norm(ce_exon_hist, ce), 'show':enough_peaks(ce)}
+    peaks['Native cassette exons ({} Events)'.format(nc)] = {'means':norm.norm(native_cassette_hist, nc), 'show':enough_peaks(nc)}
+    peaks['Natively included exons ({} Events)'.format(ni)] = {'means':norm.norm(native_incl_hist, ni), 'show':enough_peaks(ni)}
+    peaks['Natively excluded exons ({} Events)'.format(ne)] = {'means':norm.norm(native_excl_hist, ne), 'show':enough_peaks(ne)}
+
+    # Hack to show error bars for all/some/none
+    incl_error_plus, incl_error_minus = norm.get_std_error_boundaries(
+        incl_upon_kd_hist, p)
+    excl_error_plus, excl_error_minus = norm.get_std_error_boundaries(
+        excl_upon_kd_hist, n)
+    ce_error_plus, ce_error_minus = norm.get_std_error_boundaries(
+        ce_exon_hist, ce)
+    ncass_error_plus, ncass_error_minus = norm.get_std_error_boundaries(
+        native_cassette_hist, nc)
+    nincl_error_plus, nincl_error_minus = norm.get_std_error_boundaries(
+        native_incl_hist, ni)
+    nexcl_error_plus, nexcl_error_minus = norm.get_std_error_boundaries(
+        native_excl_hist, ne)
+
+    peaks['Inclusion error plus'] = {
+        'means': incl_error_plus, 'show':enough_peaks(p)
+    }
+    peaks['Inclusion error minus'] = {
+        'means': incl_error_minus, 'show': enough_peaks(p)
+    }
+
+    peaks['Exclusion error plus'] = {
+        'means': excl_error_plus, 'show': enough_peaks(n)
+    }
+    peaks['Exclusion error minus'] = {
+        'means': excl_error_minus, 'show': enough_peaks(n)
+    }
+
+    peaks['CE error plus'] = {
+        'means': ce_error_plus, 'show': enough_peaks(ce)
+    }
+    peaks['CE error minus'] = {
+        'means': ce_error_minus, 'show': enough_peaks(ce)
+    }
+
+    peaks['NC error plus'] = {
+        'means': ncass_error_plus, 'show': enough_peaks(ce)
+    }
+    peaks['NC error minus'] = {
+        'means': ncass_error_minus, 'show': enough_peaks(ce)
+    }
+
+    peaks['NI error plus'] = {
+        'means': nincl_error_plus, 'show': enough_peaks(ce)
+    }
+    peaks['NI error minus'] = {
+        'means': nincl_error_minus, 'show': enough_peaks(ce)
+    }
+
+    peaks['NE error plus'] = {
+        'means': nexcl_error_plus, 'show': enough_peaks(ce)
+    }
+    peaks['NE error minus'] = {
+        'means': nexcl_error_minus, 'show': enough_peaks(ce)
+    }
 
     f, (ax1, ax2, ax3, ax4) = plt.subplots(
         1, 4, sharey=True, figsize=(16, 8)
     )
     axs = [ax1, ax2, ax3, ax4]
     Plot.plot_se(peaks, axs)
-    plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+    plt.tight_layout(pad=1.5 * len(annotation_dict.keys()), w_pad=1)
     f.savefig(outfile)
     return 0
 
