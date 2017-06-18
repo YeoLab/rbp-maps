@@ -9,7 +9,9 @@ ip : CLIP IP density
 input : CLIP Input density
 output filename : name of the output file and base
 norm function : normalization to use (see normalization_functions.py)
-annotation : annotation file(s) to use
+annotation : annotation file(s) to use and their type. This is a dictionary of 
+  {filename:filetype(rmats, miso, etc.)} where the filename is used to 
+  associated which density values belong to which condition.
 offsets : either describing upstream/downstream or exon/intron bases to plot
 is_scaled : whether or not we want the map to 'scale' or keep nucleotide dims
 conf : percentage of scores to keep (outlier removal).
@@ -20,24 +22,38 @@ import matplotlib
 import matplotlib.patches as patches
 matplotlib.use('Agg')
 from matplotlib import rc
-
+import matplotlib.gridspec as gridspec
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
-
+import seaborn as sns
 import os
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
 import gzip
-
+import colors
 from collections import defaultdict, OrderedDict
 import RDPlotter
 import matrix as mtx
 import misc
 import normalization_functions as norm
+import LineObject
 
 SEP = '.'  # file delimiter
+
+MIN_EVENT_THRESHOLD=100 # number of events required to not grey the line out
+
+COLOR_PALETTE = sns.color_palette("hls", 8)
+
+BG1_COLOR = 'black' # COLOR_PALETTE['black']
+BG2_COLOR = COLOR_PALETTE[6]
+BG3_COLOR = COLOR_PALETTE[7]
+BG4_COLOR = COLOR_PALETTE[4]
+POS_COLOR = COLOR_PALETTE[0]
+NEG_COLOR = COLOR_PALETTE[5]
+
+COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
 
 
 class Map:
@@ -55,7 +71,7 @@ class Map:
         norm_function : function
             Function
             See: normalization_functions
-        annotation : dict
+        annotation : collections.OrderedDict
             {file:type} representing an annotation file and format
             See: Feature
         upstream_offset : int
@@ -82,9 +98,9 @@ class Map:
 
         self.raw_matrices = defaultdict(dict)
         self.norm_matrices = defaultdict(dict)
-        self.means = defaultdict()
-        self.sems = defaultdict()
-        self.num_events = defaultdict()
+        self.means = defaultdict() # TODO delete when safe
+        self.sems = defaultdict() # TODO delete when safe
+        self.lines = []
 
     def create_matrix(self):
         """
@@ -115,7 +131,7 @@ class Map:
                 )
         self.raw_matrices = matrices
 
-    def set_means_and_sems(self):
+    def create_lines(self):
         """
         For each position, remove the outlying 5% (or as specified in
         self.conf) and compute the average and mean
@@ -124,15 +140,19 @@ class Map:
         -------
 
         """
-        means = defaultdict()
-        sems = defaultdict()
 
+        c = 0  # color for iterating over default COLOR scheme
         for filename, filetype in self.annotation.iteritems():
-            means[filename], sems[filename] = norm.get_means_and_sems(
-                self.raw_matrices[filename], self.conf
+            self.lines.append(
+                LineObject.LineObject(
+                    self.raw_matrices[filename],
+                    filename,
+                    self.conf,
+                    COLORS[c],
+                    MIN_EVENT_THRESHOLD
+                )
             )
-        self.means = means
-        self.sems = sems
+            c += 1
 
     def write_intermediate_raw_matrices_to_csv(self):
         """
@@ -143,18 +163,21 @@ class Map:
         -------
 
         """
-        for condition, annotations in self.raw_matrices.iteritems():
-            for filename, matrix in annotations.iteritems():
-                matrix.to_csv(
-                    self.output_base + SEP +
-                    os.path.splitext(os.path.basename(filename))[0] + SEP +
-                    condition + SEP +
-                    'raw_density.csv'
-                )
+        for filename, filetype in self.annotation.iteritems():
+            output_file_ip = self.output_base + SEP + \
+                             (os.path.basename(filename)) + '.ip.raw_density.txt'
+            output_file_input = self.output_base + SEP + \
+                                (os.path.basename(filename)) + '.input.raw_density.txt'
+            self.raw_matrices['ip'][filename].to_csv(
+                output_file_ip
+            )
+            self.raw_matrices['input'][filename].to_csv(
+                output_file_input
+            )
 
     def write_intermediate_means_to_csv(self):
         """
-        Writes to output_base + annotation + norm_func + outlier + mean.csv
+        Writes to output_base + annotation + norm_func + outlier + mean.txt
         the mean normalized density values over input for each
         annotation/rbp matrix created
 
@@ -162,30 +185,30 @@ class Map:
         -------
 
         """
-        for filename, mean in self.means.iteritems():
-            pd.Series(mean['means']).to_csv(
-                self.output_base + SEP +
-                os.path.splitext(os.path.basename(filename))[0] + SEP +
-                '{}'.format(self.norm_function.__name__) + SEP +
-                '{}.mean.csv'.format(self.conf)
-            )
+        for line in self.lines:
+            output_file = self.output_base + SEP + \
+                          line.file_label + '.means.txt'
+
+            with open(output_file, 'w') as o:
+                for mean in line.means:
+                    o.write("{}\n".format(mean))
 
     def write_intermediate_sems_to_csv(self):
         """
-        Writes to output_base + annotation_base + norm_func + sem.csv
+        Writes to output_base + annotation_base + norm_func + sem.txt
         the standard error values for each position in the map.
 
         Returns
         -------
 
         """
-        for filename, sem in self.sems.iteritems():
-            pd.Series(sem).to_csv(
-                self.output_base + SEP +
-                os.path.splitext(os.path.basename(filename))[0] + SEP +
-                '{}'.format(self.norm_function.__name__) + SEP +
-                '{}.sem.csv'.format(self.conf)
-            )
+        for line in self.lines:
+            output_file = self.output_base + SEP + \
+                          line.file_label + '.sems.txt'
+
+            with open(output_file, 'w') as o:
+                for error in line.sems:
+                    o.write("{}\n".format(error))
 
     def write_intermediates_to_csv(self):
         """
@@ -200,20 +223,6 @@ class Map:
         self.write_intermediate_sems_to_csv()
 
 
-    def compute_num_events(self):
-        """
-        Prints the number of events for each annotation used.
-
-        Returns
-        -------
-
-        """
-        num_events = dict()
-        for filename, matrix in self.raw_matrices['ip'].iteritems():
-            num_events[misc.sane(filename)] = matrix.shape[0]
-        print(num_events)
-
-
 class WithInput(Map):
     def __init__(self, ip, inp, output_filename, norm_function,
                  annotation=None, upstream_offset=0, downstream_offset=0,
@@ -226,20 +235,80 @@ class WithInput(Map):
                      is_scaled=is_scaled, conf=conf)
 
         self.inp = inp
+        self.lines = []
+
+    def set_background_and_calculate_ks(self, cond_file_name, bg_file_name):
+        """
+        AFTER creation of all LineObjects, we can specify a condition
+        matrix to run a ks-test against its distribution of values
+        for each position compared to a specified background control.
+        
+        Parameters
+        ----------
+        cond_file_name : basestring
+        bg_file_name : basestring
+
+        Returns
+        -------
+
+        """
+
+        print("background: {}".format(bg_file_name))
+        for line in self.lines:
+            if line.annotation == cond_file_name:
+                print("now testing: {} against {}".format(cond_file_name, bg_file_name))
+                line.calculate_and_set_significance(self.norm_matrices[bg_file_name])
+
+    def set_background_and_calculate_zscore(self, cond_file_name, bg_file_name):
+        """
+        AFTER creation of all LineObjects, we can specify a condition
+        (bg_file_name) to run z-score comparison for each position
+        of our test (cond_file_name).
+
+        Parameters
+        ----------
+        cond_file_name
+        bg_file_name
+
+        Returns
+        -------
+
+        """
+        print("background: {}".format(bg_file_name))
+        bg_line = None
+        for line in self.lines:
+            if line.annotation == bg_file_name:
+                bg_line = line
+
+        if bg_line is not None:
+            for line in self.lines:
+                if line.annotation == cond_file_name:
+                    print("now testing: {} against {}".format(cond_file_name,
+                                                              bg_file_name))
+                    line.calculate_zscore(bg_line)
 
     def write_intermediate_norm_matrices_to_csv(self):
-        for filename, matrix in self.norm_matrices.iteritems():
-            matrix.to_csv(
-                self.output_base + SEP +
-                os.path.splitext(os.path.basename(filename))[0] + SEP +
-                '{}.csv'.format(self.norm_function.__name__)
-            )
+        for line in self.lines:
+            output_file = self.output_base + SEP + \
+                          line.file_label + '.normed_matrix.txt'
+
+            line.event_matrix.to_csv(output_file)
+
+    def write_intermediate_pvalues_to_csv(self):
+        for line in self.lines:
+            output_file = self.output_base + SEP + \
+                          line.file_label + '.zscores.txt'
+
+            with open(output_file, 'w') as o:
+                for z in line.z_scores:
+                    o.write("{}\n".format(z))
 
     def write_intermediates_to_csv(self):
         self.write_intermediate_raw_matrices_to_csv()
         self.write_intermediate_norm_matrices_to_csv()
         self.write_intermediate_means_to_csv()
         self.write_intermediate_sems_to_csv()
+        self.write_intermediate_pvalues_to_csv()
         # self.export_as_deeptool_matrix()
 
     def create_matrices(self):
@@ -270,8 +339,15 @@ class WithInput(Map):
             )
         self.raw_matrices = matrices
 
-
     def normalize_matrix(self):
+        """
+        For each annotation we have to parse, normalize the ip
+        density values above its matched input density values.
+        
+        Returns
+        -------
+
+        """
         matrices = defaultdict()
         for filename, filetype in self.annotation.iteritems():
             matrices[filename] = self.norm_function(
@@ -282,23 +358,27 @@ class WithInput(Map):
             )
         self.norm_matrices = matrices
 
-    def set_means_and_sems(self):
-        means = OrderedDict()
-        sems = OrderedDict()
-        i = 0
+    def create_lines(self):
+        """
+        Creates LineObject for each annotation we have to 
+        parse. LineObjects contain density matrices, means, 
+        errorbar positions, 
+        Returns
+        -------
 
+        """
+        c = 0 # color for iterating over default COLOR scheme
         for filename, filetype in self.annotation.iteritems():
-            i+=1
-            name = "{}".format(misc.sane(filename))
-            means[name] = defaultdict()
-
-            means[name]['means'], sems[name] = norm.get_means_and_sems(
-                self.norm_matrices[filename],
-                self.conf
+            self.lines.append(
+                LineObject.LineObject(
+                    self.norm_matrices[filename],
+                    filename,
+                    self.conf,
+                    COLORS[c],
+                    MIN_EVENT_THRESHOLD
+                )
             )
-            means[name]['nums'] = self.norm_matrices[filename].shape[0]
-        self.means = means
-        self.sems = sems
+            c+=1
 
     def plot(self):
         """
@@ -432,47 +512,88 @@ class SkippedExon(WithInput):
         self.raw_matrices = matrices
 
     def plot(self):
+        map_gridspec = gridspec.GridSpec(
+            ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[9, 1, 1]
+        )
+        map_gridspec.update(hspace=0.6)
+        gs = gridspec.GridSpec(
+            ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[12, 1, 1]
+        )
+        gs.update(hspace=0)
+
+        f = plt.figure(figsize=(20, 10))
+        plot_axs = []
+        heatmap_axs = []
+
+        plot_axs.append(f.add_subplot(map_gridspec[0]))
+        for i in range(1, 4):
+            plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+        for j in range(4, 8):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+        for j in range(8, 12):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+
+        """
         f, (ax1, ax2, ax3, ax4) = plt.subplots(
             1, 4, sharey=True, figsize=(16, 8)
         )
+
         axs = [ax1, ax2, ax3, ax4]
-        RDPlotter.plot_se(self.means, self.sems, axs)
+        RDPlotter.plot_se(self.lines, axs)
 
         plt.tight_layout(pad=1.3 * len(self.annotation.keys()), w_pad=1)
         # plt.tight_layout(pad=5.5, w_pad=3, h_pad=6)
         f.suptitle(
             misc.sane(self.output_filename).replace(
                 '.merged.r2',''
-            ).split('_')[-1]
+            ).split('_')[-1].replace('.svg','').replace('.png','')
         )
+        """
+        RDPlotter.plot_se(self.lines, plot_axs)
 
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0],  # red
+            low=COLOR_PALETTE[1]  # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
+        RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:4], cmap_1, ylabel='left')
+        RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[4:], cmap_2, ylabel='right')
+
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
         f.savefig(self.output_filename)
 
 
 class MutuallyExclusiveExon(WithInput):
-    def __init__(self, ip, inp, output_filename,
-                 norm_function, annotation=None, exon_offset=50,
-                 intron_offset=300, min_density_threshold=0, conf=0.95):
+    def __init__(
+            self, ip, inp, output_filename,
+            norm_function, annotation=None, exon_offset=50,
+            intron_offset=300, min_density_threshold=0, conf=0.95
+    ):
         """
 
         Parameters
         ----------
         ip : density.ReadDensity
         inp : density.ReadDensity
-        output_filename :
-        norm_function
-        annotation
-        exon_offset
-        intron_offset
-        min_density_threshold
-        conf
+        output_filename : 
+        norm_function :
+        annotation :
+        exon_offset :
+        intron_offset :
+        min_density_threshold :
+        conf :
         """
-        WithInput.__init__(self, ip=ip, inp=inp,
-                           output_filename=output_filename,
-                           norm_function=norm_function, annotation=annotation,
-                           upstream_offset=0, downstream_offset=0,
-                           min_density_threshold=min_density_threshold,
-                           is_scaled=False, conf=conf)
+        WithInput.__init__(
+            self, ip=ip, inp=inp,
+            output_filename=output_filename,
+            norm_function=norm_function, annotation=annotation,
+            upstream_offset=0, downstream_offset=0,
+            min_density_threshold=min_density_threshold,
+            is_scaled=False, conf=conf
+        )
 
         self.exon_offset = exon_offset
         self.intron_offset = intron_offset
@@ -543,6 +664,7 @@ class Alt3PSpliceSite(WithInput):
 
         self.exon_offset = exon_offset
         self.intron_offset = intron_offset
+        self.lines = []
 
     def create_matrices(self):
         """
@@ -573,15 +695,59 @@ class Alt3PSpliceSite(WithInput):
         self.raw_matrices = matrices
 
     def plot(self):
+        map_gridspec = gridspec.GridSpec(
+            ncols=3, nrows=3, width_ratios=[1, 1, 1], height_ratios=[9, 1, 1]
+        )
+        map_gridspec.update(hspace=0.6)
+        gs = gridspec.GridSpec(
+            ncols=3, nrows=3, width_ratios=[1, 1, 1], height_ratios=[12, 1, 1]
+        )
+        gs.update(hspace=0)
+
+        f = plt.figure(figsize=(20, 10))
+        plot_axs = []
+        heatmap_axs = []
+
+        plot_axs.append(f.add_subplot(map_gridspec[0]))
+        for i in range(1, 3):
+            plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+        for j in range(3, 6):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+        for j in range(6, 9):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+
+        RDPlotter.plot_a3ss(self.lines, plot_axs)
+
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0],  # red
+            low=COLOR_PALETTE[1]  # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
+
+        RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:3], cmap_1, ylabel='left')
+        RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[3:], cmap_2, ylabel='right')
+
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
+        f.savefig(self.output_filename)
+
+        """
         f, (ax1, ax2, ax3) = plt.subplots(
             1, 3, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2, ax3]
-        RDPlotter.plot_a3ss(self.means, self.sems, axs)
-        plt.tight_layout()
-        f.suptitle(misc.sane(self.output_filename))
-        f.savefig(self.output_filename)
-
+        RDPlotter.plot_a3ss(self.lines, axs)
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
+        # plt.tight_layout(pad=1.3 * len(self.annotation.keys()), w_pad=1)
+        # plt.tight_layout(pad=5.5, w_pad=3, h_pad=6)
+        f.suptitle(
+            misc.sane(self.output_filename).replace(
+                '.merged.r2', ''
+            ).split('_')[-1].replace('.svg', '').replace('.png', '')
+        )
+        """
 
 class Alt5PSpliceSite(WithInput):
     def __init__(self, ip, inp, output_filename,
@@ -640,15 +806,61 @@ class Alt5PSpliceSite(WithInput):
         self.raw_matrices = matrices
 
     def plot(self):
+        map_gridspec = gridspec.GridSpec(
+            ncols=3, nrows=3, width_ratios=[1, 1, 1], height_ratios=[9, 1, 1]
+        )
+        map_gridspec.update(hspace=0.6)
+        gs = gridspec.GridSpec(
+            ncols=3, nrows=3, width_ratios=[1, 1, 1], height_ratios=[12, 1, 1]
+        )
+        gs.update(hspace=0)
+
+        f = plt.figure(figsize=(20, 10))
+        plot_axs = []
+        heatmap_axs = []
+
+        plot_axs.append(f.add_subplot(map_gridspec[0]))
+        for i in range(1, 3):
+            plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+        for j in range(3, 6):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+        for j in range(6, 9):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+
+        RDPlotter.plot_a5ss(self.lines, plot_axs)
+
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0],  # red
+            low=COLOR_PALETTE[1]  # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
+
+        RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:3], cmap_1,
+                               ylabel='left')
+        RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[3:], cmap_2,
+                               ylabel='right')
+
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
+        f.savefig(self.output_filename)
+
+        """
         f, (ax1, ax2, ax3) = plt.subplots(
             1, 3, sharey=True, figsize=(16, 8)
         )
         axs = [ax1, ax2, ax3]
-        RDPlotter.plot_a5ss(self.means, self.sems, axs)
-        plt.tight_layout()
-        f.suptitle(misc.sane(self.output_filename))
+        RDPlotter.plot_a5ss(self.lines, axs)
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
+        # plt.tight_layout(pad=1.0 * len(self.annotation.keys()), w_pad=1)
+        f.suptitle(
+            misc.sane(self.output_filename).replace(
+                '.merged.r2', ''
+            ).split('_')[-1].replace('.svg', '').replace('.png', '')
+        )
         f.savefig(self.output_filename)
-
+        """
 
 class RetainedIntron(WithInput):
     def __init__(self, ip, inp, output_filename,
@@ -707,6 +919,7 @@ class RetainedIntron(WithInput):
         self.raw_matrices = matrices
 
     def plot(self):
+        """
         f, (ax1, ax2, ) = plt.subplots(
             1, 2, sharey=True, figsize=(16, 8)
         )
@@ -715,8 +928,46 @@ class RetainedIntron(WithInput):
         plt.tight_layout()
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
+        """
+        map_gridspec = gridspec.GridSpec(
+            ncols=2, nrows=3, width_ratios=[1, 1], height_ratios=[9, 1, 1]
+        )
+        map_gridspec.update(hspace=0.6)
+        gs = gridspec.GridSpec(
+            ncols=2, nrows=3, width_ratios=[1, 1], height_ratios=[12, 1, 1]
+        )
+        gs.update(hspace=0)
 
+        f = plt.figure(figsize=(20, 10))
+        plot_axs = []
+        heatmap_axs = []
 
+        plot_axs.append(f.add_subplot(map_gridspec[0]))
+        for i in range(1, 2):
+            plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+        for j in range(2, 4):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+        for j in range(4, 6):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+
+        RDPlotter.plot_ri(self.lines, plot_axs)
+
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0],  # red
+            low=COLOR_PALETTE[1]  # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
+
+        RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:2], cmap_1,
+                               ylabel='left')
+        RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[2:], cmap_2,
+                               ylabel='right')
+
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
+        f.savefig(self.output_filename)
 class UnscaledCDS(WithInput):
     def __init__(self, ip, inp, output_filename,
                  norm_function, annotation=None, upstream_offset=50,

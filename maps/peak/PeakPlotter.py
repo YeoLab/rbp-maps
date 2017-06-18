@@ -6,177 +6,160 @@ rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
+import pandas as pd
 import intervals
 import seaborn as sns
 import numpy as np
+
 sns.set_style("ticks")
-sns.despine()
-sns.set_context("talk", font_scale=1.2)
-# matplotlib.rcParams.update({'font.size': 12})
-
-COLOR_PALETTE = sns.color_palette("hls", 8)
-
-BG1_COLOR = 'black' # COLOR_PALETTE['black']
-BG2_COLOR = COLOR_PALETTE[6]
-BG3_COLOR = COLOR_PALETTE[7]
-BG4_COLOR = COLOR_PALETTE[4]
-POS_COLOR = COLOR_PALETTE[0]
-NEG_COLOR = COLOR_PALETTE[5]
-
-COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
-
-COLORDICT = {
-    'Included upon knockdown':POS_COLOR,
-    'Excluded upon knockdown':NEG_COLOR,
-    'Constitutive exons':BG1_COLOR,
-    'Native cassette exons':BG2_COLOR,
-    'Native included exons':BG3_COLOR,
-    'Native excluded exons':BG4_COLOR
-}
-COLORDICT_ERROR = {
-    'Inclusion error':POS_COLOR,
-    'Exclusion error':NEG_COLOR,
-    'CE error':BG1_COLOR,
-    'NC error':BG2_COLOR,
-    'NI error':BG3_COLOR,
-    'NE error':BG4_COLOR
-}
-
-import misc
+sns.set_context("talk", font_scale=1.4)
 
 
-class _Plotter:
-    def __init__(self, peaks, num_regions=1):
+class _LinePlotter():
+    def __init__(self, lines, num_regions):
         """
-        means : dict
-            {filename:pandas.Series}
+        
+        Parameters
+        ----------
+        lines : LineObject.LineObject
+            LineObjects to plot
+        num_regions : int
+            number of regions to plot
         """
-        self.peaks = peaks
+        self.lines = lines
         self.num_regions = num_regions
-        self.coldict = COLORDICT
-        self.error_colordict = COLORDICT_ERROR
-
-class _GenericPlotter(_Plotter):
-    def __init__(self, peaks, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        """
-        _Plotter.__init__(self, peaks, num_regions)
         sns.despine(left=True, right=True)
-        self.cols = COLORS
+
+    def plot(self, axs):
+        c = 0
+        for line in self.lines:
+
+            regions = intervals.split(line.means, self.num_regions)
+
+            error_pos_regions = intervals.split(line.error_pos, self.num_regions)
+            error_neg_regions = intervals.split(line.error_neg, self.num_regions)
+
+            alpha = 0.3 if line.dim else 0.9
+            for i in range(0, self.num_regions):
+                axs[i].plot(
+                    regions[i],
+                    label=line.label,
+                    alpha=alpha,
+                    color=line.color,
+                    linewidth=0.8
+                )
+                axs[i].fill_between(
+                    np.arange(0, len(regions[i])),
+                    error_neg_regions[i],
+                    error_pos_regions[i],
+                    color=line.color,
+                    alpha=0.2
+                )
+
+                self.reorder_axes(i, axs)
+            c += 1
+
+        # Remove y ticks for anything but the leftmost subplot
+        for i in range(1, self.num_regions):
+            axs[i].yaxis.set_visible(False)
+
+        self.set_legend(axs)
+
+    def reorder_axes(self, i, axs):
+        if i % 2 == 1:
+            axs[i].set_xticks([0, 100, 200, 300, 350])
+            axs[i].set_xticklabels(['-300', '', '', '0', '50'])
+            axs[i].axvline(
+                300, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].axvline(
+                350, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].set_xlim(0, 351)
+        else:
+            axs[i].set_xticks([0, 50, 100, 200, 300, 350])
+            axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
+            axs[i].axvline(
+                0, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].axvline(
+                50, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].set_xlim(0, 351)
+        for tick in axs[i].get_xticklabels():
+            tick.set_rotation(90)
+
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized peak number")
+        leg = axs[0].legend(bbox_to_anchor=(1.6, -0.9), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
+        )
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
+
+class _HeatmapPlotter():
+
+    def __init__(self, values, num_regions, colors, ylabel):
+        """
+        
+        Parameters
+        ----------
+        values
+        num_regions
+        colors
+        ylabel
+        
+        """
+        self.num_regions = num_regions
+        self.values = values
+        self.colors = colors
+        self.ylabel = ylabel
 
     def plot(self, axs):
         c = 0
 
-        error_bounds_included = defaultdict(list)
-        error_bounds_excluded = defaultdict(list)
-        error_bounds_ce = defaultdict(list)
-        error_bounds_nc = defaultdict(list)
-        error_bounds_ni = defaultdict(list)
-        error_bounds_ne = defaultdict(list)
-        error_dictionaries = {
-            "Inclusion error":error_bounds_included,
-            "Exclusion error":error_bounds_excluded,
-            "CE error": error_bounds_ce,
-            "NC error": error_bounds_nc,
-            "NI error": error_bounds_ni,
-            "NE error": error_bounds_ne
-        }
-        for filename, peak in self.peaks.iteritems():
-
-            regions = intervals.split(peak['means'], self.num_regions)
-
-            if peak['show']:
-                alpha = 0.9
-            else:
-                alpha = 0.3
-
-            # print(total_len, region_len)
+        heatmaps = defaultdict(list)
+        labels = []
+        for value in self.values:
+            pvalues = intervals.split(value.fisher_pvalues, self.num_regions)
             for i in range(0, self.num_regions):
+                heatmaps[value.label, i].append(pvalues[i])
+            labels.append(value.label)
+            c += 1
 
 
-
-                for label, d in error_dictionaries.iteritems():
-                    if filename.startswith(label):
-                        if 'plus' in filename:
-                            d['plus'].append(regions[i])
-                        elif 'minus' in filename:
-                            d['minus'].append(regions[i])
-
-                if filename.startswith('Included upon knockdown'):
-                    axs[i].plot(regions[i], color=self.coldict['Included upon knockdown'], label=misc.sane(filename), alpha=alpha, linewidth=0.8)
-                elif filename.startswith('Excluded upon knockdown'):
-                    axs[i].plot(regions[i], color=self.coldict['Excluded upon knockdown'], label=misc.sane(filename), alpha=alpha, linewidth=0.8)
-                elif filename.startswith('Constitutive exons'):
-                    axs[i].plot(regions[i], color=self.coldict['Constitutive exons'], label=misc.sane(filename), alpha=alpha, linewidth=0.8)
-                elif filename.startswith('Native cassette exons'):
-                    axs[i].plot(regions[i], color=self.coldict['Native cassette exons'], label=misc.sane(filename), alpha=alpha, linewidth=0.8)
-                elif filename.startswith('Natively included exons'):
-                    axs[i].plot(regions[i], color=self.coldict['Native included exons'], label=misc.sane(filename), alpha=alpha, linewidth=0.8)
-                elif filename.startswith('Natively excluded exons'):
-                    axs[i].plot(regions[i], color=self.coldict['Native excluded exons'], label=misc.sane(filename), alpha=alpha, linewidth=0.8)
-                """
-                else:
-                    print("Not using ENCODEstyle backgrounds or names: {}".format(filename))
-                    axs[i].plot(regions[i], color=self.cols[c], label=misc.sane(filename)) # default back to original if we're not using ENCODEstyle names.
-                """
-                if i % 2 == 1:
-                    axs[i].set_xticks([0, 100, 200, 300, 350])
-                    axs[i].set_xticklabels(['-300','','','0','50'])
-                    axs[i].axvline(
-                        300, alpha=0.3, linestyle=':', linewidth=0.5
-                    )
-                    axs[i].axvline(
-                        350, alpha=0.3, linestyle=':', linewidth=0.5
-                    )
-                else:
-                    axs[i].set_xticks([0, 50, 100, 200, 300, 350])
-                    axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
-                    axs[i].axvline(
-                        0, alpha=0.3, linestyle=':', linewidth=0.5
-                    )
-                    axs[i].axvline(
-                        50, alpha=0.3, linestyle=':', linewidth=0.5
-                    )
-                for tick in axs[i].get_xticklabels():
-                    tick.set_rotation(90)
-
+        # Remove y ticks for anything but the leftmost subplot
+        # for label in labels:
         for i in range(0, self.num_regions):
-
-
-            for label, d in error_dictionaries.iteritems():
-
-                axs[i].fill_between(
-                    np.arange(0, len(d['minus'][i])),
-                    d['minus'][i],
-                    d['plus'][i],
-                    color=self.error_colordict[label],
-                    alpha=0.2
-                )
-
-        for i in range(1, self.num_regions):
-            axs[i].yaxis.set_visible(False)  # same for y axis.
-        # print(error_bounds_included['plus'][0])
+            axs[i].pcolor(heatmaps[value.label, i], cmap=self.colors, vmax=20, vmin=-20)
+            axs[i].set_yticklabels([''])
+            axs[i].set_yticks([''])
+            # axs[i].yaxis.set_visible(False)
+            axs[i].xaxis.set_visible(False)
+            axs[i].set_xlim(0, 351)
+            # if i == 0 and self.colors=='Reds':
+            #     for k in range(0, 351):
+            #         print(k, value.fisher_pvalues[k])
+        """ Do we need this???
+        if self.ylabel == 'left':
+            axs[0].set_ylabel('-log10(p)\nIncl/KD')
+            axs[0].yaxis.set_label_coords(-0.1, 0.340)
+            axs[0].yaxis.label.set_color(POS_COLOR)
+        elif self.ylabel == 'right':
+            axs[3].set_ylabel('-log10(p)\nExcl/KD', rotation=270)
+            axs[3].yaxis.set_label_position("right")
+            axs[3].yaxis.set_label_coords(1.25, 0.390)
+            axs[3].yaxis.label.set_color(NEG_COLOR)
         """
-        print(error_bounds_included['minus'])
-
-        """
-        c += 1
-        axs[0].set_ylabel("Normalized peak number")
-        leg = axs[0].legend(
-            bbox_to_anchor=(1.8, -0.3), loc=1, mode="expand",
-            borderaxespad=0., ncol=2
-        )
-        for legobj in leg.legendHandles:
-            legobj.set_linewidth(4.0)
 
 def plot_se(peaks, axs):
     """
 
     Parameters
     ----------
-    peaks : dict
+    peaks : list[Peak]
     axs : list
         list of axes subplots
 
@@ -186,8 +169,12 @@ def plot_se(peaks, axs):
     _GenericPlotter
 
     """
-    plotter = _GenericPlotter(peaks, len(axs))
+    plotter = _LinePlotter(peaks, len(axs))
+
     plotter.plot(axs)
+
     return plotter
 
-
+def plot_heatmap(peaks, axs, colors, ylabel):
+    heatmap = _HeatmapPlotter(peaks, len(axs), colors, ylabel)
+    heatmap.plot(axs)

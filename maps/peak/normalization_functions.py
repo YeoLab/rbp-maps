@@ -40,8 +40,5 @@ def std_error(some_list, num_events):
 def dev(p, q, n):
     return math.sqrt(p*q) / math.sqrt(n)
 
-def get_std_error_boundaries(hist, n):
-    plus = [x + y for x, y in zip(norm(hist, n), std_error(hist, n))]
-    minus = [x - y for x, y in zip(norm(hist, n), std_error(hist, n))]
-    return plus, minus
+
 

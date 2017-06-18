@@ -30,7 +30,34 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
                      input_pos_bw, input_neg_bw, input_bam,
                      norm_func, event, exon_or_upstream_offset,
                      intron_or_downstream_offset, is_scaled, confidence,
-                     annotation_dict):
+                     annotation_dict, condition_list, bg_filename):
+    """
+
+    Parameters
+    ----------
+    outfile
+    ip_pos_bw
+    ip_neg_bw
+    ip_bam
+    input_pos_bw
+    input_neg_bw
+    input_bam
+    norm_func
+    event
+    exon_or_upstream_offset
+    intron_or_downstream_offset
+    is_scaled
+    confidence
+    annotation_dict
+
+    condition_list :
+        list of files
+    bg_filename
+
+    Returns
+    -------
+
+    """
 
     rbp = density.ReadDensity.ReadDensity(
         pos=ip_pos_bw, neg=ip_neg_bw, bam=ip_bam
@@ -94,7 +121,11 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
 
     map_obj.create_matrices()
     map_obj.normalize_matrix()
-    map_obj.set_means_and_sems()
+    map_obj.create_lines()
+
+    for condition in condition_list: # for any condition we want to calculate pvalues for
+        print("zscore calc.")
+        map_obj.set_background_and_calculate_zscore(condition, bg_filename)
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
 
@@ -178,21 +209,21 @@ def main():
         default=False,
         action='store_true'
     )
-
-    # Toplevel directory:
-    # TODO: Remove this and implement modules
-    # curdir = os.path.dirname(__file__)
-    # topdir = os.path.abspath(os.path.join(curdir, os.pardir))
-    # topdir = os.path.dirname(os.path.realpath(__file__))
-    # external_script_dir = os.path.join(topdir, 'bin/')
-    # make_bigwigs_script = os.path.join(
-    #     external_script_dir,
-    #     'make_bigwig_files.py'
-    # )
-
-
-    # sys.path.append(external_script_dir)
-    # os.environ["PATH"] += os.pathsep + external_script_dir
+    parser.add_argument(
+        "--to_test",
+        help="annotation filenames that are labeled to"
+             " test against bg control for significance",
+        nargs='+',
+        required=False,
+        default = []
+    )
+    parser.add_argument(
+        "--bgnum",
+        help="number in the annotations list given that is the specified"
+             "control",
+        default=0,
+        type=int,
+    )
 
     make_bigwigs_script = 'make_bigwig_files.py'
     # Process arguments
@@ -235,6 +266,13 @@ def main():
 
     # process flip
     is_unflipped = args.unflip
+
+    # process bgcontrol file
+    if args.bgnum != 0:
+        background_file = annotations[args.bgnum]
+    else:
+        background_file = None
+    files_to_test = args.to_test
 
     """
     Check if bigwigs exist, otherwise make
@@ -314,7 +352,7 @@ def main():
     run_make_density(
         outfile, ip_pos, ip_neg, ip_bam, input_pos, input_neg, input_bam,
         norm_func, event, exon_offset, intron_offset,
-        is_scaled, confidence, annotation_dict
+        is_scaled, confidence, annotation_dict, files_to_test, background_file
     )
 
 if __name__ == "__main__":

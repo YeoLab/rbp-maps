@@ -17,6 +17,7 @@ import matplotlib
 import os
 import sys
 from argparse import ArgumentParser
+import matplotlib.gridspec as gridspec
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -28,20 +29,28 @@ import peak.intervals
 import peak.matrix as mtx
 import peak.normalization_functions as norm
 import peak.PeakPlotter as Plot
+from peak.LineObject import LineObject
 from collections import OrderedDict
+from color import colors
+import seaborn as sns
 
-THRESHOLD=100 # number of events required to not grey the line out
+MIN_EVENT_THRESHOLD=100 # number of events required to not grey the line out
+
+COLOR_PALETTE = sns.color_palette("hls", 8)
+
+BG1_COLOR = 'black' # COLOR_PALETTE['black']
+BG2_COLOR = COLOR_PALETTE[6]
+BG3_COLOR = COLOR_PALETTE[7]
+BG4_COLOR = COLOR_PALETTE[4]
+POS_COLOR = COLOR_PALETTE[0]
+NEG_COLOR = COLOR_PALETTE[5]
+
+COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
 
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-12-19'
 __updated__ = '2015-12-19'
-
-def enough_peaks(n):
-    if n < THRESHOLD:
-        return False
-    else:
-        return True
 
 def main():
     # Setup argument parser
@@ -63,9 +72,21 @@ def main():
     parser.add_argument(
         "-m", "--miso",
         dest="miso",
-        help="miso annotation files (positive, negative, background)",
+        help="miso annotation files (positive, negative)",
         required=True,
         nargs='+'
+    )
+    parser.add_argument(
+        "-bgnum",
+        dest="bgnum",
+        help="specify file number (1-based) to be used as backgrounds"
+             " So if the 3rd file listed is the background, "
+             " we can specify this as option as [3]."
+             " We will use this file as a background for fisher exact"
+             " test calculations.",
+        required=False,
+        type=int,
+        default=0
     )
     parser.add_argument(
         '-f', "--foldchange",
@@ -118,6 +139,7 @@ def main():
     args = parser.parse_args()
 
     misos = args.miso
+    bgnum = args.bgnum
     outfile = args.output
     infile = args.input
     l2fc_cutoff = args.fc
@@ -127,148 +149,77 @@ def main():
     hashing_val = args.hash
     event_type = args.event
 
-    """
-    all exons for now... this may change depending on the annotation we use.
-    """
-    annotation_dict = {
-        'positive-miso':misos[0],'negative-miso':misos[1],'constitutive-exon':misos[2],
-        'native-cassette':misos[3],'native-included':misos[4],'native-excluded':misos[5]
-    }
-    event_dict = {}
+    ### Create the grid + plot structure for plotting rbp-map and heatmap ###
+    out_prefix = os.path.splitext(outfile)[0]
+    map_gridspec = gridspec.GridSpec(
+        ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[9, 1, 1]
+    )
+    map_gridspec.update(hspace=0.6)
+    gs = gridspec.GridSpec(
+        ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[12, 1, 1]
+    )
+    gs.update(hspace=0)
 
-    for label, annotation in annotation_dict.iteritems():
-        event_dict[label] = peak.intervals.read_four_region_miso(
-            annotation, hashing_val, event_type, exon_overhang, intron_overhang
+    f = plt.figure(figsize=(20, 10))
+    plot_axs = []
+    heatmap_axs = []
+
+    plot_axs.append(f.add_subplot(map_gridspec[0]))
+    for i in range(1, 4):
+        plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+    for j in range(4, 8):
+        heatmap_axs.append(f.add_subplot(gs[j]))
+    for j in range(8, 12):
+        heatmap_axs.append(f.add_subplot(gs[j]))
+
+
+    ### Plot the RBP map ###
+    lines = [] # list of LineObjects to plot
+
+
+    c = 0
+    for miso_file in misos:
+        out_hist = out_prefix + '.' + os.path.basename(miso_file) + '.hist'
+        lines.append(
+            LineObject(
+                infile, out_hist, miso_file, l10p_cutoff, l2fc_cutoff,
+                hashing_val, event_type, exon_overhang, intron_overhang,
+                COLORS[c], MIN_EVENT_THRESHOLD
+            )
         )
-    """
-    positive = peak.intervals.read_four_region_miso(
-        positive_miso,
-        hashing_val,
-        event_type,
-        exon_overhang,
-        intron_overhang
-    )  # create teh dictionary
-    """
+        c+=1
 
-    outdir = os.path.splitext(outfile)[0]
-    # miso_names = ['miso','event']
-    # p = pd.read_table(positive_miso, names=miso_names)
-    # n = pd.read_table(negative_miso, names=miso_names)
+    Plot.plot_se(lines, plot_axs)
 
-    p = sum(1 for line in open(annotation_dict['positive-miso']))
-    n = sum(1 for line in open(annotation_dict['negative-miso']))
-    ce = sum(1 for line in open(annotation_dict['constitutive-exon']))
-    nc = sum(1 for line in open(annotation_dict['native-cassette']))
-    ni = sum(1 for line in open(annotation_dict['native-included']))
-    ne = sum(1 for line in open(annotation_dict['native-excluded']))
+    ### If there is background, plot heatmap of p-values for the first two conditions ###
 
-    incl_upon_kd_hist = mtx.make_hist_se(
-        infile, outdir + '.positive.txt', hashing_val,
-        l10p_cutoff, l2fc_cutoff, event_dict['positive-miso'],
-        exon_overhang, intron_overhang
-    )
+    if bgnum != 0: # if we have a background control
+        print("using {} as control.".format(misos[bgnum-1]))
+        background_control = lines[bgnum-1]
 
-    excl_upon_kd_hist = mtx.make_hist_se(
-        infile, outdir + '.negative.txt', hashing_val,
-        l10p_cutoff, l2fc_cutoff, event_dict['negative-miso'],
-        exon_overhang, intron_overhang
-    )
+        for i in range(0, len(lines)):
+            out_fish = out_prefix + '.' + os.path.basename(lines[i].label).replace(' ','_') + '.pvalue'
 
-    ce_exon_hist = mtx.make_hist_se(
-        infile, outdir + '.ce.txt', hashing_val,
-        l10p_cutoff, l2fc_cutoff, event_dict['constitutive-exon'],
-        exon_overhang, intron_overhang
-    )
+            lines[i].set_fisher(background_control)
+            with open(out_fish, 'w') as o:
+                pos = 0
+                for p in lines[i].fisher_pvalues:
+                    o.write('{}\t{}\n'.format(pos, p))
+                    pos+=1
 
-    native_cassette_hist = mtx.make_hist_se(
-        infile, outdir + '.nc.txt', hashing_val,
-        l10p_cutoff, l2fc_cutoff, event_dict['native-cassette'],
-        exon_overhang, intron_overhang
-    )
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0], # red
+            low=COLOR_PALETTE[1] # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
 
-    native_incl_hist = mtx.make_hist_se(
-        infile, outdir + '.ni.txt', hashing_val,
-        l10p_cutoff, l2fc_cutoff, event_dict['native-included'],
-        exon_overhang, intron_overhang
-    )
+        Plot.plot_heatmap(lines[0:1], heatmap_axs[:4], cmap_1, ylabel='left')
+        Plot.plot_heatmap(lines[1:2], heatmap_axs[4:], cmap_2, ylabel='right')
 
-    native_excl_hist = mtx.make_hist_se(
-        infile, outdir + '.ne.txt', hashing_val,
-        l10p_cutoff, l2fc_cutoff, event_dict['native-excluded'],
-        exon_overhang, intron_overhang
-    )
-
-
-    peaks = OrderedDict()
-    peaks['Included upon knockdown ({} Events)'.format(p)] = {'means':norm.norm(incl_upon_kd_hist, p), 'show':enough_peaks(p)}
-    peaks['Excluded upon knockdown ({} Events)'.format(n)] = {'means':norm.norm(excl_upon_kd_hist, n), 'show':enough_peaks(n)}
-    peaks['Constitutive exons ({} Events)'.format(ce)] = {'means':norm.norm(ce_exon_hist, ce), 'show':enough_peaks(ce)}
-    peaks['Native cassette exons ({} Events)'.format(nc)] = {'means':norm.norm(native_cassette_hist, nc), 'show':enough_peaks(nc)}
-    peaks['Natively included exons ({} Events)'.format(ni)] = {'means':norm.norm(native_incl_hist, ni), 'show':enough_peaks(ni)}
-    peaks['Natively excluded exons ({} Events)'.format(ne)] = {'means':norm.norm(native_excl_hist, ne), 'show':enough_peaks(ne)}
-
-    # Hack to show error bars for all/some/none
-    incl_error_plus, incl_error_minus = norm.get_std_error_boundaries(
-        incl_upon_kd_hist, p)
-    excl_error_plus, excl_error_minus = norm.get_std_error_boundaries(
-        excl_upon_kd_hist, n)
-    ce_error_plus, ce_error_minus = norm.get_std_error_boundaries(
-        ce_exon_hist, ce)
-    ncass_error_plus, ncass_error_minus = norm.get_std_error_boundaries(
-        native_cassette_hist, nc)
-    nincl_error_plus, nincl_error_minus = norm.get_std_error_boundaries(
-        native_incl_hist, ni)
-    nexcl_error_plus, nexcl_error_minus = norm.get_std_error_boundaries(
-        native_excl_hist, ne)
-
-    peaks['Inclusion error plus'] = {
-        'means': incl_error_plus, 'show':enough_peaks(p)
-    }
-    peaks['Inclusion error minus'] = {
-        'means': incl_error_minus, 'show': enough_peaks(p)
-    }
-
-    peaks['Exclusion error plus'] = {
-        'means': excl_error_plus, 'show': enough_peaks(n)
-    }
-    peaks['Exclusion error minus'] = {
-        'means': excl_error_minus, 'show': enough_peaks(n)
-    }
-
-    peaks['CE error plus'] = {
-        'means': ce_error_plus, 'show': enough_peaks(ce)
-    }
-    peaks['CE error minus'] = {
-        'means': ce_error_minus, 'show': enough_peaks(ce)
-    }
-
-    peaks['NC error plus'] = {
-        'means': ncass_error_plus, 'show': enough_peaks(ce)
-    }
-    peaks['NC error minus'] = {
-        'means': ncass_error_minus, 'show': enough_peaks(ce)
-    }
-
-    peaks['NI error plus'] = {
-        'means': nincl_error_plus, 'show': enough_peaks(ce)
-    }
-    peaks['NI error minus'] = {
-        'means': nincl_error_minus, 'show': enough_peaks(ce)
-    }
-
-    peaks['NE error plus'] = {
-        'means': nexcl_error_plus, 'show': enough_peaks(ce)
-    }
-    peaks['NE error minus'] = {
-        'means': nexcl_error_minus, 'show': enough_peaks(ce)
-    }
-
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(
-        1, 4, sharey=True, figsize=(16, 8)
-    )
-    axs = [ax1, ax2, ax3, ax4]
-    Plot.plot_se(peaks, axs)
-    plt.tight_layout(pad=1.5 * len(annotation_dict.keys()), w_pad=1)
+    plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
     f.savefig(outfile)
     return 0
 
