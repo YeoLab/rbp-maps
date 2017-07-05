@@ -223,6 +223,42 @@ class Map:
         self.write_intermediate_sems_to_csv()
 
 
+class PhastconMap(Map):
+    def __init__(self, phastcon, output_filename,
+                 annotation=None, upstream_offset=0, downstream_offset=0,
+                 min_density_threshold=0):
+        Map.__init__(self, ip=phastcon, output_filename=output_filename,
+                     norm_function=norm.get_density, annotation=annotation,
+                     upstream_offset=upstream_offset,
+                     downstream_offset=downstream_offset,
+                     min_density_threshold=min_density_threshold,
+                     is_scaled=False, conf=1)
+
+    def create_matrices(self):
+        """
+        Creates a stacked density matrix for each event in each annotation file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+
+        Returns
+        -------
+
+        """
+        matrices = defaultdict(dict)
+        for filename, filetype in self.annotation.iteritems():
+            matrices['phastcon'][filename] = mtx.unscaled_cds(
+                annotation=filename, density=self.ip,
+                upstream_offset=self.upstream_offset,
+                downstream_offset=self.downstream_offset,
+                annotation_type=filetype
+            )
+        self.raw_matrices = matrices
+
+
 class WithInput(Map):
     def __init__(self, ip, inp, output_filename, norm_function,
                  annotation=None, upstream_offset=0, downstream_offset=0,
@@ -256,8 +292,9 @@ class WithInput(Map):
         print("background: {}".format(bg_file_name))
         for line in self.lines:
             if line.annotation == cond_file_name:
-                print("now testing: {} against {}".format(cond_file_name, bg_file_name))
+                # print("now testing: {} against {}".format(cond_file_name, bg_file_name))
                 line.calculate_and_set_significance(self.norm_matrices[bg_file_name])
+
 
     def set_background_and_calculate_zscore(self, cond_file_name, bg_file_name):
         """
@@ -388,11 +425,14 @@ class WithInput(Map):
         -------
 
         """
+        self.plot_as_bed()
+        # TODO check and fix
+        """
         if self.is_scaled:
             self.plot_as_bed()
         else:
             self.plot_as_exon()
-
+        """
     def plot_as_bed(self):
         """
         Plots the entire region in one window. This function is mostly for
@@ -402,7 +442,8 @@ class WithInput(Map):
         :return:
         """
         f, ax = plt.subplots(figsize=(10, 5))
-        RDPlotter.plot_bed(self.means, self.sems, ax)
+
+        RDPlotter.plot_bed(self.lines, [ax])
         f.suptitle(misc.sane(self.output_filename))
         f.savefig(self.output_filename)
 
@@ -416,7 +457,7 @@ class WithInput(Map):
         """
         f, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10, 5))
         axs = [ax1, ax2]
-        RDPlotter.plot_exon(self.means, self.sems, axs)
+        RDPlotter.plot_exon(self.lines, axs)
         exon1 = patches.Rectangle(
             (self.downstream_offset,-1),
             self.upstream_offset,
@@ -435,6 +476,14 @@ class WithInput(Map):
         f.savefig(self.output_filename)
 
     def export_as_deeptool_matrix(self):
+        """
+        Just exports as a zipped file and can be used to import into deeptools
+        if you wanted to visualize using their tools.
+
+        Returns
+        -------
+
+        """
         for filename, matrix in self.norm_matrices.iteritems():
             df = misc.deeptoolify(norm.mask(matrix), self.annotation[filename])
             header = misc.create_deeptool_header(
@@ -968,6 +1017,8 @@ class RetainedIntron(WithInput):
 
         plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
         f.savefig(self.output_filename)
+
+
 class UnscaledCDS(WithInput):
     def __init__(self, ip, inp, output_filename,
                  norm_function, annotation=None, upstream_offset=50,
@@ -1026,6 +1077,7 @@ class UnscaledCDS(WithInput):
         self.raw_matrices = matrices
 
     def plot(self):
+        """
         f, (ax1, ax2,) = plt.subplots(
             1, 2, sharey=True, figsize=(16, 8)
         )
@@ -1037,4 +1089,44 @@ class UnscaledCDS(WithInput):
         plt.tight_layout(pad=8, w_pad=3, h_pad=5)
         f.subplots_adjust(wspace=0)
         f.suptitle(misc.sane(self.output_filename))
+        f.savefig(self.output_filename)
+        """
+        map_gridspec = gridspec.GridSpec(
+            ncols=2, nrows=3, width_ratios=[1, 1], height_ratios=[9, 1, 1]
+        )
+        map_gridspec.update(hspace=0.6)
+        gs = gridspec.GridSpec(
+            ncols=2, nrows=3, width_ratios=[1, 1], height_ratios=[12, 1, 1]
+        )
+        gs.update(hspace=0)
+
+        f = plt.figure(figsize=(20, 10))
+        plot_axs = []
+        heatmap_axs = []
+
+        plot_axs.append(f.add_subplot(map_gridspec[0]))
+        for i in range(1, 2):
+            plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+        for j in range(2, 4):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+        for j in range(4, 6):
+            heatmap_axs.append(f.add_subplot(gs[j]))
+
+        RDPlotter.plot_unscaled_cds(self.lines, plot_axs)
+
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0],  # red
+            low=COLOR_PALETTE[1]  # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
+
+        RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:2], cmap_1,
+                               ylabel='left')
+        RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[2:], cmap_2,
+                               ylabel='right')
+
+        plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
         f.savefig(self.output_filename)

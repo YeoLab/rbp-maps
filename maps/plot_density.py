@@ -96,6 +96,8 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
             conf=confidence
         )
     elif event == 'bed':
+        print('exon offset: {}'.format(exon_or_upstream_offset))
+        print('intron offset: {}'.format(intron_or_downstream_offset))
         map_obj = Map.WithInput(
             rbp, inp, outfile, norm_func,
             annotation_dict, upstream_offset=exon_or_upstream_offset,
@@ -129,6 +131,12 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
 
+def run_phastcons(outfile, phastcons, norm_func, conf, annotation):
+    map_obj = Map.Map(
+        phastcons, outfile, norm_func,
+        annotation=None, upstream_offset=0, downstream_offset=0,
+        min_density_threshold=0, is_scaled=False, conf=0.95
+    )
 
 def main():
     # TODO fix argparse arguments
@@ -198,8 +206,8 @@ def main():
         type=int
     )
     parser.add_argument(
-        "--scale",
-        help="if the features are of different lengths, scale them to 100",
+        "--same_length_features",
+        help="this is true if the features are the same lengths",
         default=False,
         action='store_true'
     )
@@ -224,7 +232,11 @@ def main():
         default=0,
         type=int,
     )
-
+    parser.add_argument(
+        "--phastcon",
+        help="plot phastcons instead of clip read densities (mutually exclusive with --ipbam",
+        default=None,
+    )
     make_bigwigs_script = 'make_bigwig_files.py'
     # Process arguments
     args = parser.parse_args()
@@ -253,6 +265,7 @@ def main():
     # process ip args
     ip_bam = args.ipbam
     input_bam = args.inputbam
+    phastcons = args.phastcon
 
     # be aware this is flipped by default
     ip_pos_bw = ip_bam.replace('.bam', '.norm.neg.bw')
@@ -262,7 +275,7 @@ def main():
     input_neg_bw = input_bam.replace('.bam', '.norm.pos.bw')
 
     # process scaling
-    is_scaled = args.scale
+    is_scaled = args.same_length_features
 
     # process flip
     is_unflipped = args.unflip
@@ -278,34 +291,37 @@ def main():
     Check if bigwigs exist, otherwise make
     """
     call_bigwig_script = False
-    required_input_files = [
-        ip_bam, ip_pos_bw, ip_neg_bw,
-        input_bam, input_pos_bw, input_neg_bw
-    ]
-    for i in required_input_files:
-        if not os.path.isfile(i):
-            print("Warning: {} does not exist".format(i))
-            logger.error("Warning: {} does not exist".format(i))
-            call_bigwig_script = True
-    if call_bigwig_script:
 
-        cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
-            make_bigwigs_script,
-            ip_bam,
-            chrom_sizes,
-            ip_pos_bw, ip_neg_bw
-        )
-        subprocess.call(cmd, shell=True)
-        cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
-            make_bigwigs_script,
-            input_bam,
-            chrom_sizes,
-            input_pos_bw,
-            input_neg_bw
-        )
-        subprocess.call(cmd, shell=True)
-    else:
-        print("all files found, skipping norm.bw creation.")
+    if phastcons is not None:
+        required_input_files = [
+            ip_bam, ip_pos_bw, ip_neg_bw,
+            input_bam, input_pos_bw, input_neg_bw
+        ]
+        for i in required_input_files:
+            if not os.path.isfile(i):
+                print("Warning: {} does not exist".format(i))
+                logger.error("Warning: {} does not exist".format(i))
+                call_bigwig_script = True
+        if call_bigwig_script:
+
+            cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
+                make_bigwigs_script,
+                ip_bam,
+                chrom_sizes,
+                ip_pos_bw, ip_neg_bw
+            )
+            subprocess.call(cmd, shell=True)
+            cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
+                make_bigwigs_script,
+                input_bam,
+                chrom_sizes,
+                input_pos_bw,
+                input_neg_bw
+            )
+            subprocess.call(cmd, shell=True)
+        else:
+            print("all files found, skipping norm.bw creation.")
+
 
     """
     Create ReadDensity objects. Note! This will effectively "flip back" bws
@@ -349,11 +365,16 @@ def main():
     elif norm_level == 3:
         norm_func = norm.get_input
 
-    run_make_density(
-        outfile, ip_pos, ip_neg, ip_bam, input_pos, input_neg, input_bam,
-        norm_func, event, exon_offset, intron_offset,
-        is_scaled, confidence, annotation_dict, files_to_test, background_file
-    )
+    if phastcons is not None:
+        run_phastcons(
+            outfile, phastcons, norm_func, confidence, annotation_dict
+        )
+    else:
+        run_make_density(
+            outfile, ip_pos, ip_neg, ip_bam, input_pos, input_neg, input_bam,
+            norm_func, event, exon_offset, intron_offset,
+            is_scaled, confidence, annotation_dict, files_to_test, background_file
+        )
 
 if __name__ == "__main__":
     main()

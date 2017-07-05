@@ -18,7 +18,7 @@ class LineObject():
         self.num_events = self.event_matrix.shape[0]
         self.label = self._parse_filename_for_plot()
         self.file_label = self._parse_filename()
-        self.means, self.sems, self.std = self._get_means_and_sems()  # 2 lists
+        self.means, self.sems, self.std = self._get_means_and_sems()  # 3 lists
         self.error_pos, self.error_neg = self._get_std_error_boundaries()
         self.dim = False if self.num_events > min_event_threshold else True
         self.ks_pvalues = []

@@ -357,7 +357,7 @@ def alt_5p_splice_site(annotation, density, exon_offset, intron_offset,
     with open(annotation) as f:
         for line in f:
             if not line.startswith('event_name') and not line.startswith('ID'):
-                event = line.rstrip()  # .split('\t')[0]
+                event = line.rstrip()  # .split('\t')[0] ## do we have headers?
                 alt1, alt2, downstream = Feature.Alt_5p_splice_site(
                     event, annotation_type
                 ).get_bedtools()

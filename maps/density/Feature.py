@@ -21,6 +21,14 @@ class Feature():
         self.annotation = annotation_line.rstrip()
 
     def get_bedtool(self):
+        """
+        Returns a bedtool given a BED6 annotation line.
+        Ignores any column past the 6th column.
+
+        Returns
+        -------
+
+        """
         chrom = None
         start = None
         end = None
@@ -484,24 +492,27 @@ class UnscaledCDS(Feature):
             second_chrom, second_start, second_end, \
             second_name, second_score, second_strand = \
                 self.annotation.split('\t')
-            if first_strand == '+':
-                upstream = bt.create_interval_from_list(
-                    [first_chrom, first_start, first_end,
-                     first_name, first_score, first_strand]
-                )
-                downstream = bt.create_interval_from_list(
-                    [second_chrom, second_start, second_end,
-                     second_name, second_score, second_strand]
-                )
-            else:
-                downstream = bt.create_interval_from_list(
-                    [first_chrom, first_start, first_end,
-                     first_name, first_score, first_strand]
-                )
-                upstream = bt.create_interval_from_list(
-                    [second_chrom, second_start, second_end,
-                     second_name, second_score, second_strand]
-                )
+            try:
+                if first_strand == '+':
+                    upstream = bt.create_interval_from_list(
+                        [first_chrom, first_start, first_end,
+                         first_name, first_score, first_strand]
+                    )
+                    downstream = bt.create_interval_from_list(
+                        [second_chrom, second_start, second_end,
+                         second_name, second_score, second_strand]
+                    )
+                else:
+                    downstream = bt.create_interval_from_list(
+                        [first_chrom, first_start, first_end,
+                         first_name, first_score, first_strand]
+                    )
+                    upstream = bt.create_interval_from_list(
+                        [second_chrom, second_start, second_end,
+                         second_name, second_score, second_strand]
+                    )
+            except Exception as e:
+                print("Check this line: {}".format(self.annotation))
         else:
             print("Warning, no valid feature source found. ")
         return upstream, downstream
