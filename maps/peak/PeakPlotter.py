@@ -16,7 +16,7 @@ sns.set_context("talk", font_scale=1.4)
 
 
 class _LinePlotter():
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, legend=True):
         """
         
         Parameters
@@ -28,6 +28,7 @@ class _LinePlotter():
         """
         self.lines = lines
         self.num_regions = num_regions
+        self.legend = legend
         sns.despine(left=True, right=True)
 
     def plot(self, axs):
@@ -39,7 +40,7 @@ class _LinePlotter():
             error_pos_regions = intervals.split(line.error_pos, self.num_regions)
             error_neg_regions = intervals.split(line.error_neg, self.num_regions)
 
-            alpha = 0.3 if line.dim else 0.9
+            alpha = 0.3 if line.dim else 0.8
             for i in range(0, self.num_regions):
                 axs[i].plot(
                     regions[i],
@@ -63,12 +64,15 @@ class _LinePlotter():
         for i in range(1, self.num_regions):
             axs[i].yaxis.set_visible(False)
 
-        self.set_legend(axs)
+        if self.legend:
+            self.set_legend(axs)
 
     def reorder_axes(self, i, axs):
         if i % 2 == 1:
-            axs[i].set_xticks([0, 100, 200, 300, 350])
-            axs[i].set_xticklabels(['-300', '', '', '0', '50'])
+            axs[i].set_xticks([0, 300, 350])
+            axs[i].set_xticklabels(['-300', '0', '50'])
+            # axs[i].set_xticks([0, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-300', '', '', '0', '50'])
             axs[i].axvline(
                 300, alpha=0.3, linestyle=':', linewidth=0.5
             )
@@ -77,8 +81,10 @@ class _LinePlotter():
             )
             axs[i].set_xlim(0, 351)
         else:
-            axs[i].set_xticks([0, 50, 100, 200, 300, 350])
-            axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
+            axs[i].set_xticks([0, 50, 350])
+            axs[i].set_xticklabels(['-50', '0', '300'])
+            # axs[i].set_xticks([0, 50, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
             axs[i].axvline(
                 0, alpha=0.3, linestyle=':', linewidth=0.5
             )
@@ -142,19 +148,8 @@ class _HeatmapPlotter():
             # if i == 0 and self.colors=='Reds':
             #     for k in range(0, 351):
             #         print(k, value.fisher_pvalues[k])
-        """ Do we need this???
-        if self.ylabel == 'left':
-            axs[0].set_ylabel('-log10(p)\nIncl/KD')
-            axs[0].yaxis.set_label_coords(-0.1, 0.340)
-            axs[0].yaxis.label.set_color(POS_COLOR)
-        elif self.ylabel == 'right':
-            axs[3].set_ylabel('-log10(p)\nExcl/KD', rotation=270)
-            axs[3].yaxis.set_label_position("right")
-            axs[3].yaxis.set_label_coords(1.25, 0.390)
-            axs[3].yaxis.label.set_color(NEG_COLOR)
-        """
 
-def plot_se(peaks, axs):
+def plot_se(peaks, axs, legend=True):
     """
 
     Parameters
@@ -169,7 +164,7 @@ def plot_se(peaks, axs):
     _GenericPlotter
 
     """
-    plotter = _LinePlotter(peaks, len(axs))
+    plotter = _LinePlotter(peaks, len(axs), legend)
 
     plotter.plot(axs)
 

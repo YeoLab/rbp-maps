@@ -13,9 +13,11 @@ import pyBigWig
 import pysam
 import os
 
+
 class Density:
     def values(self, chrom, start, end, strand):
         return 0
+
 
 class ReadDensity(Density):
     """
@@ -94,6 +96,7 @@ class ReadDensity(Density):
         except RuntimeError:
             # usually occurs when no chromosome exists in the bigwig file
             return [np.NaN] * abs(start - end)
+
 
 class Phastcon(Density):
 

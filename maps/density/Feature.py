@@ -83,7 +83,7 @@ class Skipped_exon(Feature):
         elif self.source == 'xintao':
             pass
         elif self.source == 'eric':
-            pos, upstream, skipped, downstream = self.annotation.split('\t')
+            pos, upstream, skipped, downstream, incl, excl = self.annotation.split('\t')
             chrom, strand, up_junc, down_junc, se_region = pos.split('|')
 
             if strand == '-':  # these are coord-based not *stream-based.
@@ -213,7 +213,7 @@ class Alt_5p_splice_site(Feature):
                 [chrom, shortES, shortEE, '0', '0', strand]
             )
         elif self.source == 'eric':
-            junctions, short_isoform, long_isoform, downstream_exon = \
+            junctions, short_isoform, long_isoform, downstream_exon, incl, excl = \
                 self.annotation.split('\t')
             chrom, strand, _, _, _ = junctions.split('|')
 
@@ -302,7 +302,7 @@ class Alt_3p_splice_site(Feature):
                 [chrom, shortES, shortEE, '0', '0', strand]
             )
         elif self.source == 'eric':
-            junctions, upstream_exon, long_isoform, short_isoform = \
+            junctions, upstream_exon, long_isoform, short_isoform, incl, excl = \
                 self.annotation.split('\t')
             chrom, strand, _, _, _ = junctions.split('|')
 
@@ -409,7 +409,71 @@ class Retained_intron(Feature):
             else:
                 print("strand not correct")
                 return -1
+        elif self.source == 'twobed':
+            lower_chrom, lower_start, lower_end, \
+            lower_name, lower_score, lower_strand, \
+            upper_chrom, upper_start, upper_end, \
+            upper_name, upper_score, upper_strand = self.annotation.split('\t')
+
+            if lower_strand == '+' and upper_strand == '+':
+                upstream = bt.create_interval_from_list(
+                    [lower_chrom, lower_start, lower_end, lower_name, lower_score, lower_strand]
+                )
+                downstream = bt.create_interval_from_list(
+                    [upper_chrom, upper_start, upper_end, upper_name, upper_score, upper_strand]
+                )
+            elif lower_strand == '-' and upper_strand == '-':
+                downstream = bt.create_interval_from_list(
+                    [lower_chrom, lower_start, lower_end, lower_name,
+                     lower_score, lower_strand]
+                )
+                upstream = bt.create_interval_from_list(
+                    [upper_chrom, upper_start, upper_end, upper_name,
+                     upper_score, upper_strand]
+                )
+            else:
+                print("Warning, strand not correct!")
+                return -1
         return upstream, downstream
+
+
+class ATAC_intron(Feature):
+    """
+    Unused for now
+    """
+    def __init__(self, annotation_line, annotation_format):
+        Feature.__init__(self, annotation_line, annotation_format)
+
+    def get_bedtools(self):
+        upstream = None
+        downstream = None
+
+        if self.source == 'twobed':
+            lower_chrom, lower_start, lower_end, \
+            lower_name, lower_score, lower_strand, \
+            upper_chrom, upper_start, upper_end, \
+            upper_name, upper_score, upper_strand = self.annotation.split('\t')
+
+            if lower_strand == '+' and upper_strand == '+':
+                upstream = bt.create_interval_from_list(
+                    [lower_chrom, lower_start, lower_end, lower_name, lower_score, lower_strand]
+                )
+                downstream = bt.create_interval_from_list(
+                    [upper_chrom, upper_start, upper_end, upper_name, upper_score, upper_strand]
+                )
+            elif lower_strand == '-' and upper_strand == '-':
+                downstream = bt.create_interval_from_list(
+                    [lower_chrom, lower_start, lower_end, lower_name,
+                     lower_score, lower_strand]
+                )
+                upstream = bt.create_interval_from_list(
+                    [upper_chrom, upper_start, upper_end, upper_name,
+                     upper_score, upper_strand]
+                )
+            else:
+                print("Warning, strand not correct!")
+                return -1
+            return upstream, downstream
 
 
 class Mutually_exclusive_exon(Feature):
@@ -486,7 +550,7 @@ class UnscaledCDS(Feature):
         downstream : pybedtools.BedTool
 
         """
-        if self.source == 'twobeds':
+        if self.source == 'twobed':
             first_chrom, first_start, first_end, \
             first_name, first_score, first_strand, \
             second_chrom, second_start, second_end, \

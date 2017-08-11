@@ -53,7 +53,7 @@ class _Plotter():
                 if line.dim:
                     alpha = 0.3
                 else:
-                    alpha = 1
+                    alpha = 0.8
                 axs[i].plot(
                     regions[i], color=self.cols[c], label=line.label,
                     alpha=alpha, linewidth=0.8
@@ -65,9 +65,12 @@ class _Plotter():
                     color=self.cols[c],
                     alpha=0.2
                 )
+                axs[i].yaxis.set_ticks_position('left')
+                axs[i].xaxis.set_ticks_position('bottom')
                 if i > 0:
                     axs[i].yaxis.set_visible(False)
                 self.renumber_axes(i, axs)
+
             c+=1
         self.set_legend(axs)
 
@@ -93,8 +96,10 @@ class _SEPlotter(_Plotter):
 
     def renumber_axes(self, i, axs):
         if i % 2 == 1:
-            axs[i].set_xticks([0, 100, 200, 300, 350])
-            axs[i].set_xticklabels(['-300', '', '', '0', '50'])
+            axs[i].set_xticks([0, 300, 350])
+            axs[i].set_xticklabels(['-300', '0', '50'])
+            # axs[i].set_xticks([0, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-300', '', '', '0', '50'])
             axs[i].axvline(
                 300, alpha=0.3, linestyle=':', linewidth=0.5
             )
@@ -103,8 +108,10 @@ class _SEPlotter(_Plotter):
             )
             axs[i].set_xlim(0, 351)
         else:
-            axs[i].set_xticks([0, 50, 100, 200, 300, 350])
-            axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
+            axs[i].set_xticks([0, 50, 350])
+            axs[i].set_xticklabels(['-50', '0', '300'])
+            # axs[i].set_xticks([0, 50, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
             axs[i].axvline(
                 0, alpha=0.3, linestyle=':', linewidth=0.5
             )
@@ -134,13 +141,13 @@ class _A3SSPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_xaxis(self, i, axs):
+    def renumber_axes(self, i, axs):
         axs[0].set_xticks([0, 50, 150, 250, 350])
-        axs[0].set_xticklabels(['-50', '0', '', '', '300'])
+        axs[0].set_xticklabels(['-50', '0', '', '', '300'], rotation=90)
         axs[1].set_xticks([0, 100, 200, 300, 350])
-        axs[1].set_xticklabels(['-300', '', '', '0', '50'])
+        axs[1].set_xticklabels(['-300', '', '', '0', '50'], rotation=90)
         axs[2].set_xticks([0, 100, 200, 300, 350])
-        axs[2].set_xticklabels(['-300', '', '', '0', '50'])
+        axs[2].set_xticklabels(['-300', '', '', '0', '50'], rotation=90)
 
         axs[0].axvline(
             50, alpha=0.3, linestyle=':', linewidth=0.5
@@ -155,7 +162,7 @@ class _A3SSPlotter(_Plotter):
     def set_legend(self, axs):
         axs[0].set_ylabel("Normalized density")
 
-        leg = axs[0].legend(bbox_to_anchor=(1.3, -0.9), loc=1, mode="expand",
+        leg = axs[0].legend(bbox_to_anchor=(1.75, -0.9), loc=1, mode="expand",
         # leg = axs[0].legend(bbox_to_anchor=(1, -0.9), loc=1, mode="expand",
             borderaxespad=0., ncol=2
         )
@@ -170,7 +177,7 @@ class _A5SSPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_xaxis(self, i, axs):
+    def renumber_axes(self, i, axs):
         axs[0].set_xticks([0, 50, 150, 250, 350])
         axs[0].set_xticklabels(['-50', '0', '', '', '300'])
         axs[1].set_xticks([0, 50, 150, 250, 350])
@@ -206,7 +213,7 @@ class _RetainedIntronPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_xaxis(self, i, axs):
+    def renumber_axes(self, i, axs):
         axs[0].set_xticks([0, 50, 150, 250, 350])
         axs[0].set_xticklabels(['-50', '0', '', '', '300'])
         axs[1].set_xticks([0, 50, 150, 250, 350])
@@ -235,7 +242,7 @@ class _UnscaledCDSPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_xaxis(self, i, region_len, axs):
+    def renumber_axes(self, i, region_len, axs):
         """
         Renames x axis to fit up/downstream directionality.
 
@@ -289,7 +296,7 @@ class _HeatmapPlotter():
             axs[i].pcolor(
                 heatmaps[value.label, i],
                 cmap=self.colors,
-                vmax=4, vmin=-4,
+                vmax=2, vmin=-2,
                 alpha=1
             )
             axs[i].set_yticklabels([''])

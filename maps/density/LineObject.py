@@ -40,15 +40,30 @@ class LineObject():
         -------
         nice_label : basestring
         """
-        return os.path.splitext(
-            os.path.basename(self.annotation)
-        )[0].replace(
+        if 'shorter-isoform' in os.path.basename(self.annotation):
+            firstparsed_string = 'shorter-isoform'
+        elif 'longer-isoform' in os.path.basename(self.annotation):
+            firstparsed_string = 'longer-isoform'
+        elif 'included-upon-knockdown' in os.path.basename(self.annotation):
+            firstparsed_string = 'included-upon-knockdown'
+        elif 'excluded-upon-knockdown' in os.path.basename(self.annotation):
+            firstparsed_string = 'excluded-upon-knockdown'
+        else:
+            firstparsed_string = os.path.basename(self.annotation)
+
+        firstparsed_string = firstparsed_string.replace(
+            'HepG2-', '').replace(
+            'K562-', '').replace(
             '-', ' ').replace(
-            '_', ' ').replace(
-            'HepG2', '').replace(
-            'K562', '') + " ({} events)".format(
+            '_', ' ') + " ({} events)".format(
             self.num_events
         )
+        firstparsed_string = '{}{}'.format(
+            firstparsed_string[0].upper(), firstparsed_string[1:]
+        )
+        return os.path.splitext(
+            firstparsed_string
+        )[0]
 
     def _parse_filename(self):
         return os.path.splitext(
@@ -101,7 +116,7 @@ class LineObject():
         Parameters
         ----------
         means
-        error
+        errori
 
         Returns
         -------
@@ -141,8 +156,8 @@ class LineObject():
 
         Parameters
         ----------
-        bg_matrix
-
+        bg_line : density.LineObject
+            Line of the 'background' that current object with compare to.
         Returns
         -------
 

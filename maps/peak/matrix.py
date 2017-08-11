@@ -17,8 +17,12 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
         event_dict['downstream_region_skipped_exon'] = {}
         event_dict['upstream_region_downstream_exon'] = {}
 
+        intersect = 0
+        no_intersect = 0
+
         with open(infile, 'r') as f:
             for line in f:
+                intersects_any_region = False # if this flag is true, then a peak intersects a region.
                 line = line.split('\t')
                 chrom = line[0]
                 pstart = int(line[1])
@@ -50,6 +54,7 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
                             if pstart > int(exregstop):  # pass if peak stop occurs before exon region start
                                 continue
                             tmphash[event] = 1  # otherwise peak falls within event region
+                            intersects_any_region = True
                     # event_dict[region_type][p_str] = tmphash
                     for event in tmphash:
                         if stra == "+":
@@ -73,6 +78,14 @@ def make_hist_se(infile, outfile, hashing_val, l10p_cutoff, l2fc_cutoff, all_exo
                                                                                    relative_pos)
                         else:
                             print("strand error\n")
+                if intersects_any_region:
+                    intersect+=1
+                else:
+                    no_intersect+=1
+        o = open(outfile + '.overlapping_peaks', 'w')
+        o.write('infile\tintersect\tno_intersect\n')
+        o.write('{}\t{}\t{}'.format(infile, intersect, no_intersect))
+        o.close()
         # print(event_dict['downstream_region_skipped_exon']['chr11:47237411-47237505:+'])
 
         # count from 0 to max
