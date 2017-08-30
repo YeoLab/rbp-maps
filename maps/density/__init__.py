@@ -5,5 +5,6 @@ __all__ = [
     'three_prime_site',
     'five_prime_site',
     'intervals',
-    'ReadDensity'
+    'ReadDensity',
+    'color/'
 ]

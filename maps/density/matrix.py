@@ -58,7 +58,7 @@ def scaled_region(
     # TODO: pd.DataFrame.from_dict(dic, orient="index")
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
                 event = line.rstrip()
                 interval = Feature.Feature(
                     event, annotation_type
@@ -117,7 +117,7 @@ def unscaled_region(
     down = {}  # describes for every event the downstream region
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
                 event = line.rstrip()  # .split('\t')[0]
 
                 interval = Feature.Feature(
@@ -192,7 +192,7 @@ def mutually_exc_exon(annotation, density, exon_offset, intron_offset,
 
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
                 event = line.rstrip()  # .split('\t')[0]
                 upstream_interval, upstream_mxe_interval, \
                     downstream_mxe_interval, downstream_interval = \
@@ -286,10 +286,9 @@ def retained_intron(annotation, density,
 
     three_upstream = {}
     five_downstream = {}
-
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
                 event = line.rstrip()  # .split('\t')[0]
                 upstream_interval, downstream_interval = Feature.Retained_intron(
                     event,
@@ -315,7 +314,6 @@ def retained_intron(annotation, density,
 
     ra = pd.concat([three_upstream, five_downstream], axis=1)
     ra.columns = range(0, ra.shape[1])
-
     return ra
 
 
@@ -356,8 +354,8 @@ def alt_5p_splice_site(annotation, density, exon_offset, intron_offset,
 
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
-                event = line.rstrip()  # .split('\t')[0]
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
+                event = line.rstrip()  # .split('\t')[0] ## do we have headers?
                 alt1, alt2, downstream = Feature.Alt_5p_splice_site(
                     event, annotation_type
                 ).get_bedtools()
@@ -424,7 +422,7 @@ def alt_3p_splice_site(annotation, density, exon_offset, intron_offset,
 
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
                 event = line.rstrip()
                 upstream, alt1, alt2 = Feature.Alt_3p_splice_site(
                     event, annotation_type
@@ -492,7 +490,7 @@ def skipped_exon(annotation, density, exon_offset, intron_offset,
 
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID'):
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
                 event = line.rstrip()
                 try:
                     upstream_interval, interval, downstream_interval = \
@@ -579,7 +577,7 @@ def unscaled_cds(annotation, density, upstream_offset,
         for line in f:
             count += 1
             if not line.startswith('event_name') and not line.startswith(
-                    'ID'):
+                    'ID') and not line.startswith('annotation'):
                 event = line.rstrip()  # .split('\t')[0]
                 try:
                     upstream_interval, downstream_interval = Feature.UnscaledCDS(

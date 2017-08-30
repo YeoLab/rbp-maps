@@ -1,94 +1,160 @@
 import matplotlib
 matplotlib.use('Agg')
-
+from collections import defaultdict
 from matplotlib import rc
 rc('text', usetex=False)
 matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
+import pandas as pd
 import intervals
 import seaborn as sns
+import numpy as np
 
-sns.set_style("whitegrid")
-
-COLOR_PALETTE = sns.color_palette("hls", 8)
-
-import misc
+sns.set_style("ticks")
+sns.set_context("talk", font_scale=1.4)
 
 
-class _Plotter:
-    def __init__(self, means, num_regions=1):
+class _LinePlotter():
+    def __init__(self, lines, num_regions, legend=True):
         """
-        means : dict
-            {filename:pandas.Series}
+        
+        Parameters
+        ----------
+        lines : LineObject.LineObject
+            LineObjects to plot
+        num_regions : int
+            number of regions to plot
         """
-        self.means = means
+        self.lines = lines
         self.num_regions = num_regions
-        self.cols = COLOR_PALETTE  # TODO remove it
-
-    def plot(self, ax):
-        c = 0
-        for filename, mean in self.means.iteritems():
-            ax.plot(mean, color=self.cols[c], label=misc.sane(filename))
-            for tick in ax.get_xticklabels():
-                tick.set_rotation(90)
-
-            c += 1
-        ax.legend(
-            bbox_to_anchor=(
-                0., 1.2, 1., .102), loc=1, mode="expand", borderaxespad=0.
-        )
-
-
-class _GenericPlotter(_Plotter):
-    def __init__(self, means, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        """
-        _Plotter.__init__(self, means, num_regions)
+        self.legend = legend
         sns.despine(left=True, right=True)
 
     def plot(self, axs):
         c = 0
-        for filename, mean in self.means.iteritems():
-            total_len = len(mean)
-            if "INCLUDED" in filename.upper():
-                color = self.cols[0]
-            elif "EXCLUDED" in filename.upper():
-                color = self.cols[5]
-            else:
-                color = 'black'
+        for line in self.lines:
 
-            region_len = total_len / self.num_regions
-            regions = intervals.split(mean, self.num_regions)
-            # print(total_len, region_len)
+            regions = intervals.split(line.means, self.num_regions)
+
+            error_pos_regions = intervals.split(line.error_pos, self.num_regions)
+            error_neg_regions = intervals.split(line.error_neg, self.num_regions)
+
+            alpha = 0.3 if line.dim else 0.8
             for i in range(0, self.num_regions):
-
                 axs[i].plot(
-
-                    regions[i], color=color, label=misc.sane(filename)
-                    # regions[i], color=self.cols[c], label=misc.sane(filename)
+                    regions[i],
+                    label=line.label,
+                    alpha=alpha,
+                    color=line.color,
+                    linewidth=0.8
                 )
-                if i % 2 == 1:
-                    axs[i].set_xticklabels(xrange(-region_len, 1, 50))
-                for tick in axs[i].get_xticklabels():
-                    tick.set_rotation(90)
+                axs[i].fill_between(
+                    np.arange(0, len(regions[i])),
+                    error_neg_regions[i],
+                    error_pos_regions[i],
+                    color=line.color,
+                    alpha=0.2
+                )
 
+                self.reorder_axes(i, axs)
             c += 1
-        axs[0].set_ylabel("Number of peaks")
-        axs[0].legend(
-            bbox_to_anchor=(0., 1.1, 1., .102), loc=1, mode="expand",
-            borderaxespad=0.
+
+        # Remove y ticks for anything but the leftmost subplot
+        for i in range(1, self.num_regions):
+            axs[i].yaxis.set_visible(False)
+
+        if self.legend:
+            self.set_legend(axs)
+
+    def reorder_axes(self, i, axs):
+        if i % 2 == 1:
+            axs[i].set_xticks([0, 300, 350])
+            axs[i].set_xticklabels(['-300', '0', '50'])
+            # axs[i].set_xticks([0, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-300', '', '', '0', '50'])
+            axs[i].axvline(
+                300, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].axvline(
+                350, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].set_xlim(0, 351)
+        else:
+            axs[i].set_xticks([0, 50, 350])
+            axs[i].set_xticklabels(['-50', '0', '300'])
+            # axs[i].set_xticks([0, 50, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
+            axs[i].axvline(
+                0, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].axvline(
+                50, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].set_xlim(0, 351)
+        for tick in axs[i].get_xticklabels():
+            tick.set_rotation(90)
+
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized peak number")
+        leg = axs[0].legend(bbox_to_anchor=(1.6, -0.9), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
         )
 
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
 
-def plot_se(means, axs):
+
+class _HeatmapPlotter():
+
+    def __init__(self, values, num_regions, colors, ylabel):
+        """
+        
+        Parameters
+        ----------
+        values
+        num_regions
+        colors
+        ylabel
+        
+        """
+        self.num_regions = num_regions
+        self.values = values
+        self.colors = colors
+        self.ylabel = ylabel
+
+    def plot(self, axs):
+        c = 0
+
+        heatmaps = defaultdict(list)
+        labels = []
+        for value in self.values:
+            pvalues = intervals.split(value.fisher_pvalues, self.num_regions)
+            for i in range(0, self.num_regions):
+                heatmaps[value.label, i].append(pvalues[i])
+            labels.append(value.label)
+            c += 1
+
+
+        # Remove y ticks for anything but the leftmost subplot
+        # for label in labels:
+        for i in range(0, self.num_regions):
+            axs[i].pcolor(heatmaps[value.label, i], cmap=self.colors, vmax=20, vmin=-20)
+            axs[i].set_yticklabels([''])
+            axs[i].set_yticks([''])
+            # axs[i].yaxis.set_visible(False)
+            axs[i].xaxis.set_visible(False)
+            axs[i].set_xlim(0, 351)
+            # if i == 0 and self.colors=='Reds':
+            #     for k in range(0, 351):
+            #         print(k, value.fisher_pvalues[k])
+
+def plot_se(peaks, axs, legend=True):
     """
 
     Parameters
     ----------
-    means : dict
+    peaks : list[Peak]
     axs : list
         list of axes subplots
 
@@ -98,8 +164,12 @@ def plot_se(means, axs):
     _GenericPlotter
 
     """
-    plotter = _GenericPlotter(means, len(axs))
+    plotter = _LinePlotter(peaks, len(axs), legend)
+
     plotter.plot(axs)
+
     return plotter
 
-
+def plot_heatmap(peaks, axs, colors, ylabel):
+    heatmap = _HeatmapPlotter(peaks, len(axs), colors, ylabel)
+    heatmap.plot(axs)

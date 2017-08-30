@@ -35,9 +35,15 @@ __version__ = 0.1
 __date__ = '2015-12-19'
 __updated__ = '2015-12-19'
 
+<<<<<<< HEAD
 def norm(some_list):
     some_list_ps = [x+1 for x in some_list]
     normed_list = [float(x)/sum(some_list_ps) for x in some_list_ps]
+=======
+def norm(some_list, num_events):
+    some_list_ps = [x+1 for x in some_list]
+    normed_list = [float(x)/num_events for x in some_list_ps]
+>>>>>>> encode_website_rbp_maps
     return normed_list
 
 def main():
@@ -170,7 +176,11 @@ def main():
         event_dict['positive-miso'],
         exon_overhang,
         intron_overhang
+<<<<<<< HEAD
     ))
+=======
+    ), p)
+>>>>>>> encode_website_rbp_maps
     # peaks['Excluded upon knockdown ({} Events)'.format(n)] = norm(mtx.make_hist_se(
     peaks['hepg2 nSEcenter ({} Events)'.format(n)] = norm(mtx.make_hist_se(
         infile,
@@ -181,7 +191,11 @@ def main():
         event_dict['negative-miso'],
         exon_overhang,
         intron_overhang
+<<<<<<< HEAD
     ))
+=======
+    ), n)
+>>>>>>> encode_website_rbp_maps
     # peaks['Constitutive exons ({} Events)'.format(ce)] = norm(mtx.make_hist_se(
     peaks['hepg2 strict CE all ({} Events)'.format(ce)] = norm(mtx.make_hist_se(
         infile,
@@ -192,7 +206,11 @@ def main():
         event_dict['constitutive-exon'],
         exon_overhang,
         intron_overhang
+<<<<<<< HEAD
     ))
+=======
+    ), ce)
+>>>>>>> encode_website_rbp_maps
     # peaks['Native cassette exons ({} Events)'.format(nc)] = norm(mtx.make_hist_se(
     peaks['k562 nseAll ({} Events)'.format(nc)] = norm(mtx.make_hist_se(
         infile,
@@ -203,7 +221,11 @@ def main():
         event_dict['native-cassette'],
         exon_overhang,
         intron_overhang
+<<<<<<< HEAD
     ))
+=======
+    ), nc)
+>>>>>>> encode_website_rbp_maps
     # peaks['Natively included exons ({} Events)'.format(ni)] = norm(mtx.make_hist_se(
     peaks['k562 nSEcenter ({} Events)'.format(ni)] = norm(mtx.make_hist_se(
         infile,
@@ -214,7 +236,11 @@ def main():
         event_dict['native-included'],
         exon_overhang,
         intron_overhang
+<<<<<<< HEAD
     ))
+=======
+    ), ni)
+>>>>>>> encode_website_rbp_maps
     # peaks['Natively excluded exons ({} Events)'.format(ne)] = norm(mtx.make_hist_se(
     peaks['k562 strict CE all ({} Events)'.format(ne)] = norm(mtx.make_hist_se(
         infile,
@@ -225,7 +251,11 @@ def main():
         event_dict['native-excluded'],
         exon_overhang,
         intron_overhang
+<<<<<<< HEAD
     ))
+=======
+    ), ne)
+>>>>>>> encode_website_rbp_maps
 
     f, (ax1, ax2, ax3, ax4) = plt.subplots(
         1, 4, sharey=True, figsize=(16, 8)

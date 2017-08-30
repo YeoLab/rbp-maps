@@ -17,6 +17,10 @@ import matplotlib
 import os
 import sys
 from argparse import ArgumentParser
+<<<<<<< HEAD
+=======
+import matplotlib.gridspec as gridspec
+>>>>>>> encode_website_rbp_maps
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -26,9 +30,29 @@ matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 import peak.intervals
 import peak.matrix as mtx
+import peak.normalization_functions as norm
 import peak.PeakPlotter as Plot
+<<<<<<< HEAD
 from collections import defaultdict
+=======
+from peak.LineObject import LineObject
+from collections import OrderedDict
+from color import colors
+import seaborn as sns
+>>>>>>> encode_website_rbp_maps
 
+MIN_EVENT_THRESHOLD=100 # number of events required to not grey the line out
+
+COLOR_PALETTE = sns.color_palette("hls", 8)
+
+BG1_COLOR = 'black' # COLOR_PALETTE['black']
+BG2_COLOR = COLOR_PALETTE[6]
+BG3_COLOR = COLOR_PALETTE[7]
+BG4_COLOR = COLOR_PALETTE[4]
+POS_COLOR = COLOR_PALETTE[0]
+NEG_COLOR = COLOR_PALETTE[5]
+
+COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
 
 __all__ = []
 __version__ = 0.1
@@ -55,11 +79,26 @@ def main():
     parser.add_argument(
         "-m", "--miso",
         dest="miso",
-        help="miso annotation files (positive, negative, background)",
+        help="miso annotation files (positive, negative)",
         required=True,
         nargs='+'
     )
     parser.add_argument(
+<<<<<<< HEAD
+=======
+        "-bgnum",
+        dest="bgnum",
+        help="specify file number (1-based) to be used as backgrounds"
+             " So if the 3rd file listed is the background, "
+             " we can specify this as option as [3]."
+             " We will use this file as a background for fisher exact"
+             " test calculations.",
+        required=False,
+        type=int,
+        default=0
+    )
+    parser.add_argument(
+>>>>>>> encode_website_rbp_maps
         '-f', "--foldchange",
         dest="fc",
         help="log2 fold change cutoff (default = 0)",
@@ -110,6 +149,7 @@ def main():
     args = parser.parse_args()
 
     misos = args.miso
+    bgnum = args.bgnum
     outfile = args.output
     infile = args.input
     l2fc_cutoff = args.fc
@@ -119,63 +159,77 @@ def main():
     hashing_val = args.hash
     event_type = args.event
 
-    """
-    all exons for now... this may change depending on the annotation we use.
-    """
-    positive_miso = misos[0]
-    negative_miso = misos[1]
-
-    positive = peak.intervals.read_four_region_miso(
-        positive_miso,
-        hashing_val,
-        event_type,
-        exon_overhang,
-        intron_overhang
-    )  # create teh dictionary
-
-    negative = peak.intervals.read_four_region_miso(
-        negative_miso,
-        hashing_val,
-        event_type,
-        exon_overhang,
-        intron_overhang
-    )  # create teh dictionary
-
-    peaks = defaultdict()
-    outdir = os.path.splitext(outfile)[0]
-    # miso_names = ['miso','event']
-    # p = pd.read_table(positive_miso, names=miso_names)
-    # n = pd.read_table(negative_miso, names=miso_names)
-
-    p = sum(1 for line in open(positive_miso))
-    n = sum(1 for line in open(negative_miso))
-    peaks['Included-upon-knockdown ({} Events)'.format(p)] = mtx.make_hist_se(
-        infile,
-        outdir + '.positive.txt',
-        hashing_val,
-        l10p_cutoff,
-        l2fc_cutoff,
-        positive,
-        exon_overhang,
-        intron_overhang
+    ### Create the grid + plot structure for plotting rbp-map and heatmap ###
+    out_prefix = os.path.splitext(outfile)[0]
+    map_gridspec = gridspec.GridSpec(
+        ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[9, 1, 1]
     )
-    peaks['Excluded-upon-knockdown ({} Events)'.format(n)] = mtx.make_hist_se(
-        infile,
-        outdir + '.negative.txt',
-        hashing_val,
-        l10p_cutoff,
-        l2fc_cutoff,
-        negative,
-        exon_overhang,
-        intron_overhang
+    map_gridspec.update(hspace=0.6)
+    gs = gridspec.GridSpec(
+        ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[12, 1, 1]
     )
+    gs.update(hspace=0)
 
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(
-        1, 4, sharey=True, figsize=(16, 8)
-    )
-    axs = [ax1, ax2, ax3, ax4]
-    Plot.plot_se(peaks, axs)
-    plt.tight_layout(pad=8, w_pad=3, h_pad=5)
+    f = plt.figure(figsize=(20, 10))
+    plot_axs = []
+    heatmap_axs = []
+
+    plot_axs.append(f.add_subplot(map_gridspec[0]))
+    for i in range(1, 4):
+        plot_axs.append(f.add_subplot(map_gridspec[i], sharey=plot_axs[0]))
+    for j in range(4, 8):
+        heatmap_axs.append(f.add_subplot(gs[j]))
+    for j in range(8, 12):
+        heatmap_axs.append(f.add_subplot(gs[j]))
+
+
+    ### Plot the RBP map ###
+    lines = [] # list of LineObjects to plot
+
+
+    c = 0
+    for miso_file in misos:
+        out_hist = out_prefix + '.' + os.path.basename(miso_file) + '.hist'
+        lines.append(
+            LineObject(
+                infile, out_hist, miso_file, l10p_cutoff, l2fc_cutoff,
+                hashing_val, event_type, exon_overhang, intron_overhang,
+                COLORS[c], MIN_EVENT_THRESHOLD
+            )
+        )
+        c+=1
+
+    Plot.plot_se(lines, plot_axs)
+
+    ### If there is background, plot heatmap of p-values for the first two conditions ###
+
+    if bgnum != 0: # if we have a background control
+        print("using {} as control.".format(misos[bgnum-1]))
+        background_control = lines[bgnum-1]
+
+        for i in range(0, len(lines)):
+            out_fish = out_prefix + '.' + os.path.basename(lines[i].label).replace(' ','_') + '.pvalue'
+
+            lines[i].set_fisher(background_control)
+            with open(out_fish, 'w') as o:
+                pos = 0
+                for p in lines[i].fisher_pvalues:
+                    o.write('{}\t{}\n'.format(pos, p))
+                    pos+=1
+
+        cmap_1 = colors.diverge_map(
+            high=COLOR_PALETTE[0], # red
+            low=COLOR_PALETTE[1] # orange/yellow
+        )
+        cmap_2 = colors.diverge_map(
+            high=COLOR_PALETTE[5],
+            low=COLOR_PALETTE[3]
+        )
+
+        Plot.plot_heatmap(lines[0:1], heatmap_axs[:4], cmap_1, ylabel='left')
+        Plot.plot_heatmap(lines[1:2], heatmap_axs[4:], cmap_2, ylabel='right')
+
+    plt.tight_layout(pad=1.5 * 5.5, w_pad=0.5)
     f.savefig(outfile)
     return 0
 

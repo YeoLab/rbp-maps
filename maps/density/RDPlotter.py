@@ -10,8 +10,12 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import OrderedDict, defaultdict
+import numpy as np
 
-sns.set_style("whitegrid")
+sns.set_style("ticks")
+sns.set_context("talk", font_scale=1.4)
+
+MIN_N_THRESHOLD = 100
 
 COLOR_PALETTE = sns.color_palette("hls", 8)
 BG1_COLOR = 'black' # COLOR_PALETTE['black']
@@ -24,225 +28,282 @@ NEG_COLOR = COLOR_PALETTE[5]
 COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
 
 import intervals
-import misc
 
-
-class _Plotter:
-    def __init__(self, means, sems, num_regions=1):
-        """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
-        """
-        self.means = means
-        self.sems = sems
+class _Plotter():
+    def __init__(self, lines, num_regions, colors=COLORS):
+        self.lines = lines
         self.num_regions = num_regions
-        self.cols = COLORS  # TODO remove it
+        self.cols = colors
 
-    def plot(self, ax):
+    def plot(self, axs):
+
         c = 0
-        for filename, mean in self.means.iteritems():
-            ax.plot(mean['means'], color=self.cols[c],
-                    label=misc.sane(filename))
-            for tick in ax.get_xticklabels():
-                tick.set_rotation(90)
+        for line in self.lines:
 
-            c += 1
-        ax.legend(
-            bbox_to_anchor=(
-                0., 1.2, 1., .102), loc=1, mode="expand", borderaxespad=0.
+            regions = intervals.split(line.means, self.num_regions)
+            error_pos_regions = intervals.split(
+                line.error_pos, self.num_regions
+            )
+            error_neg_regions = intervals.split(
+                line.error_neg, self.num_regions
+            )
+
+            for i in range(0, self.num_regions):
+                if line.dim:
+                    alpha = 0.3
+                else:
+                    alpha = 0.8
+                axs[i].plot(
+                    regions[i], color=line.color, label=line.label,
+                    alpha=alpha, linewidth=0.8
+                )
+                axs[i].fill_between(
+                    np.arange(0, len(regions[i])),
+                    error_pos_regions[i],
+                    error_neg_regions[i],
+                    color=line.color,
+                    alpha=0.2
+                )
+                axs[i].yaxis.set_ticks_position('left')
+                axs[i].xaxis.set_ticks_position('bottom')
+                if i > 0:
+                    axs[i].yaxis.set_visible(False)
+                self.renumber_axes(i, axs)
+
+            c+=1
+        self.set_legend(axs)
+
+    def renumber_axes(self, i, axs):
+        pass
+
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized values")
+        leg = axs[0].legend()
+        # bbox_to_anchor=(1.6, -0.9), loc=1, mode="expand",
+        #                    borderaxespad=0., ncol=2
+        #                    )
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
+class _SEPlotter(_Plotter):
+    def __init__(self, lines, num_regions, colors=COLORS):
+        _Plotter.__init__(
+            self,
+            lines, num_regions, colors
         )
 
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
+        if i % 2 == 1:
+            axs[i].set_xticks([0, 300, 350])
+            axs[i].set_xticklabels(['-300', '0', '50'])
+            # axs[i].set_xticks([0, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-300', '', '', '0', '50'])
+            axs[i].axvline(
+                300, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].axvline(
+                350, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].set_xlim(0, 351)
+        else:
+            axs[i].set_xticks([0, 50, 350])
+            axs[i].set_xticklabels(['-50', '0', '300'])
+            # axs[i].set_xticks([0, 50, 100, 200, 300, 350])
+            # axs[i].set_xticklabels(['-50', '0', '', '', '', '300'])
+            axs[i].axvline(
+                0, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].axvline(
+                50, alpha=0.3, linestyle=':', linewidth=0.5
+            )
+            axs[i].set_xlim(0, 351)
+        for tick in axs[i].get_xticklabels():
+            tick.set_rotation(90)
 
-class _GenericPlotter(_Plotter):
-    def __init__(self, means, sems, num_regions):
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized density")
+
+        leg = axs[0].legend(bbox_to_anchor=(1.6, -0.9), loc=1, mode="expand",
+        # leg = axs[0].legend(bbox_to_anchor=(1, -0.9), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
+        )
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
+
+class _A3SSPlotter(_Plotter):
+    def __init__(self, lines, num_regions, colors=COLORS):
+        _Plotter.__init__(
+            self,
+            lines, num_regions, colors
+        )
+
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
+        axs[0].set_xticks([0, 50, 150, 250, 350])
+        axs[0].set_xticklabels(['-50', '0', '', '', '300'], rotation=90)
+        axs[1].set_xticks([0, 100, 200, 300, 350])
+        axs[1].set_xticklabels(['-300', '', '', '0', '50'], rotation=90)
+        axs[2].set_xticks([0, 100, 200, 300, 350])
+        axs[2].set_xticklabels(['-300', '', '', '0', '50'], rotation=90)
+
+        axs[0].axvline(
+            50, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[1].axvline(
+            300, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[2].axvline(
+            300, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized density")
+
+        leg = axs[0].legend(bbox_to_anchor=(1.75, -0.9), loc=1, mode="expand",
+        # leg = axs[0].legend(bbox_to_anchor=(1, -0.9), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
+        )
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
+class _A5SSPlotter(_Plotter):
+    def __init__(self, lines, num_regions, colors=COLORS):
+        _Plotter.__init__(
+            self,
+            lines, num_regions, colors
+        )
+
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
+        axs[0].set_xticks([0, 50, 150, 250, 350])
+        axs[0].set_xticklabels(['-50', '0', '', '', '300'])
+        axs[1].set_xticks([0, 50, 150, 250, 350])
+        axs[1].set_xticklabels(['-50', '0', '', '', '300'])
+        axs[2].set_xticks([0, 100, 200, 300, 350])
+        axs[2].set_xticklabels(['-300', '', '', '0', '50'])
+
+        axs[0].axvline(
+            50, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[1].axvline(
+            50, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[2].axvline(
+            300, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized density")
+
+        leg = axs[0].legend(bbox_to_anchor=(1.3, -0.9), loc=1, mode="expand",
+        # leg = axs[0].legend(bbox_to_anchor=(1, -0.9), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
+        )
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
+class _RetainedIntronPlotter(_Plotter):
+    def __init__(self, lines, num_regions, colors=COLORS):
+        _Plotter.__init__(
+            self,
+            lines, num_regions, colors
+        )
+
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
+        axs[0].set_xticks([0, 50, 150, 250, 350])
+        axs[0].set_xticklabels(['-50', '0', '', '', '300'])
+        axs[1].set_xticks([0, 50, 150, 250, 350])
+        axs[1].set_xticklabels(['-300', '', '', '0', '50'])
+
+        axs[0].axvline(
+            50, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[1].axvline(
+            300, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+
+    def set_legend(self, axs):
+        axs[0].set_ylabel("Normalized density")
+        leg = axs[0].legend(bbox_to_anchor=(0.7, -0.9), loc=1, mode="expand",
+            borderaxespad=0., ncol=2
+        )
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
+class _UnscaledCDSPlotter(_Plotter):
+    def __init__(self, lines, num_regions, colors=COLORS):
+        _Plotter.__init__(
+            self,
+            lines, num_regions, colors
+        )
+
+    def renumber_axes(self, i, region_len, axs):
         """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
+        Renames x axis to fit up/downstream directionality.
+
+        Parameters
+        ----------
+        i : int
+            number of regions
+        region_len : int
+            length of the entire region
+        axs : matplotib axes[]
+            list of matplotlib subplot axes
+        Returns
+        -------
+
         """
-        _Plotter.__init__(self, means, sems, num_regions)
-        sns.despine(left=True, right=True)
+        if i % 2 == 1:
+            axs[i].set_xticklabels(xrange(-region_len, 1, 50))
+
+class _HeatmapPlotter():
+    def __init__(self, values, num_regions, colors, ylabel):
+        """
+
+        Parameters
+        ----------
+        values
+        num_regions
+        colors
+        ylabel
+
+        """
+        self.num_regions = num_regions
+        self.values = values
+        self.colors = colors
+        self.ylabel = ylabel
 
     def plot(self, axs):
         c = 0
 
-        for filename, mean in self.means.iteritems():
-            # TODO: turn this into an option
-            """
-            if "INCLUDED" in filename.upper():
-                color = self.cols[0]
-            elif "EXCLUDED" in filename.upper():
-                color = self.cols[5]
-            else:
-                color = 'black'
-            """
-            total_len = len(mean['means'])
-
-            region_len = total_len / self.num_regions
-            regions = intervals.split(mean['means'], self.num_regions)
+        heatmaps = defaultdict(list)
+        labels = []
+        for value in self.values:
+            z_scores = intervals.split(value.z_scores, self.num_regions)
             for i in range(0, self.num_regions):
-                # print("filename: {}".format(filename))
-                axs[i].plot(
-                    # regions[i], color=color, label=misc.sane(filename)
-                    regions[i], color=self.cols[c], label=(
-                        filename + " ({} events)".format(mean['nums'])
-                    )
-                )
-                self.renumber_xaxis(i, region_len, axs)
-                for tick in axs[i].get_xticklabels():
-                    tick.set_rotation(90)
-
+                heatmaps[value.label, i].append(z_scores[i])
+            labels.append(value.label)
             c += 1
-        axs[0].set_ylabel("Normalized Density")
 
-        axs[0].legend(
-            bbox_to_anchor=(0, -0.1), loc=1, mode="expand",
-            borderaxespad=0.
-        )
+        # Remove y ticks for anything but the leftmost subplot
+        # for label in labels:
+        for i in range(0, self.num_regions):
+            axs[i].pcolor(
+                heatmaps[value.label, i],
+                cmap=self.colors,
+                vmax=2, vmin=-2,
+                alpha=1
+            )
+            axs[i].set_yticklabels([''])
+            axs[i].set_yticks([''])
+            axs[i].xaxis.set_visible(False)
+            axs[i].set_xlim(0, 351)
 
-    def renumber_xaxis(self, i, region_len, axs):
-        """
-        Renames x axis to fit up/downstream directionality.
-
-        Parameters
-        ----------
-        i : int
-            number of regions
-        region_len : int
-            length of the entire region
-        axs : matplotib axes[]
-            list of matplotlib subplot axes
-        Returns
-        -------
-
-        """
-        if i % 2 == 1:
-            axs[i].set_xticklabels(xrange(-region_len, 1, 50))
-
-
-class _SEPlotter(_GenericPlotter):
-    def __init__(self, means, sems, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
-        """
-        _GenericPlotter.__init__(self, means, sems, num_regions)
-
-    def renumber_xaxis(self, i, region_len, axs):
-        """
-        Renames x axis to fit up/downstream directionality.
-
-        Parameters
-        ----------
-        i : int
-            number of regions
-        region_len : int
-            length of the entire region
-        axs : matplotib axes[]
-            list of matplotlib subplot axes
-        Returns
-        -------
-
-        """
-        if i % 2 == 1:
-            axs[i].set_xticklabels(xrange(-region_len+50, 51, 50))
-
-
-class _A3SSPlotter(_GenericPlotter):
-    def __init__(self, means, sems, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
-        """
-        _GenericPlotter.__init__(self, means, sems, num_regions)
-
-    def renumber_xaxis(self, i, region_len, axs):
-        axs[0].set_xticklabels(xrange(-50, region_len+51, 50))
-        axs[1].set_xticklabels(xrange(-region_len+50, 51, 50))
-        axs[2].set_xticklabels(xrange(-region_len+50, 51, 50))
-
-
-class _A5SSPlotter(_GenericPlotter):
-    def __init__(self, means, sems, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
-        """
-        _GenericPlotter.__init__(self, means, sems, num_regions)
-
-    def renumber_xaxis(self, i, region_len, axs):
-        axs[0].set_xticklabels(xrange(-50, region_len + 51, 50))
-        axs[1].set_xticklabels(xrange(-50, region_len + 51, 50))
-        axs[2].set_xticklabels(xrange(-region_len, 1, 50))
-
-
-class _RetainedIntronPlotter(_GenericPlotter):
-    def __init__(self, means, sems, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
-        """
-        _GenericPlotter.__init__(self, means, sems, num_regions)
-
-    def renumber_xaxis(self, i, region_len, axs):
-        """
-        Renames x axis to fit up/downstream directionality.
-
-        Parameters
-        ----------
-        i : int
-            number of regions
-        region_len : int
-            length of the entire region
-        axs : matplotib axes[]
-            list of matplotlib subplot axes
-        Returns
-        -------
-
-        """
-        if i % 2 == 1:
-            axs[i].set_xticklabels(xrange(-region_len, 1, 50))
-
-
-class _UnscaledCDSPlotter(_Plotter):
-    def __init__(self, means, sems, num_regions):
-        """
-        means : dict
-            {filename:pandas.Series}
-        sems : dict
-            {filename:pandas.Series}
-        """
-        _GenericPlotter.__init__(self, means, sems, num_regions)
-
-    def renumber_xaxis(self, i, region_len, axs):
-        """
-        Renames x axis to fit up/downstream directionality.
-
-        Parameters
-        ----------
-        i : int
-            number of regions
-        region_len : int
-            length of the entire region
-        axs : matplotib axes[]
-            list of matplotlib subplot axes
-        Returns
-        -------
-
-        """
-        if i % 2 == 1:
-            axs[i].set_xticklabels(xrange(-region_len, 1, 50))
+            # axs[i].yaxis.set_visible(False)
 
 def plot_across_multiple_axes(means, sems, axs):
     """
@@ -262,12 +323,12 @@ def plot_across_multiple_axes(means, sems, axs):
     _GenericPlotter
 
     """
-    plotter = _GenericPlotter(means, sems, len(axs))
+    plotter = _Plotter(means, sems, len(axs))
     plotter.plot(axs)
     return plotter
 
 
-def plot_bed(means, sems, ax):
+def plot_bed(lines, axs, colors=COLORS):
     """
 
     Parameters
@@ -285,8 +346,9 @@ def plot_bed(means, sems, ax):
     _Plotter
 
     """
-    plotter = _Plotter(means, sems)
-    plotter.plot(ax)
+    # plotter = _Plotter(means, sems)
+    plotter = _Plotter(lines, len(axs), colors)
+    plotter.plot(axs)
     return plotter
 
 
@@ -294,26 +356,19 @@ def plot_exon(means, sems, axs):
     return plot_across_multiple_axes(means, sems, axs)
 
 
-def plot_splice(means, sems, axs):
-    # TODO: deprecate
-    return plot_across_multiple_axes(means, sems, axs)
-
-
-def plot_ri(means, sems, axs):
-    plotter = _RetainedIntronPlotter(means, sems, len(axs))
+def plot_ri(lines, axs, colors=COLORS):
+    plotter = _RetainedIntronPlotter(lines, len(axs), colors)
     plotter.plot(axs)
     return plotter
 
 
-def plot_se(means, sems, axs):
+def plot_se(lines, axs, colors=COLORS):
     """
 
     Parameters
     ----------
-    means : dict
+    lines : LineObject
 
-    sems : dict
-        std error for each annotation file
     axs : list
         list of 4 axes subplots
 
@@ -321,7 +376,7 @@ def plot_se(means, sems, axs):
     -------
 
     """
-    plotter = _SEPlotter(means, sems, len(axs))
+    plotter = _SEPlotter(lines, len(axs), colors)
     plotter.plot(axs)
     return plotter
 
@@ -347,7 +402,7 @@ def plot_mxe(means, sems, axs):
     return plotter
 
 
-def plot_a3ss(means, sems, axs):
+def plot_a3ss(lines, axs, colors=COLORS):
     """
 
     Parameters
@@ -363,12 +418,12 @@ def plot_a3ss(means, sems, axs):
     -------
 
     """
-    plotter = _A3SSPlotter(means, sems, len(axs))
+    plotter = _A3SSPlotter(lines, len(axs), colors)
     plotter.plot(axs)
     return plotter
 
 
-def plot_a5ss(means, sems, axs):
+def plot_a5ss(lines, axs, colors=COLORS):
     """
 
     Parameters
@@ -384,7 +439,7 @@ def plot_a5ss(means, sems, axs):
     -------
 
     """
-    plotter = _A5SSPlotter(means, sems, len(axs))
+    plotter = _A5SSPlotter(lines, len(axs), colors)
     plotter.plot(axs)
     return plotter
 
@@ -410,3 +465,8 @@ def plot_unscaled_cds(means, sems, axs, upstream_offset, downstream_offset):
     )
     plotter.plot(axs)
     return plotter
+
+
+def plot_heatmap(lines, axs, colors, ylabel):
+    heatmap = _HeatmapPlotter(lines, len(axs), colors, ylabel)
+    heatmap.plot(axs)

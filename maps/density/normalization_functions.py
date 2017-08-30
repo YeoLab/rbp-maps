@@ -359,3 +359,4 @@ def get_means_and_sems(df, conf=0.95):
         means.append(single_col.mean())
         sems.append(single_col.sem())
     return means, sems
+

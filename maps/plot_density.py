@@ -30,7 +30,34 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
                      input_pos_bw, input_neg_bw, input_bam,
                      norm_func, event, exon_or_upstream_offset,
                      intron_or_downstream_offset, is_scaled, confidence,
-                     annotation_dict):
+                     annotation_dict, condition_list, bg_filename):
+    """
+
+    Parameters
+    ----------
+    outfile
+    ip_pos_bw
+    ip_neg_bw
+    ip_bam
+    input_pos_bw
+    input_neg_bw
+    input_bam
+    norm_func
+    event
+    exon_or_upstream_offset
+    intron_or_downstream_offset
+    is_scaled
+    confidence
+    annotation_dict
+
+    condition_list :
+        list of files
+    bg_filename
+
+    Returns
+    -------
+
+    """
 
     rbp = density.ReadDensity.ReadDensity(
         pos=ip_pos_bw, neg=ip_neg_bw, bam=ip_bam
@@ -69,6 +96,8 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
             conf=confidence
         )
     elif event == 'bed':
+        print('exon offset: {}'.format(exon_or_upstream_offset))
+        print('intron offset: {}'.format(intron_or_downstream_offset))
         map_obj = Map.WithInput(
             rbp, inp, outfile, norm_func,
             annotation_dict, upstream_offset=exon_or_upstream_offset,
@@ -84,6 +113,14 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
             min_density_threshold=0,
             is_scaled=is_scaled, conf=confidence,
         )
+    elif event == 'atac':
+        map_obj = Map.ATACIntron(
+            rbp, inp, outfile, norm_func,
+            annotation_dict, exon_offset=exon_or_upstream_offset,
+            intron_offset=intron_or_downstream_offset,
+            min_density_threshold=0,
+            conf=confidence
+        )
     else:
         map_obj = Map.SkippedExon(
             rbp, inp, outfile, norm_func,
@@ -94,10 +131,20 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
 
     map_obj.create_matrices()
     map_obj.normalize_matrix()
-    map_obj.set_means_and_sems()
+    map_obj.create_lines()
+
+    for condition in condition_list: # for any condition we want to calculate pvalues for
+        print("zscore calc.")
+        map_obj.set_background_and_calculate_zscore(condition, bg_filename)
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
 
+def run_phastcons(outfile, phastcons, norm_func, conf, annotation):
+    map_obj = Map.Map(
+        phastcons, outfile, norm_func,
+        annotation=None, upstream_offset=0, downstream_offset=0,
+        min_density_threshold=0, is_scaled=False, conf=0.95
+    )
 
 def main():
     # TODO fix argparse arguments
@@ -136,7 +183,7 @@ def main():
     parser.add_argument(
         "--chrom_sizes",
         help="chrom.sizes file from UCSC goldenpath",
-        required=True
+        required=False
     )
     parser.add_argument(
         "--exon_offset",
@@ -167,8 +214,8 @@ def main():
         type=int
     )
     parser.add_argument(
-        "--scale",
-        help="if the features are of different lengths, scale them to 100",
+        "--same_length_features",
+        help="this is true if the features are the same lengths",
         default=False,
         action='store_true'
     )
@@ -178,22 +225,32 @@ def main():
         default=False,
         action='store_true'
     )
-
-    # Toplevel directory:
-    # TODO: Remove this and implement modules
-    # curdir = os.path.dirname(__file__)
-    # topdir = os.path.abspath(os.path.join(curdir, os.pardir))
-    # topdir = os.path.dirname(os.path.realpath(__file__))
-    # external_script_dir = os.path.join(topdir, 'bin/')
-    # make_bigwigs_script = os.path.join(
-    #     external_script_dir,
-    #     'make_bigwig_files.py'
-    # )
-
-
-    # sys.path.append(external_script_dir)
-    # os.environ["PATH"] += os.pathsep + external_script_dir
-
+    parser.add_argument(
+        "--to_test",
+        help="annotation filenames that are labeled to"
+             " test against bg control for significance",
+        nargs='+',
+        required=False,
+        default = []
+    )
+    parser.add_argument(
+        "--bgnum",
+        help="number in the annotations list given that is the specified"
+             "control",
+        default=0,
+        type=int,
+    )
+    parser.add_argument(
+        "--phastcon",
+        help="plot phastcons instead of clip read densities (mutually exclusive with --ipbam",
+        default=None,
+    )
+    parser.add_argument(
+        "--encode_settings",
+        help="removes anything before included-upon-knockdown/excluded-upon-knockdown",
+        action='store_true',
+        default=False
+    )
     make_bigwigs_script = 'make_bigwig_files.py'
     # Process arguments
     args = parser.parse_args()
@@ -222,6 +279,7 @@ def main():
     # process ip args
     ip_bam = args.ipbam
     input_bam = args.inputbam
+    phastcons = args.phastcon
 
     # be aware this is flipped by default
     ip_pos_bw = ip_bam.replace('.bam', '.norm.neg.bw')
@@ -231,43 +289,53 @@ def main():
     input_neg_bw = input_bam.replace('.bam', '.norm.pos.bw')
 
     # process scaling
-    is_scaled = args.scale
+    is_scaled = args.same_length_features
 
     # process flip
     is_unflipped = args.unflip
+
+    # process bgcontrol file
+    if args.bgnum != 0:
+        background_file = annotations[args.bgnum]
+    else:
+        background_file = None
+    files_to_test = args.to_test
 
     """
     Check if bigwigs exist, otherwise make
     """
     call_bigwig_script = False
-    required_input_files = [
-        ip_bam, ip_pos_bw, ip_neg_bw,
-        input_bam, input_pos_bw, input_neg_bw
-    ]
-    for i in required_input_files:
-        if not os.path.isfile(i):
-            print("Warning: {} does not exist".format(i))
-            logger.error("Warning: {} does not exist".format(i))
-            call_bigwig_script = True
-    if call_bigwig_script:
 
-        cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
-            make_bigwigs_script,
-            ip_bam,
-            chrom_sizes,
-            ip_pos_bw, ip_neg_bw
-        )
-        subprocess.call(cmd, shell=True)
-        cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
-            make_bigwigs_script,
-            input_bam,
-            chrom_sizes,
-            input_pos_bw,
-            input_neg_bw
-        )
-        subprocess.call(cmd, shell=True)
-    else:
-        print("all files found, skipping norm.bw creation.")
+    if phastcons is not None:
+        required_input_files = [
+            ip_bam, ip_pos_bw, ip_neg_bw,
+            input_bam, input_pos_bw, input_neg_bw
+        ]
+        for i in required_input_files:
+            if not os.path.isfile(i):
+                print("Warning: {} does not exist".format(i))
+                logger.error("Warning: {} does not exist".format(i))
+                call_bigwig_script = True
+        if call_bigwig_script:
+
+            cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
+                make_bigwigs_script,
+                ip_bam,
+                chrom_sizes,
+                ip_pos_bw, ip_neg_bw
+            )
+            subprocess.call(cmd, shell=True)
+            cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
+                make_bigwigs_script,
+                input_bam,
+                chrom_sizes,
+                input_pos_bw,
+                input_neg_bw
+            )
+            subprocess.call(cmd, shell=True)
+        else:
+            print("all files found, skipping norm.bw creation.")
+
 
     """
     Create ReadDensity objects. Note! This will effectively "flip back" bws
@@ -311,11 +379,16 @@ def main():
     elif norm_level == 3:
         norm_func = norm.get_input
 
-    run_make_density(
-        outfile, ip_pos, ip_neg, ip_bam, input_pos, input_neg, input_bam,
-        norm_func, event, exon_offset, intron_offset,
-        is_scaled, confidence, annotation_dict
-    )
+    if phastcons is not None:
+        run_phastcons(
+            outfile, phastcons, norm_func, confidence, annotation_dict
+        )
+    else:
+        run_make_density(
+            outfile, ip_pos, ip_neg, ip_bam, input_pos, input_neg, input_bam,
+            norm_func, event, exon_offset, intron_offset,
+            is_scaled, confidence, annotation_dict, files_to_test, background_file
+        )
 
 if __name__ == "__main__":
     main()
