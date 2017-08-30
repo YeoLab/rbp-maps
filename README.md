@@ -84,5 +84,20 @@ plot_density --ip ip.bam \
 ```--phastcon``` (beta): instead of providing BAM files, you can also map phastcon data to
 determine the level of conservation over a set of events. For example: ```--phastcon hg19_phastcons.bw```
 
+# Example Outputs
+
+## Skipped Exon
+![skippedexon](https://github.com/YeoLab/rbp-maps/blob/master/images/skippedexon.png)
+
+## Alternative 3' Splice Sites
+![alt3prime](https://github.com/YeoLab/rbp-maps/blob/master/images/alternative3p.png)
+
+## Alternative 5' Splice Sites
+![alt5prime](https://github.com/YeoLab/rbp-maps/blob/master/images/alternative5p.png)
+
+## Retained Intron
+![retained](https://github.com/YeoLab/rbp-maps/blob/master/images/retainedintron.png)
+
+
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
 
