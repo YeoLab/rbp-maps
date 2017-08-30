@@ -331,10 +331,7 @@ class WithInput(Map):
         self.write_intermediate_norm_matrices_to_csv()
         self.write_intermediate_means_to_csv()
         self.write_intermediate_sems_to_csv()
-<<<<<<< HEAD
-=======
         self.write_intermediate_pvalues_to_csv()
->>>>>>> encode_website_rbp_maps
         # self.export_as_deeptool_matrix()
 
     def create_matrices(self):

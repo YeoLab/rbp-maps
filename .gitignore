@@ -104,9 +104,4 @@ ENV/
 
 # datadir to ignore
 api_examples/
-<<<<<<< HEAD
-
-=======
 /site
-=======
->>>>>>> encode_website_rbp_maps

@@ -17,10 +17,7 @@ import matplotlib
 import os
 import sys
 from argparse import ArgumentParser
-<<<<<<< HEAD
-=======
 import matplotlib.gridspec as gridspec
->>>>>>> encode_website_rbp_maps
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -32,14 +29,11 @@ import peak.intervals
 import peak.matrix as mtx
 import peak.normalization_functions as norm
 import peak.PeakPlotter as Plot
-<<<<<<< HEAD
 from collections import defaultdict
-=======
 from peak.LineObject import LineObject
 from collections import OrderedDict
 from color import colors
 import seaborn as sns
->>>>>>> encode_website_rbp_maps
 
 MIN_EVENT_THRESHOLD=100 # number of events required to not grey the line out
 
@@ -84,8 +78,6 @@ def main():
         nargs='+'
     )
     parser.add_argument(
-<<<<<<< HEAD
-=======
         "-bgnum",
         dest="bgnum",
         help="specify file number (1-based) to be used as backgrounds"
@@ -98,7 +90,6 @@ def main():
         default=0
     )
     parser.add_argument(
->>>>>>> encode_website_rbp_maps
         '-f', "--foldchange",
         dest="fc",
         help="log2 fold change cutoff (default = 0)",
