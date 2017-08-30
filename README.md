@@ -56,14 +56,14 @@ For example, if you would like to plot the z-score for included and excluded eve
 your command would look something like:
 
 ```
-plot_density --ip ip.bam \
- --input input.bam \
- --annotations INCLUDED.txt EXCLUDED.txt BACKGROUND.txt \
- --annotation_type rmats rmats rmats \
- --output rbfox2.svg \
- --event se \
- --bgnum 2 \
- --to_test INCLUDED.txt EXCLUDED.txt
+plot_density --ip ip.bam \ # IP BAM file from eCLIP output
+ --input input.bam \ # input BAM file from eCLIP output
+ --annotations INCLUDED.txt EXCLUDED.txt BACKGROUND.txt \ # these are typically all JunctionCountsOnly.txt formatted files from RMATS
+ --annotation_type rmats rmats rmats \ # for each annotation file specified, please specify the format (typically rmats)
+ --output rbfox2.svg \ # output file name
+ --event se \ # event (se/a3ss/a5ss/ri)
+ --bgnum 2 \ # 0-based number of the background file (in this example, it is 2 because BACKGROUND.txt is the 3rd file listed)
+ --to_test INCLUDED.txt EXCLUDED.txt # the filenames of the test conditions whose distributions you want to get z-scores from with respect to (--bgnum)
 ```
 
 ```--exon_offset```: (untested) controls how many bases into an exon you would like to plot (default 50 bases)
@@ -98,6 +98,11 @@ determine the level of conservation over a set of events. For example: ```--phas
 ## Retained Intron
 ![retained](https://github.com/YeoLab/rbp-maps/blob/master/images/retainedintron.png)
 
+# Other Notes
+- The script will automatically create intermediate raw and normalized matrix files for every condition you provide... the files can get big!! but they can be loaded into pandas if you wanted to look at a few events. They're tab separated
 
+- At least for ENCODE, we set a cutoff of a minimum 100 events (rmats annotation file should have at least 100 lines), otherwise the signal will look messy
+
+- Interactive nodes are preferred, for annotations with a ton of events TSCC will run out of memory. I think it's fine for a few hundred or so, but I've tried with 700k and it didn't go over so well...
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
 
