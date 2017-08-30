@@ -55,6 +55,10 @@ NEG_COLOR = COLOR_PALETTE[5]
 
 COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
 
+RED = COLOR_PALETTE[0]
+ORANGE = COLOR_PALETTE[1]
+BLUE = COLOR_PALETTE[5]
+GREEN = COLOR_PALETTE[3]
 
 class Map:
     def __init__(self, ip, output_filename, norm_function,
@@ -551,12 +555,12 @@ class SkippedExon(WithInput):
         RDPlotter.plot_se(self.lines, plot_axs)
 
         cmap_1 = colors.diverge_map(
-            high=COLOR_PALETTE[0],  # red
-            low=COLOR_PALETTE[1]  # orange/yellow
+            high=RED,  # red
+            low=ORANGE  # orange/yellow
         )
         cmap_2 = colors.diverge_map(
-            high=COLOR_PALETTE[5],
-            low=COLOR_PALETTE[3]
+            high=BLUE,
+            low=GREEN
         )
         RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:4], cmap_1, ylabel='left')
         RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[4:], cmap_2, ylabel='right')
@@ -657,12 +661,12 @@ class MutuallyExclusiveExon(WithInput):
         RDPlotter.plot_se(self.lines, plot_axs)
 
         cmap_1 = colors.diverge_map(
-            high=COLOR_PALETTE[0],  # red
-            low=COLOR_PALETTE[1]  # orange/yellow
+            high=RED,  # red
+            low=ORANGE  # orange/yellow
         )
         cmap_2 = colors.diverge_map(
-            high=COLOR_PALETTE[5],
-            low=COLOR_PALETTE[3]
+            high=BLUE,
+            low=GREEN
         )
         RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:6], cmap_1, ylabel='left')
         RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[6:], cmap_2, ylabel='right')
@@ -751,12 +755,12 @@ class Alt3PSpliceSite(WithInput):
         RDPlotter.plot_a3ss(self.lines, plot_axs)
 
         cmap_1 = colors.diverge_map(
-            high=COLOR_PALETTE[0],  # red
-            low=COLOR_PALETTE[1]  # orange/yellow
+            high=RED,  # red
+            low=ORANGE  # orange/yellow
         )
         cmap_2 = colors.diverge_map(
-            high=COLOR_PALETTE[5],
-            low=COLOR_PALETTE[3]
+            high=BLUE,
+            low=GREEN
         )
 
         RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:3], cmap_1, ylabel='left')
@@ -847,12 +851,12 @@ class Alt5PSpliceSite(WithInput):
         RDPlotter.plot_a5ss(self.lines, plot_axs)
 
         cmap_1 = colors.diverge_map(
-            high=COLOR_PALETTE[0],  # red
-            low=COLOR_PALETTE[1]  # orange/yellow
+            high=RED,  # red
+            low=ORANGE  # orange/yellow
         )
         cmap_2 = colors.diverge_map(
-            high=COLOR_PALETTE[5],
-            low=COLOR_PALETTE[3]
+            high=BLUE,
+            low=GREEN
         )
 
         RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:3], cmap_1,
@@ -955,12 +959,12 @@ class RetainedIntron(WithInput):
         RDPlotter.plot_ri(self.lines, plot_axs)
 
         cmap_1 = colors.diverge_map(
-            high=COLOR_PALETTE[0],  # red
-            low=COLOR_PALETTE[1]  # orange/yellow
+            high=RED,  # red
+            low=ORANGE  # orange/yellow
         )
         cmap_2 = colors.diverge_map(
-            high=COLOR_PALETTE[5],
-            low=COLOR_PALETTE[3]
+            high=BLUE,
+            low=GREEN
         )
 
         RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:2], cmap_1,
@@ -1078,12 +1082,12 @@ class UnscaledCDS(WithInput):
         RDPlotter.plot_unscaled_cds(self.lines, plot_axs)
 
         cmap_1 = colors.diverge_map(
-            high=COLOR_PALETTE[0],  # red
-            low=COLOR_PALETTE[1]  # orange/yellow
+            high=RED,  # red
+            low=ORANGE  # orange/yellow
         )
         cmap_2 = colors.diverge_map(
-            high=COLOR_PALETTE[5],
-            low=COLOR_PALETTE[3]
+            high=BLUE,
+            low=GREEN
         )
 
         RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:2], cmap_1,

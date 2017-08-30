@@ -40,7 +40,6 @@ class _Plotter():
         c = 0
         for line in self.lines:
 
-            region_len = len(line.means) / self.num_regions
             regions = intervals.split(line.means, self.num_regions)
             error_pos_regions = intervals.split(
                 line.error_pos, self.num_regions
@@ -55,14 +54,14 @@ class _Plotter():
                 else:
                     alpha = 0.8
                 axs[i].plot(
-                    regions[i], color=self.cols[c], label=line.label,
+                    regions[i], color=line.color, label=line.label,
                     alpha=alpha, linewidth=0.8
                 )
                 axs[i].fill_between(
                     np.arange(0, len(regions[i])),
                     error_pos_regions[i],
                     error_neg_regions[i],
-                    color=self.cols[c],
+                    color=line.color,
                     alpha=0.2
                 )
                 axs[i].yaxis.set_ticks_position('left')
@@ -94,7 +93,7 @@ class _SEPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_axes(self, i, axs):
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
         if i % 2 == 1:
             axs[i].set_xticks([0, 300, 350])
             axs[i].set_xticklabels(['-300', '0', '50'])
@@ -141,7 +140,7 @@ class _A3SSPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_axes(self, i, axs):
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
         axs[0].set_xticks([0, 50, 150, 250, 350])
         axs[0].set_xticklabels(['-50', '0', '', '', '300'], rotation=90)
         axs[1].set_xticks([0, 100, 200, 300, 350])
@@ -177,7 +176,7 @@ class _A5SSPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_axes(self, i, axs):
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
         axs[0].set_xticks([0, 50, 150, 250, 350])
         axs[0].set_xticklabels(['-50', '0', '', '', '300'])
         axs[1].set_xticks([0, 50, 150, 250, 350])
@@ -213,7 +212,7 @@ class _RetainedIntronPlotter(_Plotter):
             lines, num_regions, colors
         )
 
-    def renumber_axes(self, i, axs):
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
         axs[0].set_xticks([0, 50, 150, 250, 350])
         axs[0].set_xticklabels(['-50', '0', '', '', '300'])
         axs[1].set_xticks([0, 50, 150, 250, 350])
