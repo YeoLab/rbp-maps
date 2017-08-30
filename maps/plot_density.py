@@ -113,6 +113,14 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
             min_density_threshold=0,
             is_scaled=is_scaled, conf=confidence,
         )
+    elif event == 'atac':
+        map_obj = Map.ATACIntron(
+            rbp, inp, outfile, norm_func,
+            annotation_dict, exon_offset=exon_or_upstream_offset,
+            intron_offset=intron_or_downstream_offset,
+            min_density_threshold=0,
+            conf=confidence
+        )
     else:
         map_obj = Map.SkippedExon(
             rbp, inp, outfile, norm_func,
@@ -175,7 +183,7 @@ def main():
     parser.add_argument(
         "--chrom_sizes",
         help="chrom.sizes file from UCSC goldenpath",
-        required=True
+        required=False
     )
     parser.add_argument(
         "--exon_offset",
@@ -236,6 +244,12 @@ def main():
         "--phastcon",
         help="plot phastcons instead of clip read densities (mutually exclusive with --ipbam",
         default=None,
+    )
+    parser.add_argument(
+        "--encode_settings",
+        help="removes anything before included-upon-knockdown/excluded-upon-knockdown",
+        action='store_true',
+        default=False
     )
     make_bigwigs_script = 'make_bigwig_files.py'
     # Process arguments
