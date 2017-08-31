@@ -68,7 +68,8 @@ class _Plotter():
                 axs[i].xaxis.set_ticks_position('bottom')
                 if i > 0:
                     axs[i].yaxis.set_visible(False)
-                self.renumber_axes(i, axs)
+                if(len(regions[0]) == 350):  # TODO kinda hacky
+                    self.renumber_axes(i, axs)
 
             c+=1
         self.set_legend(axs)
@@ -261,29 +262,32 @@ class _UnscaledCDSPlotter(_Plotter):
             axs[i].set_xticklabels(xrange(-region_len, 1, 50))
 
 class _HeatmapPlotter():
-    def __init__(self, values, num_regions, colors, ylabel):
+    def __init__(self, values, num_regions, colors, ylabel, vmax, vmin):
         """
 
         Parameters
         ----------
-        values
-        num_regions
-        colors
-        ylabel
+        values: LineObject.LineObject()
+        num_regions: int
+        colors: cmap
+        ylabel: string
 
         """
         self.num_regions = num_regions
         self.values = values
         self.colors = colors
         self.ylabel = ylabel
+        self.vmax = vmax
+        self.vmin = vmin
 
     def plot(self, axs):
         c = 0
-
+        max_xlim = 0
         heatmaps = defaultdict(list)
         labels = []
         for value in self.values:
             z_scores = intervals.split(value.z_scores, self.num_regions)
+            max_xlim = len(z_scores[0]) + 1
             for i in range(0, self.num_regions):
                 heatmaps[value.label, i].append(z_scores[i])
             labels.append(value.label)
@@ -295,14 +299,14 @@ class _HeatmapPlotter():
             axs[i].pcolor(
                 heatmaps[value.label, i],
                 cmap=self.colors,
-                vmax=2, vmin=-2,
+                vmax=self.vmax, vmin=self.vmin,
                 alpha=1
             )
             axs[i].set_yticklabels([''])
             axs[i].set_yticks([''])
             axs[i].xaxis.set_visible(False)
-            axs[i].set_xlim(0, 351)
-
+            # axs[i].set_xlim(0, 351)
+            axs[i].set_xlim(0, max_xlim)
             # axs[i].yaxis.set_visible(False)
 
 def plot_across_multiple_axes(means, sems, axs):
@@ -467,6 +471,19 @@ def plot_unscaled_cds(means, sems, axs, upstream_offset, downstream_offset):
     return plotter
 
 
-def plot_heatmap(lines, axs, colors, ylabel):
-    heatmap = _HeatmapPlotter(lines, len(axs), colors, ylabel)
+def plot_heatmap(lines, axs, colors, ylabel, vmax, vmin):
+    """
+
+    Parameters
+    ----------
+    lines: LineObject.LineObject()
+    axs
+    colors
+    ylabel
+
+    Returns
+    -------
+
+    """
+    heatmap = _HeatmapPlotter(lines, len(axs), colors, ylabel, vmax, vmin)
     heatmap.plot(axs)

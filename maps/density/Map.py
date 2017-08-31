@@ -28,7 +28,6 @@ matplotlib.rcParams['svg.fonttype'] = 'none'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 import seaborn as sns
 import os
-import logging
 import pandas as pd
 import matplotlib.pyplot as plt
 import gzip
@@ -272,7 +271,6 @@ class WithInput(Map):
         print("background: {}".format(bg_file_name))
         for line in self.lines:
             if line.annotation == cond_file_name:
-                # print("now testing: {} against {}".format(cond_file_name, bg_file_name))
                 line.calculate_and_set_significance(self.norm_matrices[bg_file_name])
 
 
@@ -312,7 +310,7 @@ class WithInput(Map):
 
     def write_intermediate_pvalues_to_csv(self):
         """
-        Writes zscores to csv
+        Writes zscores to csv.
         """
         for line in self.lines:
             output_file = self.output_base + SEP + \
@@ -531,6 +529,8 @@ class SkippedExon(WithInput):
         Plots the rbp map and heatmap of z-value scores for the first 
         two items in the self.lines list.
         """
+
+        ### Set up axes and format of plot/subplots
         map_gridspec = gridspec.GridSpec(
             ncols=4, nrows=3, width_ratios=[1, 1, 1, 1], height_ratios=[9, 1, 1]
         )
@@ -552,7 +552,10 @@ class SkippedExon(WithInput):
         for j in range(8, 12):
             heatmap_axs.append(f.add_subplot(gs[j]))
 
+        ### Plot the plot stuff
         RDPlotter.plot_se(self.lines, plot_axs)
+
+        ### Plot the heatmap stuff
 
         cmap_1 = colors.diverge_map(
             high=RED,  # red
@@ -562,8 +565,14 @@ class SkippedExon(WithInput):
             high=BLUE,
             low=GREEN
         )
-        RDPlotter.plot_heatmap(self.lines[0:1], heatmap_axs[:4], cmap_1, ylabel='left')
-        RDPlotter.plot_heatmap(self.lines[1:2], heatmap_axs[4:], cmap_2, ylabel='right')
+        RDPlotter.plot_heatmap(
+            self.lines[0:1], heatmap_axs[:4], cmap_1, ylabel='left',
+            vmax=2, vmin=-2
+        )
+        RDPlotter.plot_heatmap(
+            self.lines[1:2], heatmap_axs[4:], cmap_2, ylabel='right',
+            vmax=2, vmin=-2
+        )
 
         plt.tight_layout(pad=1.5 * 5.5, w_pad=0.8)
         f.savefig(self.output_filename)

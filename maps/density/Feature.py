@@ -1,6 +1,37 @@
 #!/bin/env python
 
 '''
+Feature module for handling different alternative splicing annotations.
+
+Main Classes
+--------------
+
+- Feature: base class describing a generic genomic region.
+- Skipped_exon: class that takes in annotations describing skipped exon
+    regions and returns upstream, cassette, and downstream bedtools
+    corresponding to regions describing skipped events.
+- Alt_5p_splice_site : class that takes in annotations describing alternative
+    5' splice sites and returns splice1 (longer exon),
+    splice2 (shorter exon), and downstream bedtools
+- Alt_3p_splice_site : class that takes in annotations describing alternative
+    3' splice sites and returns upstream, splice1 (longer exon), and
+    splice2 (shorter exon) bedtools
+- Retained_intron : class that takes in annotations describing retained
+    intron events, returning bedtools representing upstream, downstream exons.
+- Mutually_exclusive_exon : class that takes in annotations describing
+    mutually exclusive exons, returning 4 exon bedtools:
+    - upstream : upstream exon
+    - up_mxe : mutually exclusive exon upstream
+    - down_mxe : mutually exclusive exon downstream
+    - downstream : downstream exon
+- ATAC_intron : class that takes in a 'twobed' (two side-by-side BED6 files)
+    and returns both exons as bedtools, with the idea that the inclusive
+    intron is implicitly defined.
+- UnscaledCDS : class that takes in a 'twobed' (two side-by-side BED6 files)
+    that describe a single exon. The end of the first region should be
+    the same coordinate as the start of the second region. Upstream and
+    downstream regions returned will be corrected based on strandedness.
+
 Created on Sep 21, 2016
 
 @author: brian
@@ -437,45 +468,6 @@ class Retained_intron(Feature):
         return upstream, downstream
 
 
-class ATAC_intron(Feature):
-    """
-    Unused for now
-    """
-    def __init__(self, annotation_line, annotation_format):
-        Feature.__init__(self, annotation_line, annotation_format)
-
-    def get_bedtools(self):
-        upstream = None
-        downstream = None
-
-        if self.source == 'twobed':
-            lower_chrom, lower_start, lower_end, \
-            lower_name, lower_score, lower_strand, \
-            upper_chrom, upper_start, upper_end, \
-            upper_name, upper_score, upper_strand = self.annotation.split('\t')
-
-            if lower_strand == '+' and upper_strand == '+':
-                upstream = bt.create_interval_from_list(
-                    [lower_chrom, lower_start, lower_end, lower_name, lower_score, lower_strand]
-                )
-                downstream = bt.create_interval_from_list(
-                    [upper_chrom, upper_start, upper_end, upper_name, upper_score, upper_strand]
-                )
-            elif lower_strand == '-' and upper_strand == '-':
-                downstream = bt.create_interval_from_list(
-                    [lower_chrom, lower_start, lower_end, lower_name,
-                     lower_score, lower_strand]
-                )
-                upstream = bt.create_interval_from_list(
-                    [upper_chrom, upper_start, upper_end, upper_name,
-                     upper_score, upper_strand]
-                )
-            else:
-                print("Warning, strand not correct!")
-                return -1
-            return upstream, downstream
-
-
 class Mutually_exclusive_exon(Feature):
     def __init__(self, annotation_line, annotation_format):
         Feature.__init__(self, annotation_line, annotation_format)
@@ -531,6 +523,45 @@ class Mutually_exclusive_exon(Feature):
                 print("Warning, strand not correct!")
                 return -1
         return upstream, up_mxe, down_mxe, downstream
+
+
+class ATAC_intron(Feature):
+    """
+    Unused for now
+    """
+    def __init__(self, annotation_line, annotation_format):
+        Feature.__init__(self, annotation_line, annotation_format)
+
+    def get_bedtools(self):
+        upstream = None
+        downstream = None
+
+        if self.source == 'twobed':
+            lower_chrom, lower_start, lower_end, \
+            lower_name, lower_score, lower_strand, \
+            upper_chrom, upper_start, upper_end, \
+            upper_name, upper_score, upper_strand = self.annotation.split('\t')
+
+            if lower_strand == '+' and upper_strand == '+':
+                upstream = bt.create_interval_from_list(
+                    [lower_chrom, lower_start, lower_end, lower_name, lower_score, lower_strand]
+                )
+                downstream = bt.create_interval_from_list(
+                    [upper_chrom, upper_start, upper_end, upper_name, upper_score, upper_strand]
+                )
+            elif lower_strand == '-' and upper_strand == '-':
+                downstream = bt.create_interval_from_list(
+                    [lower_chrom, lower_start, lower_end, lower_name,
+                     lower_score, lower_strand]
+                )
+                upstream = bt.create_interval_from_list(
+                    [upper_chrom, upper_start, upper_end, upper_name,
+                     upper_score, upper_strand]
+                )
+            else:
+                print("Warning, strand not correct!")
+                return -1
+            return upstream, downstream
 
 
 class UnscaledCDS(Feature):

@@ -1,3 +1,15 @@
+#!/bin/env python
+# encoding: utf-8
+"""
+
+This module contains the LineObject class whose attributes describe
+lines that will be plotted.
+
+Created on May 3, 2017
+
+@author: brianyee
+"""
+
 import normalization_functions as norm
 import intervals
 import matrix as mtx
