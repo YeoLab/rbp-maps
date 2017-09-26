@@ -249,10 +249,11 @@ def main():
         action='store_true'
     )
     parser.add_argument(
-        "--to_test",
+        "--testnums",
         help="annotation filenames that are labeled to"
              " test against bg control for significance",
         nargs='+',
+        type=int,
         required=False,
         default = []
     )
@@ -326,7 +327,13 @@ def main():
         background_file = annotations[args.bgnum]
     else:
         background_file = None
-    files_to_test = args.to_test
+
+
+    # process totest files
+    files_to_test = []
+    if len(args.testnums) > 0:
+        for num in args.testnums:
+            files_to_test.append(annotations[num])
 
     """
     Check if bigwigs exist, otherwise make
