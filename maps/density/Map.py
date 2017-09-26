@@ -348,7 +348,6 @@ class WithInput(Map):
             matrices['ip'][filename] = mtx.region(
                 filename, self.ip, filetype, self.is_scaled,
                 self.upstream_offset, self.downstream_offset
-
             )
             matrices['input'][filename] = mtx.region(
                 filename, self.inp, filetype, self.is_scaled,

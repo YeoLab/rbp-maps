@@ -35,7 +35,7 @@ import intervals
 
 def region(
     annotation, density, annotation_type,
-    is_scaled=True, upstream_offset=300, downstream_offset=300
+    is_scaled, upstream_offset=300, downstream_offset=300
 ):
     if is_scaled:
         return scaled_region(
@@ -70,11 +70,13 @@ def scaled_region(
                     upstream_offset,
                     downstream_offset
                 )
+
                 # wiggle = intervals.get_scale(wiggle)
                 densities[intervals.rename_index(interval)] = wiggle
     try:
         return pd.DataFrame(densities).T
-    except Exception:
+    except Exception as e:
+        print(e)
         print("found different length features")
         for key, value in densities.iteritems():
             densities[key] = intervals.get_scale(value)

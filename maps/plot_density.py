@@ -155,8 +155,32 @@ def main():
         required=True
     )
     parser.add_argument(
+        "--ip_pos_bw",
+        required=False,
+        help="IP positive bigwig file",
+        default=None
+    )
+    parser.add_argument(
+        "--ip_neg_bw",
+        required=False,
+        help="IP negative bigwig file",
+        default=None
+    )
+    parser.add_argument(
         "--inputbam",
         required=True
+    )
+    parser.add_argument(
+        "--input_pos_bw",
+        required=False,
+        help="INPUT positive bigwig file",
+        default=None
+    )
+    parser.add_argument(
+        "--input_neg_bw",
+        required=False,
+        help="INPUT negative bigwig file",
+        default=None
     )
     parser.add_argument(
         "--output",
@@ -179,7 +203,6 @@ def main():
         nargs='+',
         required=True
     )
-
     parser.add_argument(
         "--chrom_sizes",
         help="chrom.sizes file from UCSC goldenpath",
@@ -220,7 +243,7 @@ def main():
         action='store_true'
     )
     parser.add_argument(
-        "--unflip",
+        "--flip",
         help="option for correcting *.neg -> *.pos bw",
         default=False,
         action='store_true'
@@ -262,7 +285,6 @@ def main():
     confidence = args.confidence
 
     # Process testing and some other stuff
-
     annotations = args.annotations
     annotation_type = args.annotation_type
 
@@ -273,26 +295,31 @@ def main():
     # Process normalization options
     norm_level = args.normalization_level
 
-    # Process chrom.sizes (for make_bigwigs)
-    chrom_sizes = args.chrom_sizes
-
     # process ip args
     ip_bam = args.ipbam
     input_bam = args.inputbam
     phastcons = args.phastcon
 
     # be aware this is flipped by default
-    ip_pos_bw = ip_bam.replace('.bam', '.norm.neg.bw')
-    ip_neg_bw = ip_bam.replace('.bam', '.norm.pos.bw')
+    if args.ip_pos_bw is None or args.ip_neg_bw is None:
+        ip_pos_bw = ip_bam.replace('.bam', '.norm.pos.bw')
+        ip_neg_bw = ip_bam.replace('.bam', '.norm.neg.bw')
+    else:
+        ip_pos_bw = args.ip_pos_bw
+        ip_neg_bw = args.ip_neg_bw
 
-    input_pos_bw = input_bam.replace('.bam', '.norm.neg.bw')
-    input_neg_bw = input_bam.replace('.bam', '.norm.pos.bw')
+    if args.input_pos_bw is None or args.input_neg_bw is None:
+        input_pos_bw = input_bam.replace('.bam', '.norm.pos.bw')
+        input_neg_bw = input_bam.replace('.bam', '.norm.neg.bw')
+    else:
+        input_pos_bw = args.input_pos_bw
+        input_neg_bw = args.input_neg_bw
 
     # process scaling
     is_scaled = args.same_length_features
 
     # process flip
-    is_unflipped = args.unflip
+    is_flipped = args.flip
 
     # process bgcontrol file
     if args.bgnum != 0:
@@ -314,42 +341,21 @@ def main():
         for i in required_input_files:
             if not os.path.isfile(i):
                 print("Warning: {} does not exist".format(i))
-                logger.error("Warning: {} does not exist".format(i))
-                call_bigwig_script = True
-        if call_bigwig_script:
-
-            cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
-                make_bigwigs_script,
-                ip_bam,
-                chrom_sizes,
-                ip_pos_bw, ip_neg_bw
-            )
-            subprocess.call(cmd, shell=True)
-            cmd = '{} --bam {} --genome {} --bw_pos {} --bw_neg {} --dont_flip'.format(
-                make_bigwigs_script,
-                input_bam,
-                chrom_sizes,
-                input_pos_bw,
-                input_neg_bw
-            )
-            subprocess.call(cmd, shell=True)
-        else:
-            print("all files found, skipping norm.bw creation.")
-
+                exit(1)
 
     """
     Create ReadDensity objects. Note! This will effectively "flip back" bws
     """
-    if is_unflipped:
-        ip_pos = ip_pos_bw
-        ip_neg = ip_neg_bw
-        input_pos = input_pos_bw
-        input_neg = input_neg_bw
-    else:
+    if is_flipped:
         ip_pos = ip_neg_bw
         ip_neg = ip_pos_bw
         input_pos = input_neg_bw
         input_neg = input_pos_bw
+    else:
+        ip_pos = ip_pos_bw
+        ip_neg = ip_neg_bw
+        input_pos = input_pos_bw
+        input_neg = input_neg_bw
 
     """
     Create annotations - turn annotation, type into annotation:type dicts

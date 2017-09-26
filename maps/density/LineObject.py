@@ -101,6 +101,8 @@ class LineObject():
             mean value for each position in the dataframe df
         sems : list
             standard error of the mean
+        std : list
+            standard deviation of the mean
         """
 
         means = list()

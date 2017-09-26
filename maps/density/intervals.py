@@ -546,8 +546,8 @@ def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0):
     elif interval.strand == "-":
         wiggle = rbp.values(
             interval.chrom,
-            interval.start - upstream_offset,
-            interval.end + downstream_offset,
+            interval.start - downstream_offset,
+            interval.end + upstream_offset,
             interval.strand
         )
     else:

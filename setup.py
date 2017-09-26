@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='rbp-maps',
-    version='0.0.2',
+    version='0.0.4',
     packages=['peak', 'density', 'analysis'],
     url='',
     license='',
