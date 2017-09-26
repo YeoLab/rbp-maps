@@ -5,12 +5,15 @@ RBP splice and feature maps
 
 | Module        | Version
 | ------------- |:-------------:
-| pandas        | 0.18.1+
-| pybedtools    | 0.7.8+
-| bedtools      | 2.26.0+
-| pysam         | 0.8.4+
-| samtools      | 1.3.1+
-| jupyter       | 4.2.0+ (if you want to import)
+| pandas        | 0.20.1
+| pybedtools    | 0.7.8
+| bedtools      | 2.26.0
+| pysam         | 0.8.4
+| samtools      | 1.3.1
+| pyBigWig      | 0.3.5
+| matplotlib    | 2.0.2
+| seaborn       | 0.8
+| jupyter       | 4.2.0 (if you want to import)
 
 ### Create the environment:
 ```python
@@ -26,17 +29,26 @@ python setup.py build
 python setup.py install
 ```
 
+### Or run this script:
+sh install_packages.sh (you might need to re-activate the environment)
+
 ### Simple Commandline Usage:
 
 ##### Plotting density (*.bw files from the eCLIP bioinformatics pipeline)
 ```
 plot_density --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .pos.bw and .neg.bw files are in this directory)
+ --ip_pos_bw \ # positive bigwig file for CLIp
+ --ip_neg_bw \ # negative bigwig file for CLIp
  --input input.bam \ # BAM file containing reads for size matched input (make sure the .pos.bw and .neg.bw files are in this directory)
- --annotations rmats_annotation1 rmats_annotation2 rmats_annotation3 \ # annotation files
- --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats', 'miso', or 'eric' options are supported)
+ --input_pos_bw \ # positive bigwig file for INPUT
+ --input_neg_bw \ # negative bigwig file for INPUT
+ --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
+ --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works
  --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
 ```
+
+
 
 ##### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
@@ -97,6 +109,12 @@ determine the level of conservation over a set of events. For example: ```--phas
 
 ## Retained Intron
 ![retained](https://github.com/YeoLab/rbp-maps/blob/master/images/retainedintron.png)
+
+# Intermediate files produced
+
+The program will try and create as many intermediate files so you can do more downstream analysis, or plot your own maps, and things.
+
+
 
 # Other Notes
 - The script will automatically create intermediate raw and normalized matrix files for every condition you provide... the files can get big!! but they can be loaded into pandas if you wanted to look at a few events. They're tab separated
