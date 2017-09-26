@@ -15,7 +15,6 @@ setup(
     author='brianyee',
     author_email='',
     description='RNA-binding protein maps for region/splicing',
-    py_modules=['maps'],
     package_dir={
         'peak': 'maps/peak', 'density': 'maps/density',
         'analysis': 'maps/analysis', 'maps': 'maps',
