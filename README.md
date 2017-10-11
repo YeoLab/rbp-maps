@@ -14,16 +14,17 @@ RBP splice and feature maps
 | matplotlib    | 2.0.2
 | seaborn       | 0.8
 | jupyter       | 4.2.0 (if you want to import)
+| cwltool       | 1.0.20170828135420 (if you want to use as a CWL tool)
 
 ### Create the environment:
 ```python
-cd rbp-maps
 conda env create -f conda_env.txt -n rbp-maps
 source activate rbp-maps
 ```
 
 ### Install:
 ```
+git clone https://github.com/yeolab/rbp-maps
 cd rbp-maps
 python setup.py build
 python setup.py install
