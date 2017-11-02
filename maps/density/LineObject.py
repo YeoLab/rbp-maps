@@ -34,6 +34,7 @@ class LineObject():
         self.error_pos, self.error_neg = self._get_std_error_boundaries()
         self.dim = False if self.num_events > min_event_threshold else True
         self.ks_pvalues = []
+        self.mannwhitneyu_pvalues = []
         self.z_scores = []
         self.color = color
 
@@ -140,11 +141,17 @@ class LineObject():
         neg = [x - y for x, y in zip(self.means, self.sems)]
         return pos, neg
 
-    def calculate_and_set_significance(self, bg_matrix):
+    def calculate_and_set_significance(self, bg_matrix, test='mannwhitneyu'):
+        if test == 'mannwhitneyu':
+            self.calculate_mannwhitneyu(bg_matrix)
+        elif test == 'ks':
+            self.calculate_mannwhitneyu(bg_matrix)
+
+    def calculate_ks(self, bg_matrix):
         """
         Given a background event matrix, compute distribution
         and calculate 2-sample KS test
-        
+
         Parameters
         ----------
         bg_matrix : pandas.DataFrame()
@@ -153,7 +160,7 @@ class LineObject():
         Returns
         -------
         list of -log10 p-values for each position
-        
+
         """
         for position in self.event_matrix.columns:
             _, p = stats.ks_2samp(
@@ -161,7 +168,7 @@ class LineObject():
             )
             print('p value at position {}: {}'.format(position, p))
 
-            self.ks_pvalues.append(-1*np.log10(p))
+            self.ks_pvalues.append(-1 * np.log10(p))
 
     def calculate_zscore(self, bg_line):
         """
@@ -184,3 +191,26 @@ class LineObject():
             # print('zscore: {}'.format(z_score))
             self.z_scores.append(z_score)
 
+
+    def calculate_mannwhitneyu(self, bg_matrix):
+        """
+        Given a background event matrix, compute distribution
+        and calculate 2-sample KS test
+
+        Parameters
+        ----------
+        bg_matrix : pandas.DataFrame()
+            a position matrix (event = row, positon = col)
+
+        Returns
+        -------
+        list of -log10 p-values for each position
+
+        """
+        for position in self.event_matrix.columns:
+            _, p = stats.mannwhitneyu(
+                self.event_matrix[position], bg_matrix[position], alternative='greater'
+            )
+            # print('p value at position {}: {}'.format(position, p))
+
+            self.mannwhitneyu_pvalues.append(p) # -1 * np.log10(p))

@@ -25,7 +25,7 @@ class LineObject():
         self.num_events = sum(1 for line in open(annotation))
 
         self.label = self._parse_filename(annotation)
-        self.means = norm.norm(self.peak_hist, self.num_events)
+        self.means = self.peak_hist # norm.norm(self.peak_hist, self.num_events)
         self.error_pos, self.error_neg = self.set_std_error_boundaries()
         self.dim = False if self.num_events > min_event_threshold else True
         self.fisher_pvalues = []
@@ -107,12 +107,21 @@ class LineObject():
         -------
 
         """
+        '''
         plus = [x + y for x, y in zip(
             norm.norm(self.peak_hist, self.num_events), norm.std_error(
                 self.peak_hist, self.num_events)
         )]
         minus = [x - y for x, y in zip(
             norm.norm(self.peak_hist, self.num_events), norm.std_error(
+                self.peak_hist, self.num_events)
+        )]'''
+        plus = [x + y*self.num_events for x, y in zip(
+            self.peak_hist, norm.std_error(
+                self.peak_hist, self.num_events)
+        )]
+        minus = [x - y*self.num_events for x, y in zip(
+            self.peak_hist, norm.std_error(
                 self.peak_hist, self.num_events)
         )]
         return plus, minus

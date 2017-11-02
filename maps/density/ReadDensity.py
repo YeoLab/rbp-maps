@@ -36,7 +36,11 @@ class ReadDensity(Density):
             ).replace(
                 'neg', '*'
             )
-            self.bam = pysam.AlignmentFile(bam)
+            if bam is not None:
+                self.bam = pysam.AlignmentFile(bam)
+            else:
+                print("warning no bam file!")
+
         except Exception as e:
             print("couldn't open the bigwig files!")
             print(e)

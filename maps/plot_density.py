@@ -58,7 +58,6 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
     -------
 
     """
-
     rbp = density.ReadDensity.ReadDensity(
         pos=ip_pos_bw, neg=ip_neg_bw, bam=ip_bam
     )
@@ -96,14 +95,24 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
             conf=confidence
         )
     elif event == 'bed':
-        print('exon offset: {}'.format(exon_or_upstream_offset))
-        print('intron offset: {}'.format(intron_or_downstream_offset))
+        # print('exon offset: {}'.format(exon_or_upstream_offset))
+        # print('intron offset: {}'.format(intron_or_downstream_offset))
         map_obj = Map.WithInput(
             rbp, inp, outfile, norm_func,
             annotation_dict, upstream_offset=exon_or_upstream_offset,
             downstream_offset=intron_or_downstream_offset,
             min_density_threshold=0,
-            is_scaled=is_scaled, conf=confidence,
+            is_scaled=is_scaled, conf=confidence, normalize=False
+        )
+    elif event == 'normalizedbed':
+        # print('exon offset: {}'.format(exon_or_upstream_offset))
+        # print('intron offset: {}'.format(intron_or_downstream_offset))
+        map_obj = Map.WithInput(
+            rbp, inp, outfile, norm_func,
+            annotation_dict, upstream_offset=exon_or_upstream_offset,
+            downstream_offset=intron_or_downstream_offset,
+            min_density_threshold=0,
+            is_scaled=is_scaled, conf=confidence, normalize=True
         )
     elif event == 'point':
         map_obj = Map.WithInput(
@@ -135,7 +144,7 @@ def run_make_density(outfile, ip_pos_bw, ip_neg_bw, ip_bam,
 
     for condition in condition_list: # for any condition we want to calculate pvalues for
         print("zscore calc.")
-        map_obj.set_background_and_calculate_zscore(condition, bg_filename)
+        map_obj.set_background_and_calculate_significance(condition, bg_filename)
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
 
@@ -203,11 +212,11 @@ def main():
         nargs='+',
         required=True
     )
-    parser.add_argument(
-        "--chrom_sizes",
-        help="chrom.sizes file from UCSC goldenpath",
-        required=False
-    )
+    # parser.add_argument(
+    #     "--chrom_sizes",
+    #     help="chrom.sizes file from UCSC goldenpath",
+    #     required=False
+    # )
     parser.add_argument(
         "--exon_offset",
         help="exon offset (default: 50) for splice events OR " \
@@ -244,7 +253,7 @@ def main():
     )
     parser.add_argument(
         "--flip",
-        help="option for correcting *.neg -> *.pos bw",
+        help="Legacy option for correcting *.neg -> *.pos bw, ",
         default=False,
         action='store_true'
     )
@@ -266,12 +275,15 @@ def main():
     )
     parser.add_argument(
         "--phastcon",
-        help="plot phastcons instead of clip read densities (mutually exclusive with --ipbam",
+        help="plot phastcons instead of clip read densities "
+             "(mutually exclusive with --ipbam",
         default=None,
     )
     parser.add_argument(
         "--encode_settings",
-        help="removes anything before included-upon-knockdown/excluded-upon-knockdown",
+        help="Strictly aesthetic; removes anything before "
+             "included-upon-knockdown/excluded-upon-knockdown "
+             "in rMATS filenames for shorter labeling.",
         action='store_true',
         default=False
     )
@@ -301,7 +313,7 @@ def main():
     input_bam = args.inputbam
     phastcons = args.phastcon
 
-    # be aware this is flipped by default
+    # be aware this is NOT flipped by default (we'll handle this below)
     if args.ip_pos_bw is None or args.ip_neg_bw is None:
         ip_pos_bw = ip_bam.replace('.bam', '.norm.pos.bw')
         ip_neg_bw = ip_bam.replace('.bam', '.norm.neg.bw')
@@ -348,10 +360,11 @@ def main():
         for i in required_input_files:
             if not os.path.isfile(i):
                 print("Warning: {} does not exist".format(i))
+                call_bigwig_script = True  # hook the 'make_bigwig_files' script here.
                 exit(1)
 
     """
-    Create ReadDensity objects. Note! This will effectively "flip back" bws
+    Create ReadDensity objects. Note! This will effectively "flip" bigwigs!
     """
     if is_flipped:
         ip_pos = ip_neg_bw

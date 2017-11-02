@@ -62,7 +62,8 @@ GREEN = COLOR_PALETTE[3]
 class Map:
     def __init__(self, ip, output_filename, norm_function,
                  annotation, upstream_offset=0, downstream_offset=0,
-                 min_density_threshold=0, is_scaled=False, conf=0.95):
+                 min_density_threshold=0, is_scaled=False, conf=0.95,
+                 normalize=False):
         """
 
         Parameters
@@ -105,6 +106,8 @@ class Map:
         self.sems = defaultdict() # TODO delete when safe
         self.lines = []
 
+        self.normalize = normalize
+
     def create_matrix(self):
         """
         Creates a stacked density matrix for each event in each annotation file
@@ -125,12 +128,13 @@ class Map:
             if self.is_scaled:
                 matrices['ip'][filename] = mtx.scaled_region(
                     filename, self.ip, filetype,
-                    self.upstream_offset, self.downstream_offset
+                    self.upstream_offset, self.downstream_offset,
+                    self.normalize
                 )
             else:
                 matrices['ip'][filename] = mtx.unscaled_region(
                     filename, self.ip, filetype,
-                    self.upstream_offset, self.downstream_offset
+                    self.upstream_offset, self.downstream_offset,
                 )
         self.raw_matrices = matrices
 
@@ -245,18 +249,18 @@ class PhastconMap(Map):
 class WithInput(Map):
     def __init__(self, ip, inp, output_filename, norm_function,
                  annotation=None, upstream_offset=0, downstream_offset=0,
-                 min_density_threshold=0, is_scaled=False, conf=0.95):
+                 min_density_threshold=0, is_scaled=False, conf=0.95, normalize=False):
         Map.__init__(self, ip=ip, output_filename=output_filename,
                      norm_function=norm_function, annotation=annotation,
                      upstream_offset=upstream_offset,
                      downstream_offset=downstream_offset,
                      min_density_threshold=min_density_threshold,
-                     is_scaled=is_scaled, conf=conf)
+                     is_scaled=is_scaled, conf=conf, normalize=normalize)
 
         self.inp = inp
         self.lines = []
 
-    def set_background_and_calculate_ks(self, cond_file_name, bg_file_name):
+    def set_background_and_calculate_significance(self, cond_file_name, bg_file_name, test='mannwhitneyu'):
         """
         AFTER creation of all LineObjects, we can specify a condition
         matrix to run a ks-test against its distribution of values
@@ -267,11 +271,11 @@ class WithInput(Map):
         cond_file_name : basestring
         bg_file_name : basestring
         """
-
+        print("test: {}".format(cond_file_name))
         print("background: {}".format(bg_file_name))
         for line in self.lines:
             if line.annotation == cond_file_name:
-                line.calculate_and_set_significance(self.norm_matrices[bg_file_name])
+                line.calculate_and_set_significance(self.norm_matrices[bg_file_name], test)
 
 
     def set_background_and_calculate_zscore(self, cond_file_name, bg_file_name):
@@ -297,7 +301,6 @@ class WithInput(Map):
                     print("now testing: {} against {}".format(cond_file_name,
                                                               bg_file_name))
                     line.calculate_zscore(bg_line)
-
     def write_intermediate_norm_matrices_to_csv(self):
         """
         Writes intermediate normalized matrices to csv.
@@ -314,11 +317,13 @@ class WithInput(Map):
         """
         for line in self.lines:
             output_file = self.output_base + SEP + \
-                          line.file_label + '.zscores.txt'
+                          line.file_label + '.mannwhitney.txt'
 
             o = open(output_file, 'w')
-            for z in line.z_scores:
-                o.write("{}\n".format(z))
+            pos = 0
+            for p in line.mannwhitneyu_pvalues:
+                o.write("{}\t{}\n".format(pos,p))
+                pos+=1
             o.close()
             
     def write_intermediates_to_csv(self):
@@ -347,10 +352,10 @@ class WithInput(Map):
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.region(
                 filename, self.ip, filetype, self.is_scaled,
-                self.upstream_offset, self.downstream_offset
+                self.upstream_offset, self.downstream_offset, self.normalize,
             )
             matrices['input'][filename] = mtx.region(
-                filename, self.inp, filetype, self.is_scaled,
+                filename, self.inp, filetype, self.is_scaled, self.normalize,
                 self.upstream_offset, self.downstream_offset
             )
         self.raw_matrices = matrices

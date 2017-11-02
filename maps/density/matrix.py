@@ -35,12 +35,12 @@ import intervals
 
 def region(
     annotation, density, annotation_type,
-    is_scaled, upstream_offset=300, downstream_offset=300
+    is_scaled, upstream_offset=300, downstream_offset=300, normalize=False
 ):
     if is_scaled:
         return scaled_region(
             annotation, density, annotation_type,
-            upstream_offset, downstream_offset
+            upstream_offset, downstream_offset, normalize
         )
     else:
         return unscaled_region(
@@ -51,9 +51,8 @@ def region(
 
 def scaled_region(
         annotation, density, annotation_type,
-        upstream_offset, downstream_offset
+        upstream_offset, downstream_offset, normalize
 ):
-    count = 0
     densities = {}
     # TODO: pd.DataFrame.from_dict(dic, orient="index")
     with open(annotation) as f:
@@ -70,8 +69,8 @@ def scaled_region(
                     upstream_offset,
                     downstream_offset
                 )
-
-                # wiggle = intervals.get_scale(wiggle)
+                if normalize:
+                    wiggle = intervals.get_scale(wiggle)
                 densities[intervals.rename_index(interval)] = wiggle
     try:
         return pd.DataFrame(densities).T

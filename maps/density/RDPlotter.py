@@ -286,7 +286,7 @@ class _HeatmapPlotter():
         heatmaps = defaultdict(list)
         labels = []
         for value in self.values:
-            z_scores = intervals.split(value.z_scores, self.num_regions)
+            z_scores = intervals.split(value.mannwhitneyu_pvalues, self.num_regions)
             max_xlim = len(z_scores[0]) + 1
             for i in range(0, self.num_regions):
                 heatmaps[value.label, i].append(z_scores[i])
