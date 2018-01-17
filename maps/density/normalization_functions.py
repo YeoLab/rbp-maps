@@ -28,9 +28,13 @@ calculate_pdf : normalizes each event (row) to sum to 1
 @author: brianyee
 '''
 
+
+
 import numpy as np
 import pandas as pd
+import math
 
+### Normalize density methods ###
 
 def mask(density_df, fillna=0):
     """
@@ -148,10 +152,12 @@ def read_entropy(density_df, input_density_df, pseudocount, input_pseudocount,
     total_ip_mapped_reads = 1000000 / pseudocount
     total_input_mapped_reads = 1000000 / input_pseudocount
     density_df = density_df[density_df.sum(axis=1) > min_density_threshold]
+
+
+    # get equivalent events for input and ip
     df_indices = density_df.index
     dfi_indices = input_density_df.index
     missing = set(df_indices) - set(dfi_indices)
-
     input_density_df = input_density_df.append(input_density_df.ix[missing])
 
     rpm = clean(density_df)
@@ -200,10 +206,10 @@ def pdf_read_entropy(density_df, input_density_df,
     return pdf
 
 
-def get_density(density, input_density,
+def get_density(density_df, input_density_df,
                 pseudocount, ipseudocount,
                 min_density_threshold=0):
-    return clean(density)
+    return clean(density_df)
 
 
 def get_input(density_df, input_density_df,
@@ -343,10 +349,17 @@ def get_means_and_sems(df, conf=0.95):
         mean value for each position in the dataframe df
     sems : list
         standard error of the mean
+    std_deviation: list
+        standard deviation of the mean
+    merged : pandas.DataFrame
+        dataframe 'masked' of outliers
     """
 
-    means = list()
-    sems = list()
+    means = []
+    sems = []
+    std_deviation = []
+    
+    merged = pd.DataFrame(index=df.index)
     for key, value in df.iteritems():
         single_col = df[key].dropna()
         single_col = single_col.sort_values()
@@ -355,8 +368,58 @@ def get_means_and_sems(df, conf=0.95):
         dropnum = int(nums * droppercent)
         if dropnum > 0:
             single_col = single_col[dropnum:-dropnum]
-
+        merged = pd.merge(
+            merged, pd.DataFrame(single_col), how='left',
+            left_index=True, right_index=True
+        )
         means.append(single_col.mean())
         sems.append(single_col.sem())
-    return means, sems
+        std_deviation.append(single_col.std())
 
+    return means, sems, std_deviation, merged
+
+
+### Normalize peak methods ###
+
+
+def divide_by_num_events(some_list, num_events):
+    """
+    Normalizes each position by dividing by the number of events.
+
+    Parameters
+    ----------
+    some_list
+    num_events
+
+    Returns
+    -------
+
+    """
+    # some_list_ps = [x+1 for x in some_list] # remove pseudocount, uncomment to add back in
+    normed_list = [float(x) / num_events for x in some_list]
+    return normed_list
+
+
+def std_error(some_list, num_events):
+    """
+    Returns standard deviation error given list of events.
+
+    Parameters
+    ----------
+    some_list
+    num_events
+
+    Returns
+    -------
+
+    """
+    devs = []
+    p_list = divide_by_num_events(some_list, num_events)
+    q_list = [1 - p for p in p_list]
+    for p, q in zip(p_list, q_list):
+        devs.append(dev(p, q, num_events))
+    return devs
+
+
+def dev(p, q, n):
+    return math.sqrt(p * q) / math.sqrt(n)

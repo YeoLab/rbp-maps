@@ -13,113 +13,6 @@ import gzip
 import json
 
 
-def toarray(dic):
-    """
-    Returns dictionary[array] representation of dict[Series/list])
-
-    Parameters
-    ----------
-    dic : dict
-
-    Returns
-    -------
-    dict_with_array : dict
-        dictionary of arrays
-    """
-    # TODO: check if any function uses this, otherwise remove.
-    tmp = {}
-    for key in dic.keys():
-        tmp[key] = np.asarray(dic[key])
-    return tmp
-
-
-def isin(row, lst, col='gene'):
-    """
-    Returns True if a row[col] contains any element in lst
-    False otherwise.
-
-    Parameters
-    ----------
-    row : pandas.DataFrame
-    lst : list
-
-    Returns
-    -------
-    is_in_df_col : Boolean
-    """
-    # TODO: check if any function uses this, otherwise remove.
-    for g in row[col]:
-        if g in lst:
-            return True
-    return False
-
-
-def ensembl_from_gencode(gencode_id):
-    """
-    Returns the ensembl representation of the gencode ID.
-
-    Parameters
-    ----------
-    gencode_id : basestring
-        id in gencode format
-
-    Returns
-    -------
-    ensembl_id : basestring
-        id in ensembl format
-    """
-    # TODO: check if any function uses this, otherwise remove.
-    return gencode_id.split('.')[0]
-
-
-def exists(dictionary, *args):
-    """
-    Returns True if key combinations exist in a dictionary, False otherwise.
-
-    Parameters
-    ----------
-    dictionary
-    args
-
-    Returns
-    -------
-
-    """
-    # TODO: check if any function uses this, otherwise remove.
-    if args in dictionary:
-        return True
-    else:
-        return False
-
-
-#
-def ini(dictionary, *args):
-    """
-    Auto initializes a dictionary with key to 0 value otherwise increments
-    Pretty much does the same as defaultdict, I think. So this will be
-    deprecated in the future.
-
-    Parameters
-    ----------
-    dictionary
-    args
-
-    Returns
-    -------
-
-    """
-
-    # TODO: check if any function uses this, otherwise remove.
-    if args in dictionary:
-        # if 499 in args and 'upex' in args:
-        #    print("incrementing position by 1")
-        return dictionary[args] + 1
-    else:
-        # if 499 in args and 'upex' in args:
-        #    print("initializing position")
-        return 1
-
-
 def sane(filename, keep_ext=True):
     """
     Returns a 'sane' label given a filename.
@@ -199,7 +92,7 @@ def split_index(row, type='bed'):
 
 def split_bed_index(row):
     """
-    Returns a BED-formatted string from my own annotation
+    Returns a BED-formatted string from my own annotation_src_file
     See:
 
     Parameters
@@ -253,7 +146,7 @@ def deeptoolify(df, annotation_type='bed'):
     df : pandas.DataFrame
         table containing density information
     annotation_type : basestring
-        type of annotation
+        type of annotation_src_file
 
     Returns
     -------

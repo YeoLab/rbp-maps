@@ -24,14 +24,102 @@ Created on May 3, 2016
 import itertools
 import numpy as np
 import pandas as pd
+import pybedtools
 import sys
 
 MAX = sys.maxsize
 
 
-def multiply_by_100(n):
+def collapse(df):
     """
-    Multiplies n by 100: (e.g. n = 5, returns [5,5,5...(100), 5]
+    Takes a list of regions and merges them
+    """
+    unmerged = pybedtools.BedTool.from_dataframe(df)
+    merged = unmerged.merge(s=True) # , c=[4,4], o='collapse,count')
+    merged = merged.to_dataframe()
+    merged.columns = ['chrom','start','end','strand']
+    merged['score'] = 0
+    merged.reset_index()
+    return merged[['chrom','start','end','score','strand']]
+
+def merge2(fn):
+    """
+    Reads in a filename, and for each gene (in name column), 
+    collapse regions such that each gene has non-overlapping intervals.
+    This might be functionally the same as merge() but it's really slow.
+    
+    Parameters
+    ----------
+    fn : basestring
+
+    Returns
+    -------
+    bed_as_df : pandas.DataFrame
+        bed file collapsed intervals per gene.
+    """
+    df = pd.read_table(fn, names=['chrom','start','end','name','score','strand'])
+    df.sort_values(['chrom','start','end'], inplace=True)
+    df = df.groupby('name').apply(collapse)
+    df.reset_index(inplace=True)
+    return df[['chrom','start','end','name','score','strand']]
+
+def merge(fn):
+    """
+    Reads in a filename, and for each gene (in name column), 
+    collapse regions such that each gene has non-overlapping intervals.
+    
+    Parameters
+    ----------
+    fn : basestring
+
+    Returns
+    -------
+    bed_as_df : pandas.DataFrame
+        bed file collapsed intervals per gene.
+    """
+    unmerged = pybedtools.BedTool(fn).sort()
+    merged = unmerged.merge(s=True, c=[4,4], o='distinct,count')
+    merged = merged.to_dataframe()
+    merged.columns = ['chrom','start','end','strand','name','score']
+    merged['score'] = merged['score'].map('{:d}'.format)
+    return merged[['chrom','start','end','name','score','strand']]
+
+def explode(X):
+    """
+    explodes a merged dataframe. ie:
+
+    chr1    100 200 gene1,gene2 0   +
+    chr1    200 300 gene1   0   +
+
+    -->
+
+    chr1    100 200 gene1   0   +
+    chr1    100 200 gene2   0   +
+    chr1    200 300 gene1   0   +
+
+    """
+    delim = ','
+    Y = pd.DataFrame(X.name.str.split(delim).tolist(), index=[
+        X['chrom'], X['start'], X['end'], X['score'], X['strand']
+    ]).stack()
+    Y = Y.reset_index()[['chrom', 'start', 'end', 0, 'score', 'strand']]
+    Y.columns = ['chrom', 'start', 'end', 'name', 'score', 'strand']
+    return Y
+
+
+def make_linelist_from_dataframe(df):
+    """
+    given a pandas dataframe, return a list of strings that represent a bedfile (tabbed)
+    """
+    lst = []
+    for values in df.head().values:
+        lst.append('\t'.join([str(v) for v in values]))
+    return lst
+
+
+def multiply_by_x(n, x=100):
+    """
+    Multiplies n by 100 (or x): (e.g. n = 5, returns [5,5,5...(100), 5]
 
     Parameters
     ----------
@@ -42,7 +130,7 @@ def multiply_by_100(n):
     list 100 n's
     """
 
-    return [n] * 100
+    return [n] * x
 
 
 def rename_index(interval_name):
@@ -88,7 +176,23 @@ def split(lst, n):
     return newlist
 
 
-def get_scale(wiggle):
+def multiply_by_x(n, x=100):
+    """
+    Multiplies n by 100 (or x): (e.g. n = 5, returns [5,5,5...(100), 5]
+
+    Parameters
+    ----------
+    n : int
+
+    Returns
+    -------
+    list 100/x n's
+    """
+
+    return [n] * x
+
+
+def get_scale(wiggle, scale_to=100):
     """
 
     Parameters
@@ -97,48 +201,61 @@ def get_scale(wiggle):
         Series of values of any length
     Returns
     -------
-        Series of values that is scaled (length is always 100).
+        Series of values that is scale (length is always 100).
     """
 
     # Need to adjust series such that it has at least 100 parts.
     # Required since stepper will iterate from 0.01..1 and x will
     # iterate from 0..99.
-    if len(wiggle) == 100:  # no need to do any calculating.
+    if len(wiggle) == scale_to:  # no need to do any calculating.
         return wiggle
-    elif len(wiggle) == 1:  # return 100 of these values
+    elif len(wiggle) == 1:  # return 100/n of these values
         return pd.Series(
             list(
                 itertools.chain.from_iterable(
-                    [multiply_by_100(w) for w in wiggle]
+                    [multiply_by_x(w, x=scale_to) for w in wiggle]
                 )
             )
         )
-    elif len(wiggle) < 100:
+    elif len(
+            wiggle) < scale_to:  # multiply everything by scaling factor, this guarantees it is divisible by scaling factor
         wiggle = pd.Series(
             list(
                 itertools.chain.from_iterable(
-                    [multiply_by_100(w) for w in wiggle]
+                    [multiply_by_x(w, x=scale_to) for w in wiggle]
                 )
             )
         )
 
-    dist = [0] * 100  # final series
+    dist = [0] * scale_to  # final series length
     x = 0  # iterate through dist list
-    step = 0.01  # stepper
+    step = 1 / float(scale_to)  # stepper, increments increase by this number
     y = 0  # number of values in each stepwise bin
 
     # iterate through each value until it reaches next step, then averages
+    # (step = 1% -> 2%, or 2% -> 3%, etc. if we are trying to scale to 100%)
     for pos, value in enumerate(wiggle):
-        if (float(pos + 1) / len(wiggle)) < step:
+        if (float(pos + 1) / len(wiggle)) < step:  # if we haven't reached the next step, add value to bin (dist[x])
+            # print("{} < {}, dist[{}] = {}".format((float(pos + 1) / len(wiggle)), step, x, value))
             y = y + 1
             dist[x] = dist[x] + value
-        else:
-            dist[x] = dist[x] / y
-            step = step + 0.01
+        elif (float(pos + 1) / len(wiggle) == 1):  # if we have reached the last step, break loop
+            y = y + 1
+            dist[x] = dist[x] + value
+            break
+        else:  # if we have passed the next step, divide total value in dist[x] by y (number of values) to get average of bin, then move on (iterate x)
+            dist[x] = dist[x] / float(y)
+            step = step + 1 / float(scale_to)
             x = x + 1
             dist[x] = value
             y = 1
-    dist[x] = dist[x] / y
+
+    try:
+        dist[x] = dist[x] / float(y)
+    except ZeroDivisionError as e:
+        print("Got zero series, won't scale.", e, wiggle)
+    except IndexError as e:
+        pass
     return pd.Series(dist)
 
 
@@ -419,19 +536,26 @@ def _junction_site(rbp, next_interval, current_interval, exon_offset,
 
 def _clean_and_add_padding(wiggle, left_pad=0, right_pad=0, fill_pads_with=-1):
     """
+    Removes nans from a list (replaces with 0), and appends padding to ensure
+    that the list will always be of length len(wiggle) + left_pad + right_pad.
 
     Parameters
     ----------
     wiggle : list
+        list of values (in this case densities or peak scores)
     left_pad : int
+        length of padding to add to the left (< wiggle[0]) of the list
     right_pad : int
-
+        length of padding to add to the right (> wiggle[len(wiggle)-1]) of list
     fill_pads_with : int
         fill missing flank regions with this number
 
     Returns
     -------
-
+    wiggle: pandas.Series
+        series of values of a fixed length
+        (length of wiggle + left_pad + right_pad)
+        with flanked ends padded with fill_pads_with
     """
     wiggle = pd.Series(wiggle)
     wiggle = abs(wiggle)
@@ -521,7 +645,7 @@ def three_prime_site(rbp, downstream_interval, interval, exon_offset,
 
 def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0):
     """
-
+    Returns
     Parameters
     ----------
     rbp : density.ReadDensity
@@ -554,3 +678,128 @@ def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0):
         print "Strand not correct", interval.strand
         raise ()
     return _clean_and_add_padding(wiggle, 0, 0)
+
+
+def get_overlap(peak, region, score_type='simple'):
+    """
+    Returns the score of a region with peak overlaps as a series.
+
+    Parameters
+    ----------
+    peak: pybedtools.Interval
+    region: pybedtools.Interval
+    score_type: basestring
+        'simple', 'fraction_peak', or 'fraction_region'
+        @see: score()
+    Returns
+    -------
+    series: pandas.Series
+        series of scores corresponding to peaks overlapping a region.
+    """
+
+    series = pd.Series(data=0, index=range(len(region)))
+
+    overlap_type, overlap = determine_overlap(peak, region)
+
+    if overlap_type == 'no_overlap':
+        return series
+    elif overlap_type == 'equal':
+        series[:] = [score(score_type, peak, region) for i in range(overlap)]
+    elif overlap_type == 'left':
+        assert peak.end - overlap == region.start
+        series[:overlap] = [score(score_type, peak, region) for i in
+                                range(overlap)]
+    elif overlap_type == 'right':
+        assert peak.start - region.start + overlap == len(series)
+        series[-overlap:] = [score(score_type, peak, region) for i in range(overlap)]
+    elif overlap_type == 'whole_region':
+        assert overlap == len(series)
+        series[:] = [score(score_type, peak, region) for i in range(overlap)]
+    elif overlap_type == 'whole_peak':
+        left_offset = peak.start - region.start
+        right_offset = region.end - peak.end
+        assert left_offset + overlap + right_offset == len(series)
+        series[left_offset:-right_offset] = [score(score_type, peak, region) for i in range(overlap)]
+    else:
+        return -1
+    assert peak.strand == region.strand
+
+    if peak.strand == '-':
+        series = pd.Series([s for s in reversed(series)])
+        return series
+    else:
+        return series
+
+
+def determine_overlap(peak, region):
+    """
+    Takes two intervals (peak, region) and determines whether or not
+    the peak overlaps the left, right, entire region, or not at all.
+
+    Parameters
+    ----------
+    peak : pybedtools.Interval
+    region : pybedtools.Interval
+
+    Returns
+    -------
+
+    """
+    assert(peak.strand == region.strand)
+    # print('peak:', peak.start, peak.end)
+    # print('region:', region.start, region.end)
+    if peak.start >= region.end or region.start >= peak.end:
+        # newPeak and region don't overlap
+        return 'no_overlap', 0
+    elif peak.start == region.start and peak.end == region.end:
+        # newPeak and region sizes are equal (completely overlap)
+        overlap = peak.end - peak.start
+        return 'equal', overlap
+    elif peak.start <= region.start and peak.end <= region.end:
+        # newPeak overlaps the left side of the region only
+        overlap = peak.end - region.start
+        return 'left', overlap
+    elif peak.start >= region.start and peak.end >= region.end:
+        # newPeak overlaps the right side of the region only
+        overlap = region.end - peak.start
+        return 'right', overlap
+    elif peak.start <= region.start and peak.end >= region.end:
+        # region is completely contained within newPeak
+        overlap = region.end - region.start
+        return 'whole_region', overlap
+    elif peak.start >= region.start and peak.end <= region.end:
+        # newPeak is completely contained within region
+        overlap = peak.end - peak.start
+        return 'whole_peak', overlap
+    else:
+        print("warning: {}, {} overlaps in an unexpected way.".format(
+            peak, region
+        ))
+        return 'no_overlap', -1
+
+
+def score(score_type='simple', peak=None, region=None):
+    """
+    Given a score type, return the proper score.
+
+    Parameters
+    ----------
+    score_type : string
+        if 'simple', returns a score of 1
+        if 'fraction_region', returns a score of 1/length of the region
+        if 'fraction_peak', returns a score of 1/length of peak
+    peak: pybedtools.Interval
+        interval describing CLIP peak region
+    region: pybedtools.Interval
+        interval describing
+    Returns
+    -------
+
+    """
+    if score_type == 'simple':
+        return 1
+    elif score_type == 'fraction_region':
+        return 1.0/len(region)
+    elif score_type == 'fraction_peak':
+        return 1.0/len(peak)
+    return 0

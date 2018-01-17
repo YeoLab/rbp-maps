@@ -7,8 +7,8 @@ except ImportError:
 
 setup(
     name='rbp-maps',
-    version='0.0.5',
-    packages=['peak', 'density', 'analysis', 'maps'],
+    version='0.0.6',
+    packages=['density', 'maps', 'plotter', 'preprocessing_scripts'],
     url='',
     license='',
     include_package_data=True,
@@ -16,13 +16,15 @@ setup(
     author_email='',
     description='RNA-binding protein maps for region/splicing',
     package_dir={
-        'peak': 'maps/peak', 'density': 'maps/density',
-        'analysis': 'maps/analysis', 'maps': 'maps',
+        'density': 'maps/density',
+        'maps': 'maps',
+        'plotter': 'maps/plotter',
+        'preprocessing_scripts': 'preprocessing_scripts'
     },
     entry_points = {
         'console_scripts': [
-            'plot_density = maps.plot_density:main',
-            'plot_peak = maps.plot_peak:main'
+            'bed2bigbed-eclip = preprocessing_scripts.bed2bigbed:main',
+            'plot_map = maps.plot_map:main',
         ]
     }
 )

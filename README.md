@@ -15,6 +15,9 @@ RBP splice and feature maps
 | seaborn       | 0.8
 | jupyter       | 4.2.0 (if you want to import)
 | cwltool       | 1.0.20170828135420 (if you want to use as a CWL tool)
+| tqdm          | 4.19.5
+| numpy         | 1.12.1
+| scipy         | 0.19.1
 
 ### Create the environment:
 ```python
@@ -31,7 +34,7 @@ python setup.py install
 ```
 
 ### Or run this script:
-sh install_packages.sh (you might need to re-activate the environment)
+source create_environment.sh
 
 ### Simple Commandline Usage:
 
@@ -49,16 +52,15 @@ plot_density --ip ip.bam \ # BAM file containing reads of your CLIp (make sure t
  --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
 ```
 
-
-
 ##### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
-plot_peak --input input.compressed.bed \
- --output output.png \
- --miso included.txt excluded.txt background.txt
- --pvalue 3
- --foldchange 3
+plot_density --peak peak.bb \  # peaks file as a bigbed
+ --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
+ --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
+ --output rbfox2.svg \ # either an 'svg' or 'png' file works
+ --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
 ```
+
 ##### Other Options
 
 ```--bgnum```: For z-score heatmap plotting: 0-based 'index' of the annotation you want to use as the background distribution.
@@ -69,14 +71,14 @@ For example, if you would like to plot the z-score for included and excluded eve
 your command would look something like:
 
 ```
-plot_density --ip ip.bam \ # IP BAM file from eCLIP output
+plot_map --ip ip.bam \ # IP BAM file from eCLIP output
  --input input.bam \ # input BAM file from eCLIP output
  --annotations INCLUDED.txt EXCLUDED.txt BACKGROUND.txt \ # these are typically all JunctionCountsOnly.txt formatted files from RMATS
  --annotation_type rmats rmats rmats \ # for each annotation file specified, please specify the format (typically rmats)
  --output rbfox2.svg \ # output file name
  --event se \ # event (se/a3ss/a5ss/ri)
  --bgnum 2 \ # 0-based number of the background file (in this example, it is 2 because BACKGROUND.txt is the 3rd file listed)
- --to_test INCLUDED.txt EXCLUDED.txt # the filenames of the test conditions whose distributions you want to get z-scores from with respect to (--bgnum)
+ --testnums 0 1 # the 0-based number of the filenames of the test conditions whose distributions you want to get p-values from with respect to (--bgnum)
 ```
 
 ```--exon_offset```: (untested) controls how many bases into an exon you would like to plot (default 50 bases)
@@ -100,28 +102,28 @@ determine the level of conservation over a set of events. For example: ```--phas
 # Example Outputs
 
 ## Skipped Exon
-![skippedexon](https://github.com/YeoLab/rbp-maps/blob/master/images/skippedexon.png)
+![skippedexon](https://github.com/YeoLab/rbp-maps/blob/master/documentation/images/skippedexon.png)
 
 ## Alternative 3' Splice Sites
-![alt3prime](https://github.com/YeoLab/rbp-maps/blob/master/images/alternative3p.png)
+![alt3prime](https://github.com/YeoLab/rbp-maps/blob/master/documentation/images/alternative3p.png)
 
 ## Alternative 5' Splice Sites
-![alt5prime](https://github.com/YeoLab/rbp-maps/blob/master/images/alternative5p.png)
+![alt5prime](https://github.com/YeoLab/rbp-maps/blob/master/documentation/images/alternative5p.png)
 
 ## Retained Intron
-![retained](https://github.com/YeoLab/rbp-maps/blob/master/images/retainedintron.png)
+![retained](https://github.com/YeoLab/rbp-maps/blob/master/documentation/images/retainedintron.png)
 
 # Intermediate files produced
 
 The program will try and create as many intermediate files so you can do more downstream analysis, or plot your own maps, and things.
 
 
-
 # Other Notes
-- The script will automatically create intermediate raw and normalized matrix files for every condition you provide... the files can get big!! but they can be loaded into pandas if you wanted to look at a few events. They're tab separated
+- The script will automatically create intermediate raw and normalized matrix files for every condition you provide... the files can get big!! but they can be loaded into pandas if you wanted to look at a few events. They're comma separated
 
 - At least for ENCODE, we set a cutoff of a minimum 100 events (rmats annotation file should have at least 100 lines), otherwise the signal will look messy
 
-- Interactive nodes are preferred, for annotations with a ton of events TSCC will run out of memory. I think it's fine for a few hundred or so, but I've tried with 700k and it didn't go over so well...
+- Interactive nodes are preferred, for annotations with a ton of events TSCC will run out of memory. I think it's fine for a few hundred thousand events or so, but I've tried with 700k and it didn't go over so well...
+
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
 

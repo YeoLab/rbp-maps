@@ -22,42 +22,43 @@ skipped_exon
 @author: brianyee
 """
 
-import logging
 import numpy as np
-import os
 import pandas as pd
-import sys
-from collections import defaultdict
-
 import Feature
 import intervals
+from tqdm import trange
+import tqdm
+tqdm.monitor_interval = 0  # workaround for issue 481
 
-
-def region(
-    annotation, density, annotation_type,
-    is_scaled, upstream_offset=300, downstream_offset=300, normalize=False
-):
-    if is_scaled:
-        return scaled_region(
-            annotation, density, annotation_type,
-            upstream_offset, downstream_offset, normalize
-        )
-    else:
-        return unscaled_region(
-            annotation, density, annotation_type,
-            upstream_offset, downstream_offset
-        )
-
-
-def scaled_region(
+def same_length_region(
         annotation, density, annotation_type,
-        upstream_offset, downstream_offset, normalize
+        upstream_offset, downstream_offset, scale
 ):
+    """
+    Produces a matrix corresponding to a region that either is scale or
+    anchored at one central point. This means all BED file intervals are or
+    intend to be the same lengths.
+
+    Parameters
+    ----------
+    annotation
+    density
+    annotation_type
+    upstream_offset
+    downstream_offset
+    scale
+
+    Returns
+    -------
+
+    """
     densities = {}
     # TODO: pd.DataFrame.from_dict(dic, orient="index")
     with open(annotation) as f:
         for line in f:
-            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
+            if not line.startswith('event_name') and not \
+                    line.startswith('ID') and not \
+                    line.startswith('annotation'):  #
                 event = line.rstrip()
                 interval = Feature.Feature(
                     event, annotation_type
@@ -69,9 +70,12 @@ def scaled_region(
                     upstream_offset,
                     downstream_offset
                 )
-                if normalize:
+
+                if scale:
                     wiggle = intervals.get_scale(wiggle)
                 densities[intervals.rename_index(interval)] = wiggle
+                # if len(wiggle) != 601: # i saw some cds start sites that are more than 1 nt long.
+                #     print(len(wiggle), event)
     try:
         return pd.DataFrame(densities).T
     except Exception as e:
@@ -82,12 +86,14 @@ def scaled_region(
         return pd.DataFrame(densities).T
 
 
-def unscaled_region(
+def multi_length_regions(
         annotation, density, annotation_type,
         upstream_offset, downstream_offset
 ):
     """
-    Given an exon, return a dataframe of densities
+    Given an exon, return a dataframe of densities corresponding to unscaled
+    regions anchored by two points.
+
     Parameters
     ----------
     annotation : basestring
@@ -143,11 +149,47 @@ def unscaled_region(
     up = pd.DataFrame(up).T
     down = pd.DataFrame(down).T
 
-    # combine both regions in order to normalize together.
+    # combine both regions in order to scale together.
     ra = pd.concat([up, down], axis=1)
     ra.columns = range(0, ra.shape[1])
 
     return ra
+
+def meta(annotation, density, upstream_offset, downstream_offset, annotation_type="bed", scale_to=100):
+    # TODO: implement upstream and downstream CDS features.
+    densities = {}
+    df = intervals.merge(annotation)
+    df = intervals.explode(df)
+
+    genes = df.groupby('name').apply(intervals.make_linelist_from_dataframe)
+    progress = trange(len(genes))
+    for name, gene in genes.iteritems():
+        feature = Feature.MetaFeature(gene, annotation_type).get_bedtools()
+        wiggle = np.array([])  # create wiggle with all CDS values for each gene.
+        # check positive strand based on first element encountered
+        if feature[0].strand == '+':
+            # if positive, go from lower to higher
+            for interval in feature:
+                wig_segment = intervals.generic_site(
+                    density, interval, 0, 0
+                )
+                wiggle = np.append(wiggle, wig_segment)
+        elif feature[0].strand == '-':
+            # if negative, go from higher to lower
+            for interval in reversed(feature):
+                wig_segment = intervals.generic_site(
+                    density, interval, 0, 0
+                )
+                wiggle = np.append(wiggle, wig_segment)
+        if len(wiggle) != 0:
+            wiggle = intervals.get_scale(wiggle, scale_to=scale_to)
+            densities[name] = wiggle
+        progress.update(1)
+    try:
+        return pd.DataFrame(densities).T
+    except Exception as e:
+        print(e)
+        print("found different length features")
 
 
 def mutually_exc_exon(annotation, density, exon_offset, intron_offset,
@@ -173,9 +215,9 @@ def mutually_exc_exon(annotation, density, exon_offset, intron_offset,
     density : density.ReadDensity
         object containing positive and negative BigWig files
     exon_offset : int
-        how far into the exon boundary to plot
+        how far into the exon boundary to plotter
     intron_offset : int
-        how far after the exon boundary to plot
+        how far after the exon boundary to plotter
     annotation_type : basestring
         Must be "rmats" or any additional defined format (see: density.Feature)
     Returns
@@ -274,9 +316,9 @@ def retained_intron(annotation, density,
     density : density.ReadDensity
         object containing the positive and negative BigWig files
     exon_offset : int
-        how far into the exon boundary to plot
+        how far into the exon boundary to plotter
     intron_offset : int
-        how far from the exon boundary to plot
+        how far from the exon boundary to plotter
     annotation_type : str
         may be rmats format or any additional defined format in Feature
 
@@ -339,9 +381,9 @@ def alt_5p_splice_site(annotation, density, exon_offset, intron_offset,
     density : density.ReadDensity
         object containing positive and negative BigWig files
     exon_offset : int
-        how far into the exon boundary to plot
+        how far into the exon boundary to plotter
     intron_offset : int
-        how far from the exon boundary to plot
+        how far from the exon boundary to plotter
     annotation_type : str
         may be rmats format or any additional defined format in Feature
     Returns
@@ -407,9 +449,9 @@ def alt_3p_splice_site(annotation, density, exon_offset, intron_offset,
     density : density.ReadDensity
         object containing positive and negative BigWig files
     exon_offset : int
-        how far into the exon boundary to plot
+        how far into the exon boundary to plotter
     intron_offset : int
-        how far after the exon boundary to plot
+        how far after the exon boundary to plotter
     annotation_type : str
         may be rmats format or any additional defined format in Feature
     Returns
@@ -474,9 +516,9 @@ def skipped_exon(annotation, density, exon_offset, intron_offset,
     density : density.ReadDensity
         object containing positive and negative BigWig files
     exon_offset : int
-        how far into the exon boundary to plot
+        how far into the exon boundary to plotter
     intron_offset : int
-        how far after the exon boundary to plot
+        how far after the exon boundary to plotter
     annotation_type : str
         may be rmats format or any additional defined format in Feature
     Returns
@@ -538,75 +580,4 @@ def skipped_exon(annotation, density, exon_offset, intron_offset,
         axis=1
     )
     ra.columns = range(0, ra.shape[1])
-    return ra
-
-
-def unscaled_cds(annotation, density, upstream_offset,
-                 downstream_offset, annotation_type="twobeds"):
-    """
-    Given an exon, return a dataframe of densities
-    Parameters
-    ----------
-    annotation : basestring
-        filename of the annotation file to use
-    density : density.ReadDensity
-        object that contains positive and negative normalized density *.bw
-    upstream_offset : int
-        number of bases into the exon to return densities for. NOTE: this
-        nomenclature assumes we're plotting (+) exon|intron junctions, so
-        exons are 'upstream'. However 'upstream_offset' still refers to
-        exons in (-) intron|exon features.
-    downstream_offset : int
-        number of bases from the exon boundary to return. NOTE: this
-        nomenclature assumes we're plotting (+) exon|intron junctions, so
-        introns are 'downstream'. However 'downstream_offset' still refers to
-        introns in (-) intron|exon features.
-    annotation_type : basestring
-        name of the annotation feature described by density.Feature
-
-    Returns
-    -------
-    dataframe with (r rows and c cols) describing the density values across
-    a list of exons defined by annotation_file.
-    c = upstream offset + length of feature + downstream offset
-    r = number of annotations in annotation_file
-    """
-    count = 0  # event counter
-    up = {}  # describes for every event the upstream region
-    down = {}  # describes for every event the downstream region
-    with open(annotation) as f:
-        for line in f:
-            count += 1
-            if not line.startswith('event_name') and not line.startswith(
-                    'ID') and not line.startswith('annotation'):
-                event = line.rstrip()  # .split('\t')[0]
-                try:
-                    upstream_interval, downstream_interval = Feature.UnscaledCDS(
-                        event,
-                        annotation_type
-                    ).get_bedtools()
-                except ValueError as e:
-                    print(e, line, count)
-
-                """ calculate five prime site region """
-                # [      ]---|----[  |     ]
-                wiggle = intervals.three_prime_site(
-                    density, None, upstream_interval, upstream_offset,
-                    0, stop_at_midpoint=False
-                )
-                up[event] = wiggle
-                """ calculate the three prime site region """
-                wiggle = intervals.five_prime_site(
-                    density, None, downstream_interval, downstream_offset,
-                    0, stop_at_midpoint=False
-                )
-                down[event] = wiggle
-                # print(wiggle, upstream_offset, downstream_offset)
-    up = pd.DataFrame(up).T
-    down = pd.DataFrame(down).T
-
-    # combine both regions in order to normalize together.
-    ra = pd.concat([up, down], axis=1)
-    ra.columns = range(0, ra.shape[1])
-
     return ra

@@ -4,9 +4,11 @@ import matplotlib.colors as mcolors
 
 
 def make_colormap(seq):
-    """Return a LinearSegmentedColormap
-    seq: a sequence of floats and RGB-tuples. The floats should be increasing
-    and in the interval (0,1).
+    """
+    Return a LinearSegmentedColormap
+    seq: list
+        a sequence of floats and RGB-tuples. 
+        The floats should be increasing and in the interval (0,1).
     """
     seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
     cdict = {'red': [], 'green': [], 'blue': []}
@@ -21,10 +23,24 @@ def make_colormap(seq):
 
 
 def diverge_map(high=('blue'), low=('green')):
-    '''
+    """
+    Creates a colormap
+    
     low and high are colors that will be used for the two
-    ends of the spectrum. they can be either color strings
-    or rgb color tuples
+    ends of the spectrum. They can be either plotter strings
+    or rgb plotter tuples. White is in the center.
+    
+    Parameters
+    ----------
+    high
+    low
+
+    Returns
+    -------
+    colormap: cmap
+    """
+    '''
+    
     '''
     c = mcolors.ColorConverter().to_rgb
     if isinstance(low, basestring): low = c(low)

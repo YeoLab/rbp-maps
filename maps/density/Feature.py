@@ -53,7 +53,7 @@ class Feature():
 
     def get_bedtool(self):
         """
-        Returns a bedtool given a BED6 annotation line.
+        Returns a bedtool given a BED6 annotation_src_file line.
         Ignores any column past the 6th column.
 
         Returns
@@ -66,7 +66,7 @@ class Feature():
         name = None
         score = None
         strand = None
-        if self.source == 'bed' or self.source == 'normalizedbed':
+        if self.source == 'bed':
             chrom, start, end, name, score, strand = \
                 self.annotation.split('\t')[:6]
         return bt.create_interval_from_list(
@@ -166,6 +166,40 @@ class Skipped_exon(Feature):
             else:
                 print("Warning, strand not correct!")
                 return 1
+        elif self.source == 'bed12':
+            chrom, start, end, name, score, strand, thickStart, \
+            thickEnd, itemRgb, blockCount, blockSizes, blockStarts = \
+                self.annotation.split('\t')
+
+            low_exon_start, skipped_exon_start, high_exon_start = [(int(s) + int(start)) for s in blockStarts.split(',')]
+            low_exon_size, skipped_exon_size, high_exon_size = [int(s) for s in blockSizes.split(',')]
+
+            assert int(end) == high_exon_start + high_exon_size
+            
+            if strand == '+':
+                up = bt.create_interval_from_list(
+                    [chrom, str(low_exon_start), str(low_exon_start + low_exon_size), '0', '0', strand]
+                )
+                se = bt.create_interval_from_list(
+                    [chrom, str(skipped_exon_start), str(skipped_exon_start + skipped_exon_size), '0', '0', strand]
+                )
+                down = bt.create_interval_from_list(
+                    [chrom, str(high_exon_start), str(high_exon_start + high_exon_size), '0', '0', strand]
+                )
+            elif strand == '-':
+                up = bt.create_interval_from_list(
+                    [chrom, str(high_exon_start), str(high_exon_start + high_exon_size), '0', '0', strand]
+                )
+                se = bt.create_interval_from_list(
+                    [chrom, str(skipped_exon_start), str(skipped_exon_start + skipped_exon_size), '0', '0', strand]
+                )
+                down = bt.create_interval_from_list(
+                    [chrom, str(low_exon_start), str(low_exon_start + low_exon_size), '0', '0', strand]
+                )
+            else:
+                print("Warning, strand not correct!")
+                return 1
+
         return up, se, down
 
 
@@ -611,3 +645,29 @@ class UnscaledCDS(Feature):
         else:
             print("Warning, no valid feature source found. ")
         return upstream, downstream
+
+### METAGENE CLASSES
+
+class MetaFeature():
+
+    def __init__(self, annotation_lines, annotation_format):
+        """
+        Parameters
+        ----------
+        annotation_lines: list
+            list of lines corresponding to CDS regions of one gene.
+        annotation_format: 'bed'
+            format of the annotation_src_file.
+        """
+        self.features = []
+        self.source = annotation_format
+        for annotation_line in annotation_lines:
+            self.features.append(Feature(annotation_line, annotation_format))
+
+    def get_bedtools(self):
+        intervals = []
+        if self.source == 'bed':
+            for feature in self.features:
+                intervals.append(feature.get_bedtool())
+        bedtool = bt.BedTool(intervals).sort()
+        return bedtool
