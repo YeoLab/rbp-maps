@@ -40,8 +40,10 @@ class LineObject():
                 self.values = self.hist
             self.means = self.event_matrix.mean()  # TODO: remove, this is unused and here just to make other things work.
             self.sems = []  # TODO: remove, this is unused and here just to make other things work.
+
+            divide_hist = True
             self.error_pos, self.error_neg, self.max, self.min = self._get_std_error_boundaries_peak(self.values, divide_hist) # upper and lower boundaries for error
-        elif map_type == 'density':
+        elif map_type == 'density' or map_type == 'phastcon':
             self.hist = []
             self.means, \
             self.sems, \
@@ -237,7 +239,7 @@ class LineObject():
         if test == 'mannwhitneyu':
             self.p_values = self.calculate_mannwhitneyu(bg_matrix)
         elif test == 'ks':
-            self.p_values = self.calculate_mannwhitneyu(bg_matrix)
+            self.p_values = self.calculate_ks(bg_matrix)
         elif test == 'zscore':
             self.p_values = self.calculate_zscore(bg_matrix)
         elif test == 'fisher':

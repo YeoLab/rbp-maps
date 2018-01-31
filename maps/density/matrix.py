@@ -158,9 +158,11 @@ def multi_length_regions(
 def meta(annotation, density, upstream_offset, downstream_offset, annotation_type="bed", scale_to=100):
     # TODO: implement upstream and downstream CDS features.
     densities = {}
-    df = intervals.merge(annotation)
-    df = intervals.explode(df)
 
+    # TODO: we dont need this? No need to collapse transcripts
+    # df = intervals.merge(annotation)
+    # df = intervals.explode(df)
+    df = pd.read_table(annotation, names=['chrom','start','end','name','score','strand'])
     genes = df.groupby('name').apply(intervals.make_linelist_from_dataframe)
     progress = trange(len(genes))
     for name, gene in genes.iteritems():
