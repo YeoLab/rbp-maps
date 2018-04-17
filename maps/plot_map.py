@@ -66,6 +66,12 @@ def run_make_peak(
             min_density_threshold=0,
             conf=confidence, scale=scale
         )
+    if event == 'metagene':
+        divide_hist = False
+    else:
+        divide_hist = True
+
+
     map_obj.create_matrices()
     map_obj.normalize_matrix()
     map_obj.create_lines()
@@ -212,13 +218,28 @@ def run_make_density(
     map_obj.plot()
 
 
-def run_phastcons(outfile, phastcons, norm_func, conf, annotation):
-    map_obj = Map.Map(
-        phastcons, outfile, norm_func,
-        annotation=None, upstream_offset=0, downstream_offset=0,
-        min_density_threshold=0, conf=0.95
+def run_phastcons(outfile, phastcons, peak_file, masked_file, annotation):
+    print("running phastcon maps")
+    phast = density.ReadDensity.Phastcon(
+        phastcon=phastcons
+    )
+    rbp = density.Peak.Peak(
+        peaks=peak_file
     )
 
+    map_obj = Map.PhastconMap(
+        phast, rbp, outfile,
+        annotation=annotation,
+        upstream_offset=50,
+        downstream_offset=300,
+        min_density_threshold=0,
+        masked_file=masked_file
+    )
+    map_obj.create_matrices()
+    map_obj.create_lines()
+    map_obj.write_intermediates_to_csv()
+
+    map_obj.plot()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -261,18 +282,21 @@ def main():
     )
     parser.add_argument(
         "--event",
-        help="event. Can be either: se, ri, mxe, a3ss, a5ss, bed, multi-length-bed, cds",
-        required=True
+        help="Splice or region event. Can be either: "
+             "se, ri, mxe, a3ss, a5ss, bed, multi-length-bed, cds, phastcon",
+        required=False,
+        default='se'
     )
     parser.add_argument(
         "--annotations",
-        help="annotation_src_file files",
+        help="annotation_src_file files (Must all be different!)",
         nargs='+',
         required=True
     )
     parser.add_argument(
         "--annotation_type",
-        help="annotation_src_file type (miso, xintao, bed, rmats, eric)",
+        help="Annotation_src_file type (miso, xintao, bed, rmats, eric, twobed). "
+             "Some types will be incompatible with some events (see Feature()).",
         nargs='+',
         required=True
     )
@@ -293,7 +317,7 @@ def main():
     parser.add_argument(
         "--confidence",
         help="Keep only this percentage of events while removing others " \
-             "as outliers (default 0.95)",
+             "as outliers (default 0.95). Unused in phastcon maps.",
         default=0.95,
         type=float)
 
@@ -319,8 +343,9 @@ def main():
     )
     parser.add_argument(
         "--testnums",
-        help="annotation_src_file filenames that are labeled to"
-             " test against bg control for significance",
+        help="annotation_src_file filenames that are labeled to "
+             "test against bg control for significance. "
+             "This option doesn't apply to some maps",
         nargs='+',
         type=int,
         required=False,
@@ -333,8 +358,7 @@ def main():
              " we can specify this as option as [2]."
              " We will use this file as a background for fisher exact"
              " test calculations.",
-        default=-1,
-        type=int,
+        default=None,
     )
     parser.add_argument(
         "--phastcon",
@@ -343,11 +367,19 @@ def main():
         default=None,
     )
     parser.add_argument(
+        "--masknum",
+        help="specify file number (0-based) to be masked by peak in phastcon "
+             "map. For this map, scores will only be reported if they also "
+             "overlap a peak (specified by --peak). Just one mask can be "
+             "specified for now.",
+        default=None,
+    )
+    parser.add_argument(
         "--sigtest",
         help="(for density plots only - newPeak plots use fisher exact tests)."
              " Significance testing method of read density above background."
-             " Can choose either [mannwhitneyu], ks, or zscore.",
-        default='mannwhitneyu'
+             " Can choose either mannwhitneyu, ks, fisher (peaks only) or [zscore].",
+        default='zscore'
     )
     parser.add_argument(
         "--peak",
@@ -387,10 +419,16 @@ def main():
     is_flipped = args.flip
 
     # process bgcontrol file
-    if args.bgnum != -1:
-        background_file = annotations[args.bgnum]
+    if args.bgnum is not None:
+        background_file = annotations[int(args.bgnum)]
     else:
         background_file = None
+
+    # process masking (for phastcon maps)
+    if args.masknum is not None:
+        masked_file = annotations[int(args.masknum)]
+    else:
+        masked_file = None
 
     # process totest files
     files_to_test = []
@@ -430,9 +468,9 @@ def main():
         norm_func = norm.get_input
 
     # beta: plot phastcon bigwig overlaps
-    if phastcons is not None:
+    if phastcons is not None and peak_file is not None and event == 'phastcon':
         run_phastcons(
-            outfile, phastcons, norm_func, confidence, annotation_dict
+            outfile, phastcons, peak_file, masked_file, annotation_dict
         )
     # plot peaks if the peak file is specified
     elif peak_file is not None:

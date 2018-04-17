@@ -21,6 +21,7 @@ skipped_exon
 
 @author: brianyee
 """
+import sys
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,7 @@ import intervals
 from tqdm import trange
 import tqdm
 tqdm.monitor_interval = 0  # workaround for issue 481
+
 
 def same_length_region(
         annotation, density, annotation_type,
@@ -183,7 +185,12 @@ def meta(annotation, density, upstream_offset, downstream_offset, annotation_typ
                     density, interval, 0, 0
                 )
                 wiggle = np.append(wiggle, wig_segment)
-        if len(wiggle) != 0:
+        # if len(wiggle) != 0 and 'HepG2_EIF4B_626_intersecting_CDS.bed' in annotation and name == 'ENST00000379389.4':
+        #     print("WRITING INTERMEDIATE WIGGLE TO FILE")
+        #     with open('/home/bay001/projects/eric_clip_paper_20180120/permanent_data/conservation/intermediates/EIF4B.CDS.ENST00000379389.before_scaling.txt', 'w') as f:
+        #         for w in wiggle:
+        #             f.write("{}\n".format(w))
+        #    sys.exit(1)
             wiggle = intervals.get_scale(wiggle, scale_to=scale_to)
             densities[name] = wiggle
         progress.update(1)
@@ -583,3 +590,112 @@ def skipped_exon(annotation, density, exon_offset, intron_offset,
     )
     ra.columns = range(0, ra.shape[1])
     return ra
+
+
+def phastcon_region(
+        annotation, density, annotation_type,
+        exon_offset, intron_offset, peak, mask_df
+):
+    """
+    Produces a matrix corresponding to a region that contains a peak using values
+    that only overlap that peak
+
+    Parameters
+    ----------
+    annotation
+    density
+    annotation_type
+    upstream_offset
+    downstream_offset
+    peak: density.Peak
+
+    Returns
+    -------
+
+    """
+    three_upstream = {}
+    five_downstream = {}
+    with open(annotation) as f:
+        for line in f:
+            if not line.startswith('event_name') and not line.startswith('ID') and not line.startswith('annotation'):
+                event = line.rstrip()  # .split('\t')[0]
+                upstream_interval, downstream_interval = Feature.Phastcon(
+                    event,
+                    annotation_type
+                ).get_bedtools()
+                """three prime upstream region"""
+                wiggle = intervals.three_prime_site(
+                    density, downstream_interval, upstream_interval,
+                    exon_offset, intron_offset, fill_pads_with=-1
+                )
+                if mask_df:
+                    region = intervals.bedtool_from_renamed_twobed_index(event, 'upstream')
+
+
+                    masked_interval = peak.values(region.chrom, region.start,
+                                                  region.end, region.strand)
+                    if sum(masked_interval) > 0:
+                        for pos in masked_interval.index:
+                            wiggle[pos] = wiggle[pos] if masked_interval.loc[pos] > 0 else np.nan
+                        # if event == 'chr1\t1234724\t1234736\tENST00000354700.5\t0\t-\tchr1\t1235210\t1235285\tENST00000354700.5\t0\t-':
+                        #     print("upstream", region)
+                        #     print(wiggle)
+                    else:
+                        wiggle = [np.nan for pos in wiggle]
+                three_upstream[event] = wiggle
+
+                """five prime site of downstream region"""
+                wiggle = intervals.five_prime_site(
+                    density, upstream_interval, downstream_interval,
+                    exon_offset, intron_offset, fill_pads_with=-1
+                )
+
+                if mask_df:
+                    region = intervals.bedtool_from_renamed_twobed_index(event, 'downstream')
+                    masked_interval = peak.values(region.chrom, region.start,
+                                                  region.end, region.strand)
+                    if sum(masked_interval) > 0:
+
+                        for pos in masked_interval.index:
+                            wiggle[pos] = wiggle[pos] if (masked_interval.loc[pos] > 0 and wiggle[pos] >= 0) else np.nan
+                        # if event == 'chr1\t1234724\t1234736\tENST00000354700.5\t0\t-\tchr1\t1235210\t1235285\tENST00000354700.5\t0\t-':
+                        #     print("downstream", region)
+                    else:
+                        wiggle = [np.nan for pos in wiggle]
+                five_downstream[event] = wiggle
+
+        three_upstream = pd.DataFrame(three_upstream).T
+        five_downstream = pd.DataFrame(five_downstream).T
+
+    ra = pd.merge(three_upstream, five_downstream, how='outer', left_index=True, right_index=True)
+    ra = ra.replace(-1, np.nan)
+    # ra = pd.concat([three_upstream, five_downstream], axis=1)
+    ra.columns = range(0, ra.shape[1])
+    return ra
+
+    """
+    densities = {}
+    # TODO: pd.DataFrame.from_dict(dic, orient="index")
+    with open(annotation) as f:
+        for line in f:
+            if not line.startswith('event_name') and not \
+                    line.startswith('ID') and not \
+                    line.startswith('annotation'):  #
+                event = line.rstrip()
+                interval = Feature.Feature(
+                    event, annotation_type
+                ).get_bedtool()
+
+                wiggle = intervals.generic_site(
+                    density,
+                    interval,
+                    upstream_offset,
+                    downstream_offset
+                )
+                densities[intervals.rename_index(interval)] = wiggle
+
+    df = pd.DataFrame(densities).T
+    if mask_df == True:
+        df = intervals.mask(df, peak)
+
+    return df"""

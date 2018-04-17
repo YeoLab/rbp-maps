@@ -474,7 +474,7 @@ class Retained_intron(Feature):
             else:
                 print("strand not correct")
                 return -1
-        elif self.source == 'twobed':
+        elif self.source == 'twobed' or self.source == '2bed':
             lower_chrom, lower_start, lower_end, \
             lower_name, lower_score, lower_strand, \
             upper_chrom, upper_start, upper_end, \
@@ -671,3 +671,9 @@ class MetaFeature():
                 intervals.append(feature.get_bedtool())
         bedtool = bt.BedTool(intervals).sort()
         return bedtool
+
+### PHASTCON CLASSES
+
+class Phastcon(Retained_intron):
+    def __init__(self, annotation_line, annotation_format):
+        Retained_intron.__init__(self, annotation_line, annotation_format)

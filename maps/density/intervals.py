@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import pybedtools
 import sys
+from tqdm import trange
 
 MAX = sys.maxsize
 
@@ -152,6 +153,106 @@ def rename_index(interval_name):
         interval_name
     ).strip().split('\t')
     return "{}:{}-{}:{}:{}".format(chrom, start, end, name, strand)
+
+
+def bedtool_from_renamed_bed_index(name):
+    """
+    Turns the renamed index name into a bedtool (see above func: rename_index())
+
+    Parameters
+    ----------
+    name
+
+    Returns
+    -------
+
+    """
+    chrom, pos, name, strand = name.split(':')
+    start, end = pos.split('-')
+    interval = pybedtools.create_interval_from_list(
+        [chrom, start, end, name, '0', strand]
+    )
+    return interval
+
+
+def bedtool_from_renamed_twobed_index2(name, stream):
+    """
+    WARNING THIS IS ONLY GOOD FOR PHASTCON MASK FUNCTION
+
+    Parameters
+    ----------
+    name
+    stream
+
+    Returns
+    -------
+
+    """
+    low_chrom, low_start, low_end, low_name, low_score, low_strand, \
+    hi_chrom, hi_start, hi_end, hi_name, hi_score, hi_strand = name.split('\t')
+
+    if stream == 'upstream':
+        if low_strand == '+' and hi_strand == '+':
+            region = pybedtools.create_interval_from_list(
+                [low_chrom, low_start, low_end, low_name, low_score, low_strand]
+            )
+        else:
+            region = pybedtools.create_interval_from_list(
+                [hi_chrom, hi_start, hi_end, hi_name, hi_score,
+                hi_strand]
+            )
+    elif stream == 'downstream':
+        if low_strand == '-' and hi_strand == '-':
+            region = pybedtools.create_interval_from_list(
+                [low_chrom, low_start, low_end, low_name, low_score, low_strand]
+            )
+        else:
+            region = pybedtools.create_interval_from_list(
+                [hi_chrom, hi_start, hi_end, hi_name, hi_score,
+                hi_strand]
+            )
+    return region
+
+
+def bedtool_from_renamed_twobed_index(name, stream):
+    """
+    WARNING THIS IS ONLY GOOD FOR PHASTCON MASK FUNCTION
+
+    Parameters
+    ----------
+    name
+    stream
+
+    Returns
+    -------
+
+    """
+    low_chrom, low_start, low_end, low_name, low_score, low_strand, \
+    hi_chrom, hi_start, hi_end, hi_name, hi_score, hi_strand = name.split('\t')
+    region = []
+    if stream == 'upstream':
+        if low_strand == '+' and hi_strand == '+':
+            region = pybedtools.create_interval_from_list(
+                [low_chrom, str(int(low_end)-50), str(int(low_end)+300), low_name, low_score,
+                 low_strand]
+            )
+        else:
+            region = pybedtools.create_interval_from_list(
+                [hi_chrom, str(int(hi_start)-300), str(int(hi_start)+50), hi_name, hi_score,
+                 hi_strand]
+            )
+    elif stream == 'downstream':
+        if low_strand == '-' and hi_strand == '-':
+            region = pybedtools.create_interval_from_list(
+                [low_chrom, str(int(low_end)-50), str(int(low_end)+300), low_name, low_score,
+                 low_strand]
+            )
+        else:
+            region = pybedtools.create_interval_from_list(
+                [hi_chrom, str(int(hi_start)-300), str(int(hi_start)+50), hi_name, hi_score,
+                 hi_strand]
+            )
+    return region
 
 
 def split(lst, n):
@@ -527,7 +628,6 @@ def _junction_site(rbp, next_interval, current_interval, exon_offset,
     wiggle = rbp.values(
         current_interval.chrom, start, end, current_interval.strand
     )
-
     if current_interval.strand == '+':
         return left_pad, wiggle, right_pad
     else:
@@ -548,7 +648,7 @@ def _clean_and_add_padding(wiggle, left_pad=0, right_pad=0, fill_pads_with=-1):
     right_pad : int
         length of padding to add to the right (> wiggle[len(wiggle)-1]) of list
     fill_pads_with : int
-        fill missing flank regions with this number
+        fill missing flank regions with this number (CANNOT BE NAN)
 
     Returns
     -------
@@ -570,7 +670,7 @@ def _clean_and_add_padding(wiggle, left_pad=0, right_pad=0, fill_pads_with=-1):
 
 
 def five_prime_site(rbp, upstream_interval, interval, exon_offset,
-                    intron_offset, stop_at_midpoint=False):
+                    intron_offset, stop_at_midpoint=False, fill_pads_with=-1):
     """
 
     Parameters
@@ -603,11 +703,11 @@ def five_prime_site(rbp, upstream_interval, interval, exon_offset,
         '5p',
         stop_at_midpoint
     )
-    return _clean_and_add_padding(wiggle, left_pad, right_pad)
+    return _clean_and_add_padding(wiggle, left_pad, right_pad, fill_pads_with)
 
 
 def three_prime_site(rbp, downstream_interval, interval, exon_offset,
-                     intron_offset, stop_at_midpoint=False):
+                     intron_offset, stop_at_midpoint=False, fill_pads_with=-1):
     """
 
     Parameters
@@ -640,10 +740,10 @@ def three_prime_site(rbp, downstream_interval, interval, exon_offset,
         '3p',
         stop_at_midpoint
     )
-    return _clean_and_add_padding(wiggle, left_pad, right_pad)
+    return _clean_and_add_padding(wiggle, left_pad, right_pad, fill_pads_with)
 
 
-def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0):
+def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0, fill_pads_with=-1):
     """
     Returns
     Parameters
@@ -677,7 +777,7 @@ def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0):
     else:
         print "Strand not correct", interval.strand
         raise ()
-    return _clean_and_add_padding(wiggle, 0, 0)
+    return _clean_and_add_padding(wiggle, 0, 0, fill_pads_with)
 
 
 def get_overlap(peak, region, score_type='simple'):
@@ -802,4 +902,33 @@ def score(score_type='simple', peak=None, region=None):
         return 1.0/len(region)
     elif score_type == 'fraction_peak':
         return 1.0/len(peak)
+    elif score_type == 'region_name':
+        return float(region.name)
     return 0
+
+
+def mask(df, peak, stream):
+    """
+    masks the intervals in df based on where peaks are. If a peak does not directly overlap
+    the region at a given position, mask that position with nan. If a peak does overlap,
+    preserve the score.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+    peak: density.Peak
+
+    Returns
+    -------
+    masked: pandas.DataFrame
+    """
+    progress = trange(len(df.index))
+    for i in df.index:
+        region = bedtool_from_renamed_twobed_index(i, stream)
+        masked_interval = peak.values(region.chrom, region.start, region.end, region.strand)
+        if sum(masked_interval) != 0:
+            for pos in masked_interval.index:
+                df.loc[i, pos] = df.loc[i, pos] if masked_interval.loc[pos] > 0 else np.nan
+        progress.update(1)
+    return df
+

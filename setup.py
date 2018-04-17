@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='rbp-maps',
-    version='0.0.6',
+    version='0.0.7',
     packages=['density', 'maps', 'plotter', 'preprocessing_scripts'],
     url='',
     license='',

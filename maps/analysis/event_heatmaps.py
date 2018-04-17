@@ -152,7 +152,7 @@ def main(argv=None):  # IGNORE:C0111
     input_matrices_files = args.i
     if (len(input_matrices_files) != 4):
         logger.error(
-            "Does not have 4 plots to plot! {}".format(
+            "Does not have 4 plots to plotter! {}".format(
                 ' '.join(input_matrices_files)
             )
         )
@@ -183,7 +183,7 @@ def main(argv=None):  # IGNORE:C0111
     # normed matrix for Subtract - U2AF2-LV08-K562-SE.MATS.JunctionCountOnly.negative.nr.
     # normed matrix for Remove dup - calculate separately.
 
-    """ plot stuff """
+    """ plotter stuff """
     heatmaps = []
     logger.info("************************************************************")
     try:

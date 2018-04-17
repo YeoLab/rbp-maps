@@ -3,7 +3,7 @@
 """
 Created on Nov 17, 2017
 
-Module that helps containerize the CLIP read information.
+Module that helps containerize the CLIP peak information.
 
 @author: Brian
 """
@@ -48,26 +48,27 @@ class Peak():
 
         Returns
         -------
-        densites : list
+        densities : list
             values corresponding to density over specified positions.
         """
 
         # Get all overlapping values
-        try:
-            overlapped_peaks = self.peaks.entries(chrom, start, end, strand)
-        except RuntimeError as e:
-            print("weird entry (this can happen if the peak bb does not contain this chromosome, or if the region is invalid)"
-                  ": {}:{}-{}:{}".format(chrom, start, end, strand), e)
-            overlapped_peaks = None
         region = pybedtools.create_interval_from_list(
             [
                 chrom, str(start), str(end), '.', '0', strand
             ]
         )
-
         series = pd.Series(data=0, index=range(len(region)))
-        if overlapped_peaks is not None:
+        try:
+            overlapped_peaks = self.peaks.entries(chrom, start, end, strand)
+        except RuntimeError as e:
+            print("weird entry (this can happen if the peak bb does not contain this chromosome, or if the region is invalid)"
+                  ": {}:{}-{}:{}".format(chrom, start, end, strand), e)
+            return series
 
+        if overlapped_peaks is None:
+            return series
+        else:
             for p in overlapped_peaks:
                 bed_list = [chrom, str(p[0]), str(p[1])] + p[2].split('\t')
                 if bed_list[5] == strand:
@@ -76,7 +77,7 @@ class Peak():
                         print('not implemented or important yet')  # TODO: implement flatten
                     else:
                         series += intervals.get_overlap(peak, region)
-        return series
+            return series
 
     def pseudocount(self):
         return 0

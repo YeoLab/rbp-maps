@@ -386,17 +386,26 @@ def divide_by_num_events(some_list, num_events):
     """
     Normalizes each position by dividing by the number of events.
 
+    if some_list = [10, 20, 30, 40, 50]
+    and num_events = [10, 10, 10, 10, 5]
+    normed_list = [1, 2, 3, 4, 10]
+
     Parameters
     ----------
-    some_list
-    num_events
+    some_list: list
+        list of values
+    num_events: list
+        list of event numbers to divide some_list at each position
 
     Returns
     -------
-
+    normed_list: list
+        list containing value / number of events at each position.
     """
+    normed_list = []
     # some_list_ps = [x+1 for x in some_list] # remove pseudocount, uncomment to add back in
-    normed_list = [float(x) / num_events for x in some_list]
+    for value, num_event in zip(some_list, num_events):
+        normed_list.append(float(value) / num_event)
     return normed_list
 
 
@@ -416,8 +425,8 @@ def std_error(some_list, num_events):
     devs = []
     p_list = divide_by_num_events(some_list, num_events)
     q_list = [1 - p for p in p_list]
-    for p, q in zip(p_list, q_list):
-        devs.append(dev(p, q, num_events))
+    for p, q, e in zip(p_list, q_list, num_events):
+        devs.append(dev(p, q, e))
     return devs
 
 

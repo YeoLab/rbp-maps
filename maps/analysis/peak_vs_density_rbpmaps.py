@@ -144,7 +144,7 @@ def main(argv=None):  # IGNORE:C0111
     input_files = args.i
     if (len(input_files) != 4):
         logger.error(
-            "Does not have 4 plots to plot! {}".format(
+            "Does not have 4 plots to plotter! {}".format(
                 ' '.join(input_files)
             )
         )
@@ -186,11 +186,11 @@ def main(argv=None):  # IGNORE:C0111
     # normed matrix for Subtract - U2AF2-LV08-K562-SE.MATS.JunctionCountOnly.negative.nr.
     # normed matrix for Remove dup - calculate separately.
 
-    """ plot stuff """
+    """ plotter stuff """
     logger.info("************************************************************")
     f, axarr = plt.subplots(3, sharex=True, gridspec_kw = {'height_ratios':[3, 3, 0.5]})
     plot(pos_density['value'],neg_density['value'],ax=axarr[0],title='(RPM+subtraction) normalized density')
-    plot(pos_peak['value'],neg_peak['value'],ax=axarr[1],title='Input normalized peak')
+    plot(pos_peak['value'],neg_peak['value'],ax=axarr[1],title='Input normalized newPeak')
     plot_cassette(ax=axarr[2])
     f.savefig(output_file)
     logger.info("************************************************************")

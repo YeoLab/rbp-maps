@@ -51,10 +51,11 @@ BG1_COLOR = 'black' # COLOR_PALETTE['black']
 BG2_COLOR = COLOR_PALETTE[6]
 BG3_COLOR = COLOR_PALETTE[7]
 BG4_COLOR = COLOR_PALETTE[4]
+BG5_COLOR = COLOR_PALETTE[2]
 POS_COLOR = COLOR_PALETTE[0]
 NEG_COLOR = COLOR_PALETTE[5]
 
-COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR]
+COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR, BG5_COLOR]
 
 RED = COLOR_PALETTE[0]
 ORANGE = COLOR_PALETTE[1]
@@ -97,18 +98,24 @@ class Map:
         self.min_density_threshold = min_density_threshold
         self.upstream_offset = upstream_offset
         self.downstream_offset = downstream_offset
-        # self.is_scaled = is_scaled
         self.conf = conf
 
         self.raw_matrices = defaultdict(dict)
         self.norm_matrices = defaultdict(dict)
-        self.means = defaultdict() # TODO delete when safe
-        self.sems = defaultdict() # TODO delete when safe
+        self.num_events = defaultdict(dict)
+
         self.lines = []
 
         self.scale = scale
 
     def get_map_type(self):
+        """
+        Returns the string-ified version of the type of map this is.
+
+        Returns
+        -------
+        map_type: basestring
+        """
         if(isinstance(self.ip, Peak.Peak)):
             return 'peak'
         elif(isinstance(self.ip, ReadDensity.ReadDensity)):
@@ -132,13 +139,18 @@ class Map:
         """
 
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
+
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.same_length_region(
                 filename, self.ip, filetype,
                 self.upstream_offset, self.downstream_offset,
                 self.scale
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def create_lines(self):
         """
@@ -149,17 +161,17 @@ class Map:
         -------
 
         """
-
         c = 0  # plotter for iterating over default COLOR scheme
         for filename, _ in self.annotation.iteritems():
             self.lines.append(
-                LineObject.LineObject(
-                    self.raw_matrices['ip'][filename],
-                    filename,
-                    self.conf,
-                    COLORS[c],
-                    MIN_EVENT_THRESHOLD,
-                    self.map_type
+                LineObject.create_line(
+                    event_matrix=self.raw_matrices['ip'][filename],
+                    annotation_src_file=filename,
+                    conf=self.conf,
+                    color=COLORS[c],
+                    min_event_threshold=MIN_EVENT_THRESHOLD,
+                    map_type=self.map_type,
+                    num_events=self.num_events['ip'][filename]
                 )
             )
             c += 1
@@ -190,12 +202,14 @@ class Map:
         annotation_src_file/rbp matrix created
         """
         for line in self.lines:
-            output_file = self.output_base + SEP + \
-                          line.file_label + '.means.txt'
+            if line.has_mean():
+                print("label: {}".format(line.file_label))
+                output_file = self.output_base + SEP + \
+                              line.file_label + '.means.txt'
 
-            with open(output_file, 'w') as o:
-                for mean in line.means:
-                    o.write("{}\n".format(mean))
+                with open(output_file, 'w') as o:
+                    for mean in line.means:
+                        o.write("{}\n".format(mean))
 
     def write_intermediate_sems_to_csv(self):
         """
@@ -220,6 +234,7 @@ class Map:
 
     def plot(self):
         Plotter.plot_bed(self.lines, self.output_filename, self.map_type)
+
 
 class WithInput(Map):
     def __init__(self, ip, inp, output_filename, norm_function,
@@ -335,6 +350,7 @@ class WithInput(Map):
         this RBP intersected with the events described by condition1.rmats
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
 
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.same_length_region(
@@ -345,7 +361,10 @@ class WithInput(Map):
                 filename, self.inp, filetype,
                 self.upstream_offset, self.downstream_offset, self.scale,
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def normalize_matrix(self):
         """
@@ -362,7 +381,8 @@ class WithInput(Map):
             )
         self.norm_matrices = matrices
 
-    def create_lines(self, divide_hist=True):
+
+    def create_lines(self):
         """
         Creates LineObject for each annotation_src_file we have to
         parse. LineObjects contain density matrices, means, 
@@ -376,16 +396,17 @@ class WithInput(Map):
         self.conf : float
         """
         c = 0 # plotter for iterating over default COLOR scheme
+
         for filename, filetype in self.annotation.iteritems():
             self.lines.append(
-                LineObject.LineObject(
-                    self.norm_matrices[filename],
-                    filename,
-                    self.conf,
-                    COLORS[c],
-                    MIN_EVENT_THRESHOLD,
-                    self.map_type,
-                    divide_hist=divide_hist
+                LineObject.create_line(
+                    event_matrix=self.norm_matrices[filename],
+                    annotation_src_file=filename,
+                    conf=self.conf,
+                    color=COLORS[c],
+                    min_event_threshold=MIN_EVENT_THRESHOLD,
+                    map_type=self.map_type,
+                    num_events=self.num_events['ip'][filename]
                 )
             )
             c+=1
@@ -474,6 +495,8 @@ class MultiLengthBed(Bed):
 
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
+
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.multi_length_regions(
                 annotation=filename, density=self.ip,
@@ -487,7 +510,11 @@ class MultiLengthBed(Bed):
                 downstream_offset=self.downstream_offset,
                 annotation_type=filetype
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * \
+                                         matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def plot(self):
         Plotter.plot_multi_length_bed(self.lines, self.output_filename, self.map_type)
@@ -531,6 +558,8 @@ class SkippedExon(WithInput):
         this RBP intersected with the events described by condition1.rmats
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
+
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.skipped_exon(
                 annotation=filename, density=self.ip,
@@ -542,7 +571,11 @@ class SkippedExon(WithInput):
                 exon_offset=self.exon_offset, intron_offset=self.intron_offset,
                 annotation_type=filetype
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * \
+                                         matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def plot(self):
         """
@@ -600,6 +633,7 @@ class MutuallyExclusiveExon(WithInput):
 
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.mutually_exc_exon(
                 annotation=filename, density=self.ip,
@@ -611,7 +645,11 @@ class MutuallyExclusiveExon(WithInput):
                 exon_offset=self.exon_offset, intron_offset=self.intron_offset,
                 annotation_type=filetype
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * \
+                                         matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def plot(self):
         """
@@ -666,6 +704,8 @@ class Alt3PSpliceSite(WithInput):
 
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
+
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.alt_3p_splice_site(
                 annotation=filename, density=self.ip,
@@ -677,7 +717,11 @@ class Alt3PSpliceSite(WithInput):
                 exon_offset=self.exon_offset, intron_offset=self.intron_offset,
                 annotation_type=filetype
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * \
+                                         matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def plot(self):
         Plotter.plot_a3ss(self.lines, self.output_filename, self.map_type)
@@ -726,6 +770,8 @@ class Alt5PSpliceSite(WithInput):
 
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
+
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.alt_5p_splice_site(
                 annotation=filename, density=self.ip,
@@ -737,7 +783,11 @@ class Alt5PSpliceSite(WithInput):
                 exon_offset=self.exon_offset, intron_offset=self.intron_offset,
                 annotation_type=filetype
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * \
+                                         matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def plot(self):
         Plotter.plot_a5ss(self.lines, self.output_filename, self.map_type)
@@ -785,6 +835,7 @@ class RetainedIntron(WithInput):
 
         """
         matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
         for filename, filetype in self.annotation.iteritems():
             matrices['ip'][filename] = mtx.retained_intron(
                 annotation=filename, density=self.ip,
@@ -796,7 +847,11 @@ class RetainedIntron(WithInput):
                 exon_offset=self.exon_offset, intron_offset=self.intron_offset,
                 annotation_type=filetype
             )
+            num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * \
+                                         matrices['ip'][filename].shape[1]
+
         self.raw_matrices = matrices
+        self.num_events = num_events
 
     def plot(self):
         Plotter.plot_ri(self.lines, self.output_filename, self.map_type)
@@ -832,11 +887,13 @@ class Metagene(WithInput):
 
 
     def create_matrices(self):
-        three_utr_ratio = 44  # TODO: remove hardcoded percentage files
-        five_utr_ratio = 17
-        cds_ratio = 100
+        three_utr_ratio = 40 # 49 # 44  # TODO: remove hardcoded percentage files
+        five_utr_ratio = 10 # 13 # 17
+        cds_ratio = 50 # 100
 
         matrices = defaultdict()
+        num_events = defaultdict()
+
         for filename, filetype in self.annotation.iteritems():
             if filetype == '3utr' or filetype == 'utr3':
                 matrices["three_prime_utr_ip"] = mtx.meta(
@@ -845,18 +902,22 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=three_utr_ratio
                 )
-                matrices["three_prime_utr_ip"] = matrices[
-                    "three_prime_utr_ip"].div(
-                    matrices["three_prime_utr_ip"].shape[0])
+                # matrices["three_prime_utr_ip"] = matrices[
+                #     "three_prime_utr_ip"].div(
+                #     matrices["three_prime_utr_ip"].shape[0])
                 matrices["three_prime_utr_input"] = mtx.meta(
                     annotation=filename, density=self.inp,
                     upstream_offset=self.upstream_offset,
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=three_utr_ratio
                 )
-                matrices["three_prime_utr_input"] = matrices[
-                    "three_prime_utr_input"].div(
-                    matrices["three_prime_utr_input"].shape[0])
+                # matrices["three_prime_utr_input"] = matrices[
+                #     "three_prime_utr_input"].div(
+                #     matrices["three_prime_utr_input"].shape[0])
+                num_events["three_prime_utr_ip"] = [
+                    matrices["three_prime_utr_ip"].shape[0]
+                ] * matrices["three_prime_utr_ip"].shape[1]
+
             elif filetype == '5utr' or filetype == 'utr5':
                 matrices["five_prime_utr_ip"] = mtx.meta(
                     annotation=filename, density=self.ip,
@@ -864,8 +925,8 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=five_utr_ratio
                 )
-                matrices["five_prime_utr_ip"] = matrices["five_prime_utr_ip"].div(
-                    matrices["five_prime_utr_ip"].shape[0])
+                # matrices["five_prime_utr_ip"] = matrices["five_prime_utr_ip"].div(
+                #     matrices["five_prime_utr_ip"].shape[0])
 
                 matrices["five_prime_utr_input"] = mtx.meta(
                     annotation=filename, density=self.inp,
@@ -873,9 +934,13 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=five_utr_ratio
                 )
-                matrices["five_prime_utr_input"] = matrices["five_prime_utr_input"].div(
-                    matrices["five_prime_utr_input"].shape[0]
-                )
+                # matrices["five_prime_utr_input"] = matrices["five_prime_utr_input"].div(
+                #     matrices["five_prime_utr_input"].shape[0]
+                # )
+                num_events["five_prime_utr_ip"] = [
+                   matrices["five_prime_utr_ip"].shape[0]
+                ] * matrices["five_prime_utr_ip"].shape[1]
+
             elif filetype == 'cds':
                 matrices["cds_ip"] = mtx.meta(
                     annotation=filename, density=self.ip,
@@ -883,8 +948,8 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=cds_ratio
                 )
-                matrices["cds_ip"] = matrices["cds_ip"].div(
-                    matrices["cds_ip"].shape[0])
+                # matrices["cds_ip"] = matrices["cds_ip"].div(
+                #     matrices["cds_ip"].shape[0])
 
                 matrices["cds_input"] = mtx.meta(
                     annotation=filename, density=self.inp,
@@ -892,13 +957,18 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=cds_ratio
                 )
-                matrices["cds_input"] = matrices["cds_input"].div(
-                    matrices["cds_input"].shape[0]
-                )
+                # matrices["cds_input"] = matrices["cds_input"].div(
+                #     matrices["cds_input"].shape[0]
+                # )
+                num_events["cds_ip"] = [
+                    matrices["cds_ip"].shape[0]
+                ] * matrices["cds_ip"].shape[1]
+
             else:
                 print('unknown filetype! for metagene!')
+
         # combine/merge all regions
-        self.raw_matrices['ip']['cell'] = pd.merge(
+        self.raw_matrices['ip']['meta'] = pd.merge(
             matrices['five_prime_utr_ip'],
             matrices['cds_ip'],
             how='outer', left_index=True, right_index=True
@@ -907,7 +977,7 @@ class Metagene(WithInput):
             how='outer', left_index=True, right_index=True
         )
 
-        self.raw_matrices['input']['cell'] = pd.merge(
+        self.raw_matrices['input']['meta'] = pd.merge(
             matrices['five_prime_utr_ip'],
             matrices['cds_ip'],
             how='outer', left_index=True, right_index=True
@@ -915,28 +985,18 @@ class Metagene(WithInput):
             matrices['three_prime_utr_ip'],
             how='outer', left_index=True, right_index=True
         )
-        self.raw_matrices['ip']['cell'].columns = range(
-            five_utr_ratio + cds_ratio + three_utr_ratio
-        )
-        self.raw_matrices['input']['cell'].columns = range(
-            five_utr_ratio + cds_ratio + three_utr_ratio
-        )
-        self.annotation = {'cell':'metagene'}
 
-    def normalize_matrix(self):
-        """
-        For each annotation_src_file we have to parse, scale the ip
-        density values above its matched input density values.
-        """
-        matrices = defaultdict()
-        for filename, _ in self.annotation.iteritems():
-            matrices[filename] = self.norm_function(
-                self.raw_matrices['ip'][filename],
-                self.raw_matrices['input'][filename],
-                self.ip.pseudocount(), self.inp.pseudocount(),
-                self.min_density_threshold
-            )
-        self.norm_matrices = matrices
+        self.raw_matrices['ip']['meta'].columns = range(
+            five_utr_ratio + cds_ratio + three_utr_ratio
+        )
+        self.raw_matrices['input']['meta'].columns = range(
+            five_utr_ratio + cds_ratio + three_utr_ratio
+        )
+        self.annotation = {'meta':'metagene'}
+        self.num_events['ip']['meta'] = num_events['five_prime_utr_ip'] + \
+                                        num_events['cds_ip'] + \
+                                        num_events['three_prime_utr_ip']
+        print("NUM EVENTS", self.num_events)
 
     def plot(self):
         """
@@ -1022,12 +1082,42 @@ class ATACIntron(RetainedIntron):
 
 
 class PhastconMap(Map):
-    def __init__(self, phastcon, output_filename,
-                 annotation, upstream_offset=0, downstream_offset=0,
-                 min_density_threshold=0):
+    def __init__(self, phastcon, peak, output_filename,
+                 annotation, upstream_offset, downstream_offset,
+                 min_density_threshold,
+                 masked_file):
         Map.__init__(self, phastcon, output_filename, norm_function = norm.get_density,
                  annotation=annotation, upstream_offset=upstream_offset, downstream_offset=downstream_offset,
                  min_density_threshold=min_density_threshold, conf=1, scale=False)
+        self.peak = peak # for masking (see: create_matrices)
+        self.masked_file = masked_file # for masking (see: create_matrices)
+        
+    def create_matrices_meta_DEPRECATED(self):
+        """
+        Creates a stacked density matrix for each event in each annotation_src_file file
+        and sets self.raw_matrices variable.
+
+        For Example:
+
+        raw_matrices['ip']['condition1.rmats'] = matrix of density values for
+        this RBP intersected with the events described by condition1.rmats
+        """
+        matrices = defaultdict(dict)
+        num_events = defaultdict(dict)
+
+        for filename, filetype in self.annotation.iteritems():
+            matrices['phastcon'][filename] = mtx.meta(
+                annotation=filename, density=self.ip,
+                upstream_offset=self.upstream_offset,
+                downstream_offset=self.downstream_offset,
+                annotation_type=filetype
+            )
+            num_events['phastcon'][filename] = [
+                matrices['phastcon'][filename].shape[0]
+            ] * matrices['phastcon'][filename].shape[1]
+        self.raw_matrices = matrices
+        self.num_events = num_events
+
     def create_matrices(self):
         """
         Creates a stacked density matrix for each event in each annotation_src_file file
@@ -1039,15 +1129,38 @@ class PhastconMap(Map):
         this RBP intersected with the events described by condition1.rmats
         """
         matrices = defaultdict(dict)
-        for filename, filetype in self.annotation.iteritems():
-            matrices['phastcon'][filename] = mtx.meta(
-                annotation=filename, density=self.ip,
-                upstream_offset=self.upstream_offset,
-                downstream_offset=self.downstream_offset,
-                annotation_type=filetype
-            )
-        self.raw_matrices = matrices
+        num_events = defaultdict(dict)
+        ct = 0
 
+        for filename, filetype in self.annotation.iteritems():
+            if filename == self.masked_file:
+                print("Masking: {}".format(filename))
+                matrices['phastcon'][filename] = mtx.phastcon_region(
+                    annotation=filename, density=self.ip,
+                    exon_offset=self.upstream_offset,
+                    intron_offset=self.downstream_offset,
+                    annotation_type=filetype,
+                    peak=self.peak,
+                    mask_df=True
+                )
+            else:
+                # Don't mask the background file, leave for all
+
+                matrices['phastcon'][filename] = mtx.phastcon_region(
+                    annotation=filename, density=self.ip,
+                    exon_offset=self.upstream_offset,
+                    intron_offset=self.downstream_offset,
+                    annotation_type=filetype,
+                    peak=self.peak,
+                    mask_df=False
+                )
+            num_events['phastcon'][filename] = [
+                matrices['phastcon'][filename].shape[0]
+            ] * matrices['phastcon'][filename].shape[1]
+            ct += 1
+
+        self.raw_matrices = matrices
+        self.num_events = num_events
 
     def create_lines(self):
         """
@@ -1062,13 +1175,22 @@ class PhastconMap(Map):
         c = 0  # plotter for iterating over default COLOR scheme
         for filename, _ in self.annotation.iteritems():
             self.lines.append(
-                LineObject.LineObject(
-                    self.raw_matrices['phastcon'][filename],
-                    filename,
-                    self.conf,
-                    COLORS[c],
-                    MIN_EVENT_THRESHOLD,
-                    self.map_type
+                LineObject.create_line(
+                    event_matrix=self.raw_matrices['phastcon'][filename],
+                    annotation_src_file=filename,
+                    conf=self.conf,
+                    color=COLORS[c],
+                    min_event_threshold=MIN_EVENT_THRESHOLD,
+                    map_type=self.map_type,
+                    num_events=self.num_events['phastcon'][filename]
                 )
             )
             c += 1
+        for line in self.lines:
+            if line.annotation_src_file == self.masked_file:
+                if not line.label.endswith('*'):  # we probably just want one asterisk
+                    line.label = line.label + '*'
+
+    def plot(self):
+        Plotter.plot_phastcon(self.lines, self.output_filename, self.map_type)
+
