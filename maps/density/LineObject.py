@@ -416,7 +416,7 @@ def create_line(event_matrix, annotation_src_file, conf, color,
         return PeakLine(
             event_matrix=event_matrix,
             annotation_src_file=annotation_src_file,
-            conf=conf,
+            conf=1,
             color=color,
             min_event_threshold=min_event_threshold,
             num_events=num_events,

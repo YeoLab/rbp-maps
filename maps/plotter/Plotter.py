@@ -143,9 +143,10 @@ class _Plotter():
                 axs[i].set_xlim(0, len(regions[i])-1)
                 if i > 0:
                     axs[i].yaxis.set_visible(False)
-                if(len(regions[0]) == 350) or (len(regions[0]) == 351):  # TODO kinda hacky
+                if(len(regions[0]) == 350) or (len(regions[0]) == 351):  # TODO hacky
                     self.renumber_axes(i, axs)
-
+                if(len(regions[0]) == 100):
+                    self.renumber_axes(i, axs)
             c+=1
         if legend_ax:
             self.set_legend(axs, legend_ax)
@@ -180,6 +181,26 @@ class _Plotter():
                     right=True)
         ax.yaxis.set_visible(False)
         ax.xaxis.set_visible(False)
+
+
+class _MetaPlotter(_Plotter):
+    def __init__(self, lines, num_regions):
+        _Plotter.__init__(
+            self,
+            lines, num_regions
+        )
+
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
+
+        axs[0].axvline(
+            10, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[0].axvline(
+            60, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        for tick in axs[0].get_xticklabels():
+            tick.set_rotation(90)
+        axs[0].set_ylabel("Normalized Values")
 
 
 class _SEPlotter(_Plotter):
@@ -318,6 +339,41 @@ class _BedPlotter(_Plotter):
         )
 
 
+class _PhastConPlotter(_Plotter):
+    def __init__(self, lines, num_regions):
+        _Plotter.__init__(
+            self,
+            lines, num_regions
+        )
+
+    def renumber_axes(self, i, axs):  # TODO dynamically scale this.
+        axs[0].set_xticks([0, 50, 150, 250, 350])
+        axs[0].set_xticklabels(['-50', '0', '', '', '300'])
+        axs[1].set_xticks([0, 50, 150, 250, 350])
+        axs[1].set_xticklabels(['-300', '', '', '0', '50'])
+
+        axs[0].set_xlim(0, 351)
+        axs[1].set_xlim(0, 351)
+
+        axs[0].axvline(
+            50, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[1].axvline(
+            300, alpha=0.3, linestyle=':', linewidth=0.5
+        )
+        axs[0].set_ylabel("Phastcon Values")
+
+    def set_legend(self, axs, legend_ax):
+
+        leg_handles, leg_labels = axs[0].get_legend_handles_labels()
+
+        leg = legend_ax.legend(leg_handles, leg_labels, loc=10,
+                               mode="expand", ncol=1,
+                               borderaxespad=0., borderpad=-3)
+
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4.0)
+
 class _MultiLengthBedPlotter(_Plotter):
     def __init__(self, lines, num_regions):
         _Plotter.__init__(
@@ -430,6 +486,10 @@ def plot_bed(lines, output_filename, map_type):
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
 
+def plot_phastcon(lines, output_filename, map_type):
+    plotter = _PhastConPlotter(lines, 2)
+    plotter.plot_figure(output_filename, has_heatmap=False)
+    return plotter
 
 def plot_multi_length_bed(lines, output_filename, map_type):
     plotter = _Plotter(lines, 2, 10, 5)
@@ -438,7 +498,7 @@ def plot_multi_length_bed(lines, output_filename, map_type):
 
 
 def plot_meta(lines, output_filename, map_type):
-    plotter = _Plotter(lines, 1, 10, 5)
+    plotter = _MetaPlotter(lines, 1)
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
 

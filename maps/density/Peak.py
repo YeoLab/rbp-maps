@@ -10,7 +10,7 @@ Module that helps containerize the CLIP peak information.
 import pandas as pd
 import pybedtools
 import pyBigWig
-import intervals
+from . import intervals
 
 class Peak():
     """
