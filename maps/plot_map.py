@@ -206,14 +206,15 @@ def run_make_density(
         print("Invalid event choice.")
         exit(1)
 
+    # print("bg filename: {}".format(bg_filename))
     map_obj.create_matrices()
     map_obj.normalize_matrix()
     map_obj.create_lines()
 
-    for condition in condition_list:  # for any condition we want to calculate pvalues for
-        map_obj.set_background_and_calculate_significance(condition,
-                                                          bg_filename,
-                                                          test_method)
+    # for condition in condition_list:  # for any condition we want to calculate pvalues for
+    map_obj.set_background_and_calculate_significance(
+        condition_list, bg_filename, test_method
+    )
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
 
@@ -283,20 +284,19 @@ def main():
     parser.add_argument(
         "--event",
         help="Splice or region event. Can be either: "
-             "se, ri, mxe, a3ss, a5ss, bed, multi-length-bed, cds, phastcon",
+             "se, ri, mxe, a3ss, a5ss",
         required=False,
         default='se'
     )
     parser.add_argument(
         "--annotations",
-        help="annotation_src_file files (Must all be different!)",
+        help="annotation_src_file files",
         nargs='+',
         required=True
     )
     parser.add_argument(
         "--annotation_type",
-        help="Annotation_src_file type (miso, xintao, bed, rmats, eric, twobed). "
-             "Some types will be incompatible with some events (see Feature()).",
+        help="Annotation_src_file type (miso, xintao, bed, rmats, tab). ",
         nargs='+',
         required=True
     )
@@ -360,26 +360,26 @@ def main():
              " test calculations.",
         default=None,
     )
-    parser.add_argument(
-        "--phastcon",
-        help="plotter phastcons instead of clip read densities "
-             "(mutually exclusive with --ipbam",
-        default=None,
-    )
-    parser.add_argument(
-        "--masknum",
-        help="specify file number (0-based) to be masked by peak in phastcon "
-             "map. For this map, scores will only be reported if they also "
-             "overlap a peak (specified by --peak). Just one mask can be "
-             "specified for now.",
-        default=None,
-    )
+    # parser.add_argument(
+    #     "--phastcon",
+    #     help="plotter phastcons instead of clip read densities "
+    #          "(mutually exclusive with --ipbam",
+    #     default=None,
+    # )
+    # parser.add_argument(
+    #     "--masknum",
+    #     help="specify file number (0-based) to be masked by peak in phastcon "
+    #          "map. For this map, scores will only be reported if they also "
+    #          "overlap a peak (specified by --peak). Just one mask can be "
+    #          "specified for now.",
+    #     default=None,
+    # )
     parser.add_argument(
         "--sigtest",
         help="(for density plots only - newPeak plots use fisher exact tests)."
              " Significance testing method of read density above background."
-             " Can choose either mannwhitneyu, ks, fisher (peaks only) or [zscore].",
-        default='zscore'
+             " Can choose either mannwhitneyu, ks, fisher (peaks only), zscore, or [permutation].",
+        default='permutation'
     )
     parser.add_argument(
         "--peak",
@@ -409,7 +409,8 @@ def main():
     # process ip args
     ip_bam = args.ipbam
     input_bam = args.inputbam
-    phastcons = args.phastcon
+    # phastcons = args.phastcon  # TODO: re-implement
+    phastcons = None
     peak_file = args.peak
 
     # process scaling
@@ -425,6 +426,7 @@ def main():
         background_file = None
 
     # process masking (for phastcon maps)
+    args.masknum = None  # TODO: re-implement
     if args.masknum is not None:
         masked_file = annotations[int(args.masknum)]
     else:
@@ -517,6 +519,7 @@ def main():
 
         """
         Create ReadDensity objects. Note! This will effectively "flip" bigwigs!
+        This is legacy; older bigwigs were flipped.
         """
 
         if is_flipped:

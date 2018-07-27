@@ -42,13 +42,17 @@ class LineObject():
 
         self.label = self._parse_filename_for_plot() # cleans up the text for legend labels
         self.file_label = self._parse_filename() if label is None else label# cleans up the text for legend labels
-        print("number of events (avg for all positions) found for {}: {}".format(
-            self.file_label, sum(self.num_events)/len(self.num_events))
-        )
+
+        # print("number of events (avg for all positions) found for {}: {}".format(
+        #     self.file_label, sum(self.num_events)/len(self.num_events))
+        # )
 
         self.dim = False if sum(self.num_events)/len(self.num_events) > min_event_threshold else True # Dims the line. True if the number of events falls below some minimum event threshold
         self.p_values = []
         self.color = color
+        self.values = list(event_matrix.sum())
+
+
 
     def has_pvalues(self):
         """
@@ -108,7 +112,6 @@ class LineObject():
         firstparsed_string = '{}{}'.format(
             firstparsed_string[0].upper(), firstparsed_string[1:]
         )
-        print(self.annotation_src_file)
         return os.path.splitext(
             firstparsed_string
         )[0]
@@ -128,11 +131,35 @@ class LineObject():
     def calculate_and_set_significance(self, bg_matrix, test='mannwhitneyu'):
         pass
 
+    def _get_std_error_boundaries(self, values):
+        """
+        Sets the std error upper/lower boundaries given a mean and standard error
+
+        Parameters
+        ----------
+        hist
+        n
+
+        Returns
+        -------
+
+        """
+        mean_events = sum(self.num_events) / len(self.num_events)
+        plus = [x + y * mean_events for x, y in zip(
+            values, norm.std_error(
+                values, self.num_events)
+        )]
+        minus = [x - y * mean_events for x, y in zip(
+            values, norm.std_error(
+                values, self.num_events)
+        )]
+        return plus, minus, max(plus), min(minus)
 
 class PeakLine(LineObject):
     def __init__(
             self, event_matrix, annotation_src_file, conf,
-            color, min_event_threshold, num_events, label
+            color, min_event_threshold, num_events, label,
+            divide_hist=True
     ):
         """
 
@@ -156,7 +183,7 @@ class PeakLine(LineObject):
         self.values = norm.divide_by_num_events(self._get_hist(), self.num_events)
         # self.values = self.hist # if divide hist is not true
 
-        divide_hist = True
+        # divide_hist = divide_hist
         self.error_pos, self.error_neg, self.max, self.min = self._get_std_error_boundaries(
             self.values, divide_hist)  # upper and lower boundaries for error
 
@@ -310,6 +337,25 @@ class DensityLine(LineObject):
             if np.isnan(std_deviation[i]):
                 std_deviation[i] = 0
         return means, sems, std_deviation, outlier_removed_df
+
+    def _set_std_error_boundaries(self, bottom_values, top_values):
+        """
+        Returns the +/- error boundaries given a list of values (means)
+
+        Parameters
+        ----------
+        means
+        error
+
+        Returns
+        -------
+
+        """
+        self.error_pos = top_values
+        self.error_neg = bottom_values
+        self.max = max(self.error_pos)
+        self.min = min(self.error_neg)
+        return 0
 
     def _get_std_error_boundaries(self):
         """

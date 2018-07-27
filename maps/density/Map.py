@@ -40,6 +40,8 @@ import LineObject
 import Peak
 import ReadDensity
 import pandas as pd
+import Feature
+from tqdm import trange
 
 SEP = '.'  # file delimiter
 
@@ -61,6 +63,9 @@ RED = COLOR_PALETTE[0]
 ORANGE = COLOR_PALETTE[1]
 BLUE = COLOR_PALETTE[5]
 GREEN = COLOR_PALETTE[3]
+
+MAX_VAL = 100000000
+MIN_VAL = -1
 
 class Map:
     def __init__(self, ip, output_filename, norm_function,
@@ -150,6 +155,7 @@ class Map:
             num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * matrices['ip'][filename].shape[1]
 
         self.raw_matrices = matrices
+
         self.num_events = num_events
 
     def create_lines(self):
@@ -203,7 +209,7 @@ class Map:
         """
         for line in self.lines:
             if line.has_mean():
-                print("label: {}".format(line.file_label))
+                # print("label: {}".format(line.file_label))
                 output_file = self.output_base + SEP + \
                               line.file_label + '.means.txt'
 
@@ -251,7 +257,7 @@ class WithInput(Map):
         self.lines = []
 
     def set_background_and_calculate_significance(
-            self, cond_file_name, bg_file_name, test='mannwhitneyu'
+            self, cond_file_names, bg_file_name, test='mannwhitneyu'
     ):
         """
         AFTER creation of all LineObjects, we can specify a condition
@@ -270,16 +276,72 @@ class WithInput(Map):
 
         Parameters
         ----------
-        cond_file_name : basestring
+        cond_file_names : list
         bg_file_name : basestring
         """
-        print("test: {}".format(cond_file_name))
+
+
         print("background: {}".format(bg_file_name))
-        for line in self.lines:
-            if line.annotation_src_file == cond_file_name:
-                line.calculate_and_set_significance(
-                    self.norm_matrices[bg_file_name], test
+        if test == 'permutation':
+
+            top_values = [MIN_VAL]*len(self.num_events['ip'][bg_file_name])
+            bottom_values = [MAX_VAL]*len(self.num_events['ip'][bg_file_name])
+            print("top value length: {}".format(len(top_values)))
+            print("bottom value length: {}".format(len(bottom_values)))
+
+            for condition in cond_file_names:
+                print("test: {}".format(condition))
+
+                tsv = os.path.join(
+                    os.path.dirname(self.output_filename),
+                    '{}.{}.randsample.tsv'.format(
+                        os.path.basename(bg_file_name),
+                        os.path.basename(condition)
+                    )
                 )
+                subset_iterations = []
+                iterations = 1000
+                progress = trange(iterations)
+                for i in range(0, iterations):
+                    # since event_num is reported as a list across all positions, simply get the average for now.
+                    mean_event_num = int(
+                        sum(self.num_events['ip'][condition]) / float(len(self.num_events['ip'][condition]))
+                    )
+                    # get n random events where n is the number of events in incl/excl
+                    rand_subset = Feature.get_random_sample(self.norm_matrices[bg_file_name], mean_event_num)
+                    # remove outliers
+                    means, _, _, _ = norm.get_means_and_sems(rand_subset, conf=0.95)
+                    subset_iterations.append(pd.Series(means))
+
+                    progress.update(1)
+                # concatenate all "lines" (means of outlier-removed normalized data)
+                df = pd.concat(subset_iterations, axis=1).T
+                df.to_csv(tsv, sep='\t')
+                bottom_values_condition, top_values_condition = norm.median_bottom_top_values_from_dataframe(df, 10, 10)
+
+                # get the min "bottom values" and max "top_values" among each condition
+                for position in range(0, len(bottom_values_condition)):
+                    if bottom_values_condition[position] < bottom_values[position]:
+                        bottom_values[position] = bottom_values_condition[position]
+
+                for position in range(0, len(top_values_condition)):
+                    if top_values_condition[position] > top_values[position]:
+                        top_values[position] = top_values_condition[position]
+            # change the std error boundaries in background, and remove error boundaries in conditions.
+            for line in self.lines:
+                if line.annotation_src_file == bg_file_name:
+                    line._set_std_error_boundaries(bottom_values, top_values)
+                else:
+                    line._set_std_error_boundaries(line.means, line.means)
+        else:
+            for line in self.lines:
+                for condition in cond_file_names:
+                    if line.annotation_src_file == condition:
+                        line.calculate_and_set_significance(
+                            self.norm_matrices[bg_file_name], test
+                        )
+
+        for line in self.lines:
             if line.annotation_src_file == bg_file_name:
                 if not line.label.endswith('*'):  # we probably just want one asterisk
                     line.label = line.label + '*'
@@ -335,9 +397,10 @@ class WithInput(Map):
         self.write_intermediate_norm_matrices_to_csv()
         self.write_intermediate_means_to_csv()
         # self.write_intermediate_sems_to_csv()
-        # self.write_intermediate_pvalues_to_csv()
+        self.write_intermediate_pvalues_to_csv()
         self.write_intermediate_hist_to_csv()
         # self.export_as_deeptool_matrix()
+        self.write_sum_coverage_to_csv()
 
     def create_matrices(self):
         """
@@ -397,6 +460,7 @@ class WithInput(Map):
         """
         c = 0 # plotter for iterating over default COLOR scheme
 
+
         for filename, filetype in self.annotation.iteritems():
             self.lines.append(
                 LineObject.create_line(
@@ -436,6 +500,24 @@ class WithInput(Map):
             o.write(header+'\n')
             df.to_csv(o, sep='\t', index=None, header=None, compression='gzip')
             o.close()
+
+
+    def write_sum_coverage_to_csv(self):
+        """
+        Writes sum coverages across each event to csv.
+        """
+        for filename, filetype in self.annotation.iteritems():
+            for key in self.raw_matrices.keys():
+                output_file_cov = self.output_base + SEP + \
+                                 (os.path.basename(filename)) + '.{}.sum_coverage.txt'.format(key)
+                # output_file_input = self.output_base + SEP + \
+                #                     (os.path.basename(filename)) + '.input.raw_density.txt'
+                raw_matrix = self.raw_matrices[key][filename]
+                raw_matrix = raw_matrix.replace(-1, 0)
+                sum_cov = pd.Series(raw_matrix.sum(axis=1))
+                sum_cov.to_csv(
+                    output_file_cov
+                )
 
 
 class Bed(WithInput):

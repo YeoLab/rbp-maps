@@ -24,9 +24,46 @@ class Peak():
         try:
             self.peaks = pyBigWig.open(peaks)
             self.name = name if name is not None else ''
+
+
         except Exception as e:
             print("couldn't open the peak files!")
             print(e)
+
+    def overlaps(self, chrom, start, end, strand, flatten=False):
+        """
+        Returns true if there is a peak that overlaps the defined region.
+        False otherwise.
+
+        Parameters
+        ----------
+        chrom
+        start
+        end
+        strand
+        flatten
+
+        Returns
+        -------
+
+        """
+        region = pybedtools.create_interval_from_list(
+            [
+                chrom, str(start), str(end), '.', '0', strand
+            ]
+        )
+        series = pd.Series(data=0, index=range(len(region)))
+        try:
+            overlapped_peaks = self.peaks.entries(chrom, start, end, strand)
+        except RuntimeError as e:
+            print(
+            "weird entry (this can happen if the peak bb does not contain this chromosome, or if the region is invalid)"
+            ": {}:{}-{}:{}".format(chrom, start, end, strand), e)
+            return False
+        if overlapped_peaks is None:
+            return False
+        else:
+            return True
 
     def values(self, chrom, start, end, strand, flatten=False):
         """

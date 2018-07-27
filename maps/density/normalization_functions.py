@@ -330,7 +330,7 @@ def calculate_pdf(density_df, pseudocount=None, min_density_threshold=0):
     return pdf  # , mean, sem
 
 
-def get_means_and_sems(df, conf=0.95):
+def get_means_and_sems_with_merged(df, conf=0.95):
     """
     Sets the means and standard error values after outlier
     removal. Replaces remove_outliers.
@@ -378,6 +378,95 @@ def get_means_and_sems(df, conf=0.95):
 
     return means, sems, std_deviation, merged
 
+
+def get_means_and_sems(df, conf=0.95):
+    """
+    Sets the means and standard error values after outlier
+    removal. Replaces remove_outliers.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        table of densities or values
+    conf : float
+        keep {conf}% of densities present at every given position
+
+    Returns
+    -------
+
+    means : list
+        mean value for each position in the dataframe df
+    sems : list
+        standard error of the mean
+    std_deviation: list
+        standard deviation of the mean
+    None : None
+        used to be a merged dataframe, bt merging slows stuff down
+    """
+
+    means = []
+    sems = []
+    std_deviation = []
+    # merged = pd.DataFrame(index=df.index)
+    for key, value in df.iteritems():
+        single_col = df[key].dropna()
+        single_col = single_col.sort_values()
+        nums = len(single_col)
+        droppercent = (1 - conf) / 2.0
+        dropnum = int(nums * droppercent)
+        if dropnum > 0:
+            single_col = single_col[dropnum:-dropnum]
+        # merged = pd.merge(
+        #     merged, pd.DataFrame(single_col), how='left',
+        #     left_index=True, right_index=True
+        # )
+        means.append(single_col.mean())
+        sems.append(single_col.sem())
+        std_deviation.append(single_col.std())
+    return means, sems, std_deviation, None
+
+
+def median_bottom_top_values_from_dataframe(df, bottom_percent=0.5, top_percent=0.5):
+    """
+    This takes a dataframe and computes the medians of the bottom and top % for each
+    column. This helps with the "permutation" background significance calculations.
+
+    Parameters
+    ----------
+    df
+    bottom_percent: float
+        bottom percent to take median of
+        (taking the median of the bottom 25% would be bottom_percent=25)
+    top_percent: float
+        top percent to take median of
+        (taking the median of the top 25% would be top_percent=25)
+
+    Returns
+    -------
+    bottom_values : list
+    top_values : list
+    """
+    bottom_values = []
+    top_values = []
+    for key, value in df.iteritems():
+        # get true percentage
+        bottom_percent = bottom_percent * 0.01
+        top_percent = top_percent * 0.01
+        # foreach column, drop nans and get the number of starting events, sorted.
+        single_col = df[key].dropna()
+        single_col = single_col.sort_values()
+        nums = len(single_col)
+        # collect top (top subset) 0.5% and bottom 0.5% of values
+        bottom_subset = int(bottom_percent * nums)
+        top_subset = int(top_percent * nums)
+        # get the median values from the bottom/top 0.5%
+        median_bottom = single_col[:5].median()
+        median_top = single_col[-5:].median()
+        # append to list of bottom/top values
+        bottom_values.append(median_bottom)
+        top_values.append(median_top)
+
+    return bottom_values, top_values
 
 ### Normalize peak methods ###
 

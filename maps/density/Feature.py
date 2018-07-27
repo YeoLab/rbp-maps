@@ -37,7 +37,8 @@ Created on Sep 21, 2016
 @author: brian
 '''
 import pybedtools as bt
-
+import random
+import pandas as pd
 
 class Feature():
     '''
@@ -113,7 +114,7 @@ class Skipped_exon(Feature):
             pass
         elif self.source == 'xintao':
             pass
-        elif self.source == 'eric':
+        elif self.source == 'eric' or self.source == 'tab':
             pos, upstream, skipped, downstream, incl, excl = self.annotation.split('\t')
             chrom, strand, up_junc, down_junc, se_region = pos.split('|')
 
@@ -277,7 +278,7 @@ class Alt_5p_splice_site(Feature):
             splice2 = bt.create_interval_from_list(
                 [chrom, shortES, shortEE, '0', '0', strand]
             )
-        elif self.source == 'eric':
+        elif self.source == 'eric' or self.source == 'tab':
             junctions, short_isoform, long_isoform, downstream_exon, incl, excl = \
                 self.annotation.split('\t')
             chrom, strand, _, _, _ = junctions.split('|')
@@ -366,7 +367,7 @@ class Alt_3p_splice_site(Feature):
             splice2 = bt.create_interval_from_list(
                 [chrom, shortES, shortEE, '0', '0', strand]
             )
-        elif self.source == 'eric':
+        elif self.source == 'eric' or self.source == 'tab':
             junctions, upstream_exon, long_isoform, short_isoform, incl, excl = \
                 self.annotation.split('\t')
             chrom, strand, _, _, _ = junctions.split('|')
@@ -423,7 +424,7 @@ class Retained_intron(Feature):
             downstream = bt.create_interval_from_list(
                 [chrom, downstream_start, downstream_end, '0', '0', strand]
             )
-        elif self.source == 'eric':
+        elif self.source == 'eric' or self.source == 'tab':
             chrom, strand, low, high = self.annotation.split('|')
             _, _, low_pos = low.split(':')
             high_pos, _ = high.split(':')
@@ -677,3 +678,16 @@ class MetaFeature():
 class Phastcon(Retained_intron):
     def __init__(self, annotation_line, annotation_format):
         Retained_intron.__init__(self, annotation_line, annotation_format)
+
+### MISC FUNCTIONS
+
+def get_random_sample(df, n):
+    rand_indices = []
+    num_events = df.shape[0] - 1
+    for i in range(0, n):
+        rand_indices.append(random.randint(0, num_events))
+    try:
+        return df.iloc[rand_indices,].reset_index(drop=True)
+    except IndexError:
+        print(sorted(rand_indices))
+        return 1
