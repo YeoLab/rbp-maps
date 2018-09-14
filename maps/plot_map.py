@@ -76,9 +76,10 @@ def run_make_peak(
     map_obj.normalize_matrix()
     map_obj.create_lines()
 
-    for condition in condition_list:  # for any condition we want to calculate pvalues for
+    # for any condition we want to calculate pvalues for
+    if ((len(condition_list) > 0) and (bg_filename is not None)):
         map_obj.set_background_and_calculate_significance(
-            condition, bg_filename, test_method
+            condition_list, bg_filename, test_method
         )
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
@@ -212,9 +213,10 @@ def run_make_density(
     map_obj.create_lines()
 
     # for condition in condition_list:  # for any condition we want to calculate pvalues for
-    map_obj.set_background_and_calculate_significance(
-        condition_list, bg_filename, test_method
-    )
+    if ((len(condition_list) > 0) and (bg_filename is not None)):
+        map_obj.set_background_and_calculate_significance(
+            condition_list, bg_filename, test_method
+        )
     map_obj.write_intermediates_to_csv()
     map_obj.plot()
 
@@ -317,7 +319,7 @@ def main():
     parser.add_argument(
         "--confidence",
         help="Keep only this percentage of events while removing others " \
-             "as outliers (default 0.95). Unused in phastcon maps.",
+             "as outliers (default 0.95). Unused in phastcon maps and peak maps.",
         default=0.95,
         type=float)
 
@@ -447,6 +449,7 @@ def main():
     annotation_dict = OrderedDict()
 
     if len(annotations) != len(annotation_type):
+        print(annotations, len(annotation_type))
         print(
             "We have a different number of annotation_src_file types than annotations."
         )
@@ -468,6 +471,8 @@ def main():
         norm_func = norm.read_entropy
     elif norm_level == 3:
         norm_func = norm.get_input
+    elif norm_level == 4:
+        norm_func = norm.per_region_subtract_and_normalize
 
     # beta: plot phastcon bigwig overlaps
     if phastcons is not None and peak_file is not None and event == 'phastcon':
@@ -476,8 +481,9 @@ def main():
         )
     # plot peaks if the peak file is specified
     elif peak_file is not None:
+
         run_make_peak(
-            outfile, peak_file, norm_func, event, exon_offset, intron_offset,
+            outfile, peak_file, norm.get_density, event, exon_offset, intron_offset,
             confidence, annotation_dict, files_to_test, background_file,
             test_method, scale
         )
@@ -519,7 +525,7 @@ def main():
 
         """
         Create ReadDensity objects. Note! This will effectively "flip" bigwigs!
-        This is legacy; older bigwigs were flipped.
+        This is legacy; older bigwigs were flipped but newer ones won't be.
         """
 
         if is_flipped:

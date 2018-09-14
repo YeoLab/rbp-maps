@@ -13,6 +13,24 @@ import gzip
 import json
 
 
+def has_negative_values(df):
+    """
+    Checks a dataframe for negative values. Return True if
+    there are negative values, return False otherwise.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+
+    Returns
+    -------
+    has_negative : boolean
+        True if the dataframe contains negative values,
+        False if all values are 0 or greater.
+    """
+    return df[(df < 0).any(axis=1)].shape[0] > 0
+
+
 def sane(filename, keep_ext=True):
     """
     Returns a 'sane' label given a filename.
@@ -111,16 +129,46 @@ def split_bed_index(row):
 
 
 def split_eric_index(row):
+    """
+    This applies formatting changes to reformat eric's annotations to one
+    that deeptools expected. This is not currently implemented properly.
+
+    Parameters
+    ----------
+    row : basestring
+
+    Returns
+    -------
+    formatted_row : basestring
+        eric's formatted annotation string into something else.
+    """
     # TODO: figure out how to parse eric's formatted background files.
     return split_default_index(row)
 
 
 def split_default_index(row):
+    """
+    This is a dummy function that returns a default bed6 formatted string.
+
+    Parameters
+    ----------
+    row : basestring
+
+    Returns
+    -------
+    bed : basestring
+    """
+    # TODO:
     return 'chrN\t0\t1\tname\t0\t+'
 
 def split_rmats_index(row):
     """
     Returns a BED-formatted string from an RMATS-formatted string.
+    This ignores everything except for the coordinates of the cassette
+    exon. Note that this is not typically the region being looked at
+    (usually we use the region between the upstream exon junction and
+    the downstream exon junction), but for purposes of annotations and stuff,
+    sometimes it's nice to show cassette coords.
 
     Parameters
     ----------
@@ -184,6 +232,39 @@ def create_deeptool_header(
     sort_regions='keep', proc_number=1, bin_avg_type='mean',
     max_threshold='null'
 ):
+    """
+    Appends a JSON metadata tag onto matrix so that the result can be
+    imported into deeptools functions.
+
+    Parameters
+    ----------
+    sample_labels
+    downstream
+    upstream
+    group_boundaries
+    sample_boundaries
+    ref_point
+    group_labels
+    verbose
+    scale
+    skip_zeroes
+    nan_after_end
+    sort_using
+    unscaled_5_prime
+    body
+    unscaled_3_prime
+    bin_size
+    missing_data_as_zero
+    min_threshold
+    sort_regions
+    proc_number
+    bin_avg_type
+    max_threshold
+
+    Returns
+    -------
+
+    """
     header = {
         'verbose':verbose, 'scale':scale, 'skip zeroes':skip_zeroes,
         'nan after end':nan_after_end, 'sort using':sort_using,

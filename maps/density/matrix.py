@@ -160,7 +160,6 @@ def multi_length_regions(
 def meta(annotation, density, upstream_offset, downstream_offset, annotation_type="bed", scale_to=100):
     # TODO: implement upstream and downstream CDS features.
     densities = {}
-
     # TODO: we dont need this? No need to collapse transcripts
     # df = intervals.merge(annotation)
     # df = intervals.explode(df)
@@ -191,10 +190,11 @@ def meta(annotation, density, upstream_offset, downstream_offset, annotation_typ
         #         for w in wiggle:
         #             f.write("{}\n".format(w))
         #    sys.exit(1)
-            wiggle = intervals.get_scale(wiggle, scale_to=scale_to)
-            densities[name] = wiggle
+        wiggle = intervals.get_scale(wiggle, scale_to=scale_to)
+        densities[name] = wiggle
         progress.update(1)
     try:
+
         return pd.DataFrame(densities).T
     except Exception as e:
         print(e)

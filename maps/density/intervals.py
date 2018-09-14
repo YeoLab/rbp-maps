@@ -318,8 +318,7 @@ def get_scale(wiggle, scale_to=100):
                 )
             )
         )
-    elif len(
-            wiggle) < scale_to:  # multiply everything by scaling factor, this guarantees it is divisible by scaling factor
+    elif len(wiggle) < scale_to:  # multiply everything by scaling factor, this guarantees it is divisible by scaling factor
         wiggle = pd.Series(
             list(
                 itertools.chain.from_iterable(
@@ -931,4 +930,5 @@ def mask(df, peak, stream):
                 df.loc[i, pos] = df.loc[i, pos] if masked_interval.loc[pos] > 0 else np.nan
         progress.update(1)
     return df
+
 

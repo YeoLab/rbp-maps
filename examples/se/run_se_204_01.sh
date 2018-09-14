@@ -6,21 +6,21 @@ plot_map \
 --output outputs/204_01_RBFOX2.svg \
 --event se \
 --annotations \
-inputs/RBFOX2-BGHLV26-HepG2-included-upon-knockdown \
-inputs/RBFOX2-BGHLV26-HepG2-excluded-upon-knockdown \
+inputs/RBFOX2-BGHLV26-HepG2.set26-included-upon-knockdown \
+inputs/RBFOX2-BGHLV26-HepG2.set26-excluded-upon-knockdown \
 inputs/HepG2_constitutive_exons \
-inputs/HepG2_native_included_cassette_exons \
-inputs/HepG2_native_excluded_cassette_exons \
-inputs/HepG2_native_cassette_exons \
+inputs/HepG2_natively_included_cassette_exons \
+inputs/HepG2_natively_excluded_cassette_exons \
+inputs/HepG2_native_cassette_exons_all \
 --annotation_type \
 rmats \
 rmats \
-eric \
-eric \
-eric \
-eric \
+tab \
+tab \
+tab \
+tab \
 --normalization_level 1 \
 --testnums 0 1 \
 --bgnum 5 \
---sigtest zscore
+--sigtest permutation
 

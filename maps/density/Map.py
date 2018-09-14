@@ -42,6 +42,7 @@ import ReadDensity
 import pandas as pd
 import Feature
 from tqdm import trange
+import numpy as np
 
 SEP = '.'  # file delimiter
 
@@ -65,7 +66,7 @@ BLUE = COLOR_PALETTE[5]
 GREEN = COLOR_PALETTE[3]
 
 MAX_VAL = 100000000
-MIN_VAL = -1
+MIN_VAL = -100000000
 
 class Map:
     def __init__(self, ip, output_filename, norm_function,
@@ -93,6 +94,44 @@ class Map:
             Minimum density sum across an event to use
         conf : float
             Representing percentage of events to keep (default .95)
+        raw_matrices : collections.defaultdict(dict)
+            raw_matrices are structured as: [clip][filename] whose keys refer to:
+                clip : 'ip' or 'input' depending on the experimental variable
+                filename : the filename of the annotation which was overlapped
+                    by the clip.
+            And whose values refer to:
+                The raw density values overlapped at each position stored
+                in a pandas.DataFrame.
+
+        norm_matrices : collections.defaultdict(dict)
+            norm_matrices are structured as: [filename] whose keys refer to:
+                filename : the filename of the annotation which was overlapped
+                    by the clip.
+
+            And whose values refer to:
+                The normalized densities resulting from normalization of
+                ip and input raw matrices for each key in both dictionaries.
+
+        num_events : collections.defaultdict(dict)
+            This is a LIST containing the number of events at each position.
+            I made this a list due to some positions on a map being associated
+            with different numbers of events. For example, the meta maps will
+            calculate the first 10 positions as having being from the 5'UTR,
+            of which 100 genes are considered. The next 50 positions refer to
+            CDS regions, of which 1000 genes may be considered. Finally, the
+            last 40 positions are dedicated to 3'UTR densities, of which 800
+            genes are considered, therefore the num_events will be:
+            [100, 100, ... 100(10), 1000, 1000, ..., 1000(50), 800, ..., 800(40)]
+            for a total length of 100.
+
+            Num events are structured as: [clip][filename] whose keys refer to:
+                clip : 'ip' or 'input' depending on the experimental variable
+                filename : the filename of the annotation which was overlapped
+                    by the clip.
+            And whose values refer to:
+                A list containing the number of events that are considered
+                when performing certain normalizations (see above list example).
+
         """
         self.ip = ip
         self.map_type = self.get_map_type()
@@ -280,44 +319,45 @@ class WithInput(Map):
         bg_file_name : basestring
         """
 
-
-        print("background: {}".format(bg_file_name))
         if test == 'permutation':
-
+            # choose starting values for top and bottom median values
             top_values = [MIN_VAL]*len(self.num_events['ip'][bg_file_name])
             bottom_values = [MAX_VAL]*len(self.num_events['ip'][bg_file_name])
-            print("top value length: {}".format(len(top_values)))
-            print("bottom value length: {}".format(len(bottom_values)))
 
             for condition in cond_file_names:
-                print("test: {}".format(condition))
-
+                # select output filename TODO: move out
                 tsv = os.path.join(
                     os.path.dirname(self.output_filename),
-                    '{}.{}.randsample.tsv'.format(
+                    '{}.{}.{}.randsample.tsv'.format(
+                        os.path.basename(self.output_filename),
                         os.path.basename(bg_file_name),
                         os.path.basename(condition)
                     )
                 )
+
                 subset_iterations = []
-                iterations = 1000
+                iterations = 1000  # how many random samplings to take.
+                percentile = 0.5  # the extreme % value from which to take the median of. (out of 1000 values, take the median of the top and bottom 0.5%, or 5)
                 progress = trange(iterations)
                 for i in range(0, iterations):
                     # since event_num is reported as a list across all positions, simply get the average for now.
                     mean_event_num = int(
                         sum(self.num_events['ip'][condition]) / float(len(self.num_events['ip'][condition]))
                     )
+                    # print("number of events to sample: {}".format(mean_event_num))
                     # get n random events where n is the number of events in incl/excl
                     rand_subset = Feature.get_random_sample(self.norm_matrices[bg_file_name], mean_event_num)
+                    ## print("random subset: {}".format(rand_subset[:5]))
                     # remove outliers
-                    means, _, _, _ = norm.get_means_and_sems(rand_subset, conf=0.95)
+                    means, _, _, _ = norm.get_means_and_sems(rand_subset, conf=self.conf)
+                    # print("means after outlier removal: {}".format(means[:5]))
                     subset_iterations.append(pd.Series(means))
 
                     progress.update(1)
                 # concatenate all "lines" (means of outlier-removed normalized data)
                 df = pd.concat(subset_iterations, axis=1).T
                 df.to_csv(tsv, sep='\t')
-                bottom_values_condition, top_values_condition = norm.median_bottom_top_values_from_dataframe(df, 10, 10)
+                bottom_values_condition, top_values_condition = norm.bottom_top_values_from_dataframe(df, percentile, percentile)
 
                 # get the min "bottom values" and max "top_values" among each condition
                 for position in range(0, len(bottom_values_condition)):
@@ -327,15 +367,22 @@ class WithInput(Map):
                 for position in range(0, len(top_values_condition)):
                     if top_values_condition[position] > top_values[position]:
                         top_values[position] = top_values_condition[position]
+                # print("top values: {}".format(top_values))
+
+                # replace max/min defaults if nonetypes were found in any position
+                bottom_values = [np.nan if (x == MAX_VAL or x == MIN_VAL) else x for x in bottom_values]
+                top_values = [np.nan if (x == MAX_VAL or x == MIN_VAL) else x for x in top_values]
+
             # change the std error boundaries in background, and remove error boundaries in conditions.
             for line in self.lines:
                 if line.annotation_src_file == bg_file_name:
                     line._set_std_error_boundaries(bottom_values, top_values)
-                else:
+                elif line.annotation_src_file != bg_file_name:
                     line._set_std_error_boundaries(line.means, line.means)
         else:
             for line in self.lines:
                 for condition in cond_file_names:
+                    # print('condition: [{}], bg: [{}]'.format(condition, bg_file_name))
                     if line.annotation_src_file == condition:
                         line.calculate_and_set_significance(
                             self.norm_matrices[bg_file_name], test
@@ -424,6 +471,7 @@ class WithInput(Map):
                 filename, self.inp, filetype,
                 self.upstream_offset, self.downstream_offset, self.scale,
             )
+            # TODO: maybe do this by position? Currently we just multiple the positions by the matrix shape, but it would be 'cleaner' if we calculated number of events at every position instead.
             num_events['ip'][filename] = [matrices['ip'][filename].shape[0]] * matrices['ip'][filename].shape[1]
 
         self.raw_matrices = matrices
@@ -838,6 +886,7 @@ class Alt5PSpliceSite(WithInput):
         self.intron_offset = intron_offset
 
     def create_matrices(self):
+        print("making 5p matrices")
         """
         Creates a stacked density matrix for each event in each annotation_src_file file
         and sets self.raw_matrices variable.

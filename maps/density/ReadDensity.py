@@ -53,7 +53,17 @@ class ReadDensity(Density):
         -------
         rpm : float
         """
-        return 1000000.0 / self.bam.count()
+        return 1000000.0 / self.bam.mapped
+
+    def total_mapped(self):
+        """
+        Returns the number of mapped reads
+
+        Returns
+        -------
+        mapped :
+        """
+        return self.bam.mapped
 
     def rpm_to_r(self, rpm):
         """

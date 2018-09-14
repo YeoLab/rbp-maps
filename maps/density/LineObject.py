@@ -259,7 +259,6 @@ class PeakLine(LineObject):
 
             odds, p = stats.fisher_exact(contingency_table)
             p_values.append(-1 * np.log10(p))
-
         return p_values
 
     def calculate_and_set_significance(self, bg_matrix, test='fisher'):
@@ -338,7 +337,7 @@ class DensityLine(LineObject):
                 std_deviation[i] = 0
         return means, sems, std_deviation, outlier_removed_df
 
-    def _set_std_error_boundaries(self, bottom_values, top_values):
+    def _set_std_error_boundaries(self, bottom_values=None, top_values=None):
         """
         Returns the +/- error boundaries given a list of values (means)
 
@@ -351,6 +350,12 @@ class DensityLine(LineObject):
         -------
 
         """
+        for tv in range(0, len(top_values)):
+            if np.isnan(top_values[tv]):
+                top_values[tv] = self.means[tv] # + abs(self.means[tv]*0.1)
+            if np.isnan(bottom_values[tv]):
+                bottom_values[tv] = self.means[tv] # - abs(self.means[tv]*0.1)
+
         self.error_pos = top_values
         self.error_neg = bottom_values
         self.max = max(self.error_pos)
@@ -398,14 +403,18 @@ class DensityLine(LineObject):
 
         """
         p_values = []
+        _, _, _, test_matrix = norm.get_means_and_sems_with_merged(self.event_matrix, conf=self.conf)
+        _, _, _, bg_matrix = norm.get_means_and_sems_with_merged(bg_matrix, conf=self.conf)
+
         for position in self.event_matrix.columns:
             _, p = stats.ks_2samp(
-                self.event_matrix[position], bg_matrix[position]
+                test_matrix[position], bg_matrix[position]
             )
             p_values.append(-1 * np.log10(p))
         return p_values
 
     def calculate_zscore(self, bg_matrix):
+
         bg_means, bg_sems, bg_dev, _ = norm.get_means_and_sems(
             bg_matrix, self.conf
         )
@@ -431,9 +440,11 @@ class DensityLine(LineObject):
 
         """
         p_values = []
-        for position in self.event_matrix.columns:
+        _, _, _, test_matrix = norm.get_means_and_sems_with_merged(self.event_matrix, conf=self.conf)
+        _, _, _, bg_matrix = norm.get_means_and_sems_with_merged(bg_matrix, conf=self.conf)
+        for position in test_matrix.columns:
             _, p = stats.mannwhitneyu(
-                self.event_matrix[position], bg_matrix[position],
+                test_matrix[position], bg_matrix[position],
                 alternative='greater'
             )
             p_values.append(-1 * np.log10(p))
