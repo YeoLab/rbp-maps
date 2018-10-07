@@ -40,7 +40,7 @@ source create_environment.sh
 
 ##### Plotting density (*.bw files from the eCLIP bioinformatics pipeline)
 ```
-plot_density --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .pos.bw and .neg.bw files are in this directory)
+plot_map --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .pos.bw and .neg.bw files are in this directory)
  --ip_pos_bw \ # positive bigwig file for CLIp
  --ip_neg_bw \ # negative bigwig file for CLIp
  --input input.bam \ # BAM file containing reads for size matched input (make sure the .pos.bw and .neg.bw files are in this directory)
@@ -54,7 +54,7 @@ plot_density --ip ip.bam \ # BAM file containing reads of your CLIp (make sure t
 
 ##### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
-plot_density --peak peak.bb \  # peaks file as a bigbed
+plot_map --peak peak.bb \  # peaks file as a bigbed
  --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
  --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works

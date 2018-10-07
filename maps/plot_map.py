@@ -466,13 +466,13 @@ def main():
     if norm_level == 0:
         norm_func = norm.get_density  # TODO: rename this to something more general
     elif norm_level == 1:
-        norm_func = norm.normalize_and_per_region_subtract
+        norm_func = norm.per_region_subtract_and_normalize
     elif norm_level == 2:
         norm_func = norm.read_entropy
     elif norm_level == 3:
         norm_func = norm.get_input
     elif norm_level == 4:
-        norm_func = norm.per_region_subtract_and_normalize
+        norm_func = norm.normalize_and_per_region_subtract
 
     # beta: plot phastcon bigwig overlaps
     if phastcons is not None and peak_file is not None and event == 'phastcon':
