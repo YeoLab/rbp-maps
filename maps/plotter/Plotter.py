@@ -21,16 +21,25 @@ ORANGE = COLOR_PALETTE[1]
 BLUE = COLOR_PALETTE[5]
 GREEN = COLOR_PALETTE[3]
 
+BG1_COLOR = 'black' # COLOR_PALETTE['black']
+BG2_COLOR = COLOR_PALETTE[6]
+BG3_COLOR = COLOR_PALETTE[7]
+BG4_COLOR = COLOR_PALETTE[4]
+BG5_COLOR = COLOR_PALETTE[2]
+POS_COLOR = COLOR_PALETTE[0]
+NEG_COLOR = COLOR_PALETTE[5]
+
 import intervals
 
 
 class _Plotter():
-    def __init__(self, lines, num_regions, width=15, height=5):
+    def __init__(self, lines, num_regions, condition_list, width=15, height=5):
         self.lines = lines
         self.num_regions = num_regions
         self.ymin, self.ymax = self.set_ylims()
         self.width = width
         self.height = height
+        self.condition_list = condition_list
 
     def set_ylims(self):
         ymin = min(l.min for l in self.lines)
@@ -39,7 +48,7 @@ class _Plotter():
 
     def plot_figure(self, output_filename, has_heatmap=True):
         fig = plt.figure(figsize=(self.width, self.height))
-
+        # Set up the Grid (2 rows heatmap, spacer row, map row, and legend row
         full_grid = gridspec.GridSpec(
             5, self.num_regions, height_ratios=[1, 1, 8, 3.5, 4],
             width_ratios=[1 for x in range(self.num_regions)]
@@ -61,7 +70,7 @@ class _Plotter():
         legend_region = plt.subplot(full_grid[4, :])
 
         self.clean_axes(legend_region)
-
+        # Append axes to each row
         read_map_regions = []
         excl_heatmap_regions = []
         incl_heatmap_regions = []
@@ -81,38 +90,52 @@ class _Plotter():
         self.plot(read_map_regions, legend_region)
 
         ### Plot the heatmap stuff
-        if has_heatmap:
-            cmap_1 = colors.diverge_map(
-                high=RED,  # red
-                low=ORANGE  # orange/yellow
-            )
+        heatmaps_to_plot = []
+        for line in self.lines:
+            for condition in self.condition_list:
+                if line.annotation_src_file == condition:
+                    heatmaps_to_plot.append(line)
+
+        if len(heatmaps_to_plot) >= 1:
+            cmap = determine_heatmap_cmaps(heatmaps_to_plot[0].color)
+
+            # not sure if we want to do this, but it will give us finer control over cmaps by create diverging colors instead of a standard colormap
+            # cmap_1 = colors.diverge_map(
+            #     high=high,  # red
+            #     low=low  # orange/yellow
+            # )
 
             plot_heatmap(
-                self.lines[0:1], incl_heatmap_regions, cmap_1, ylabel='left',
-                vmax=2, vmin=-2
-            )
-
-            cmap_2 = colors.diverge_map(
-                high=BLUE,
-                low=GREEN
-            )
-            plot_heatmap(
-                self.lines[1:2], excl_heatmap_regions, cmap_2, ylabel='right',
-                vmax=2, vmin=-2
+                [heatmaps_to_plot[0]], incl_heatmap_regions, cmap, ylabel='left',
+                vmax=5, vmin=0
             )
         else:
             for ax in incl_heatmap_regions:
                 self.clean_axes(ax)
+
+        if len(heatmaps_to_plot) >= 2:
+            cmap = determine_heatmap_cmaps(heatmaps_to_plot[1].color)
+
+            # not sure if we want to do this, but it will give us finer control over cmaps by create diverging colors instead of a standard colormap
+            # cmap_2 = colors.diverge_map(
+            #     high=high,
+            #     low=low
+            # )
+            plot_heatmap(
+                [heatmaps_to_plot[1]], excl_heatmap_regions, cmap, ylabel='right',
+                vmax=5, vmin=0
+            )
+        else:
             for ax in excl_heatmap_regions:
                 self.clean_axes(ax)
+
         fig.savefig(output_filename)
 
-    def plot(self, axs, legend_ax):
-
+    def plot(self, axs, legend_ax, linewidth=0.8):
+        # axs[2].axvline(117)  # hacking for paper purposes
         c = 0
         for line in self.lines:
             values = line.values
-            # print([int(i) for i in values[175:250]])
             regions = intervals.split(values, self.num_regions)
             error_pos_regions = intervals.split(
                 line.error_pos, self.num_regions
@@ -126,11 +149,12 @@ class _Plotter():
                     alpha = 0.3
                 else:
                     alpha = 0.8
-
                 axs[i].plot(
                     regions[i], color=line.color, label=line.label,
-                    alpha=alpha, linewidth=0.8
+                    alpha=alpha, linewidth=linewidth
                 )
+
+
                 axs[i].fill_between(
                     np.arange(0, len(regions[i])),
                     error_pos_regions[i],
@@ -184,10 +208,12 @@ class _Plotter():
 
 
 class _MetaPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):  # TODO dynamically scale this.
@@ -204,10 +230,12 @@ class _MetaPlotter(_Plotter):
 
 
 class _SEPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):  # TODO dynamically scale this.
@@ -239,10 +267,12 @@ class _SEPlotter(_Plotter):
 
 
 class _A3SSPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):  # TODO dynamically scale this.
@@ -269,10 +299,12 @@ class _A3SSPlotter(_Plotter):
 
 
 class _A5SSPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):  # TODO dynamically scale this.
@@ -299,10 +331,12 @@ class _A5SSPlotter(_Plotter):
 
 
 class _RIPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):  # TODO dynamically scale this.
@@ -324,26 +358,32 @@ class _RIPlotter(_Plotter):
 
 
 class _MXEPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
 
 class _BedPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
 
 class _PhastConPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):  # TODO dynamically scale this.
@@ -367,18 +407,27 @@ class _PhastConPlotter(_Plotter):
 
         leg_handles, leg_labels = axs[0].get_legend_handles_labels()
 
-        leg = legend_ax.legend(leg_handles, leg_labels, loc=10,
-                               mode="expand", ncol=1,
-                               borderaxespad=0., borderpad=-3)
+        leg = legend_ax.legend(
+            leg_handles,
+            leg_labels,
+            loc=10,
+            mode="expand",
+            ncol=1,
+            borderaxespad=0.,
+            borderpad=-3
+        )
 
         for legobj in leg.legendHandles:
             legobj.set_linewidth(4.0)
 
+
 class _MultiLengthBedPlotter(_Plotter):
-    def __init__(self, lines, num_regions):
+    def __init__(self, lines, num_regions, condition_list):
         _Plotter.__init__(
             self,
-            lines, num_regions
+            lines=lines,
+            num_regions=num_regions,
+            condition_list=condition_list
         )
 
     def renumber_axes(self, i, axs):
@@ -426,10 +475,10 @@ class _HeatmapPlotter():
         heatmaps = defaultdict(list)
         labels = []
         for value in self.values:
-            z_scores = intervals.split(value.p_values, self.num_regions)
-            max_xlim = len(z_scores[0]) + 1
+            p_values = intervals.split(value.p_values, self.num_regions)
+            max_xlim = len(p_values[0]) + 1
             for i in range(0, self.num_regions):
-                heatmaps[value.label, i].append(z_scores[i])
+                heatmaps[value.label, i].append(p_values[i])
             labels.append(value.label)
             c += 1
 
@@ -451,54 +500,54 @@ class _HeatmapPlotter():
             axs[i].yaxis.set_visible(False)
 
 
-def plot_ri(lines, output_filename, map_type):
-    plotter = _RIPlotter(lines, 2)
+def plot_ri(lines, output_filename, map_type, condition_list):
+    plotter = _RIPlotter(lines=lines, num_regions=2, condition_list=condition_list)
     plotter.plot_figure(output_filename)
     return plotter
 
 
-def plot_se(lines, output_filename, map_type):
-    plotter = _SEPlotter(lines, 4)
+def plot_se(lines, output_filename, map_type, condition_list):
+    plotter = _SEPlotter(lines=lines, num_regions=4, condition_list=condition_list)
     plotter.plot_figure(output_filename)
     return plotter
 
 
-def plot_mxe(lines,  output_filename, map_type):
-    plotter = _MXEPlotter(lines, 6)
+def plot_mxe(lines,  output_filename, map_type, condition_list):
+    plotter = _MXEPlotter(lines=lines, num_regions=6, condition_list=condition_list)
     plotter.plot_figure(output_filename)
     return plotter
 
 
-def plot_a3ss(lines,  output_filename, map_type):
-    plotter = _A3SSPlotter(lines, 3)
+def plot_a3ss(lines,  output_filename, map_type, condition_list):
+    plotter = _A3SSPlotter(lines=lines, num_regions=3, num_heatmap=condition_list)
     plotter.plot_figure(output_filename)
     return plotter
 
 
-def plot_a5ss(lines,  output_filename, map_type):
-    plotter = _A5SSPlotter(lines, 3)
+def plot_a5ss(lines,  output_filename, map_type, condition_list):
+    plotter = _A5SSPlotter(lines=lines, num_regions=3, condition_list=condition_list)
     plotter.plot_figure(output_filename)
     return plotter
 
 
-def plot_bed(lines, output_filename, map_type):
-    plotter = _Plotter(lines, 1, 10, 5)
+def plot_bed(lines, output_filename, map_type, condition_list=[]):
+    plotter = _Plotter(lines=lines, num_regions=1, condition_list=condition_list, width=10, height=5)
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
 
-def plot_phastcon(lines, output_filename, map_type):
-    plotter = _PhastConPlotter(lines, 2)
+def plot_phastcon(lines, output_filename, map_type, condition_list=[]):
+    plotter = _PhastConPlotter(lines=lines, num_regions=2, condition_list=condition_list)
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
 
-def plot_multi_length_bed(lines, output_filename, map_type):
-    plotter = _Plotter(lines, 2, 10, 5)
+def plot_multi_length_bed(lines, output_filename, map_type, condition_list=[]):
+    plotter = _Plotter(lines=lines, num_regions=2, condition_list=condition_list, width=10, height=5)
     plotter.plot_figure(output_filename)
     return plotter
 
 
-def plot_meta(lines, output_filename, map_type):
-    plotter = _MetaPlotter(lines, 1)
+def plot_meta(lines, output_filename, map_type, num_heatmap):
+    plotter = _MetaPlotter(lines=lines, num_regions=1, condition_list=[])
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
 
@@ -519,3 +568,20 @@ def plot_heatmap(lines, axs, colors, ylabel, vmax, vmin):
     """
     heatmap = _HeatmapPlotter(lines, len(axs), colors, ylabel, vmax, vmin)
     heatmap.plot(axs)
+
+def determine_heatmap_cmaps(color):
+    if color == COLOR_PALETTE[0]:
+        cmap = 'Reds'
+    elif color == COLOR_PALETTE[1]:
+        cmap = 'Oranges'
+    elif color == COLOR_PALETTE[2]:
+        cmap = 'YlGn'
+    elif color == COLOR_PALETTE[3]:
+        cmap = 'Greens'
+    elif color == COLOR_PALETTE[4]:
+        cmap = 'GnBu'
+    elif color == COLOR_PALETTE[5]:
+        cmap = 'Blues'
+    else:
+        cmap = 'Greys'
+    return cmap

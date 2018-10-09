@@ -277,8 +277,8 @@ class Map:
         self.write_intermediate_means_to_csv()
         # self.write_intermediate_sems_to_csv()
 
-    def plot(self):
-        Plotter.plot_bed(self.lines, self.output_filename, self.map_type)
+    def plot(self, condition_list):
+        Plotter.plot_bed(self.lines, self.output_filename, self.map_type, condition_list)
 
 
 class WithInput(Map):
@@ -296,7 +296,7 @@ class WithInput(Map):
         self.lines = []
 
     def set_background_and_calculate_significance(
-            self, cond_file_names, bg_file_name, test='mannwhitneyu'
+            self, cond_file_names, bg_file_name, test='mannwhitneyu', num_permutations=1000, boundary_percent=0.5
     ):
         """
         AFTER creation of all LineObjects, we can specify a condition
@@ -317,6 +317,10 @@ class WithInput(Map):
         ----------
         cond_file_names : list
         bg_file_name : basestring
+        num_permutations : int
+            number of iterations we choose to randomly sample bg
+        boundary_percent : float
+            the extreme % value from which to (out of 1000 values, take the top and bottom 0.5%, or 5)
         """
 
         if test == 'permutation':
@@ -336,15 +340,15 @@ class WithInput(Map):
                 )
 
                 subset_iterations = []
-                iterations = 1000  # how many random samplings to take.
-                percentile = 0.5  # the extreme % value from which to take the median of. (out of 1000 values, take the median of the top and bottom 0.5%, or 5)
+                iterations = num_permutations  # how many random samplings to take.
+                percentile = boundary_percent  # the extreme % value from which to (out of 1000 values, take the top and bottom 0.5%, or 5)
                 progress = trange(iterations)
                 for i in range(0, iterations):
                     # since event_num is reported as a list across all positions, simply get the average for now.
                     mean_event_num = int(
                         sum(self.num_events['ip'][condition]) / float(len(self.num_events['ip'][condition]))
                     )
-                    # print("number of events to sample: {}".format(mean_event_num))
+                    print("number of events to sample: {}".format(mean_event_num))
                     # get n random events where n is the number of events in incl/excl
                     rand_subset = Feature.get_random_sample(self.norm_matrices[bg_file_name], mean_event_num)
                     ## print("random subset: {}".format(rand_subset[:5]))
@@ -388,6 +392,7 @@ class WithInput(Map):
                             self.norm_matrices[bg_file_name], test
                         )
 
+        # mark the condition which we are using for test
         for line in self.lines:
             if line.annotation_src_file == bg_file_name:
                 if not line.label.endswith('*'):  # we probably just want one asterisk
@@ -646,8 +651,8 @@ class MultiLengthBed(Bed):
         self.raw_matrices = matrices
         self.num_events = num_events
 
-    def plot(self):
-        Plotter.plot_multi_length_bed(self.lines, self.output_filename, self.map_type)
+    def plot(self, condition_list):
+        Plotter.plot_multi_length_bed(self.lines, self.output_filename, self.map_type, condition_list)
 
 class SkippedExon(WithInput):
     def __init__(self, ip, inp, output_filename,
@@ -707,14 +712,14 @@ class SkippedExon(WithInput):
         self.raw_matrices = matrices
         self.num_events = num_events
 
-    def plot(self):
+    def plot(self, condition_list):
         """
         Plots the rbp map and heatmap of z-value scores for the first 
         two items in the self.lines list.
         """
 
         ### Set up axes and format of plotter/subplots
-        Plotter.plot_se(self.lines, self.output_filename, self.map_type)
+        Plotter.plot_se(self.lines, self.output_filename, self.map_type, condition_list)
 
 class MutuallyExclusiveExon(WithInput):
     def __init__(
@@ -781,14 +786,14 @@ class MutuallyExclusiveExon(WithInput):
         self.raw_matrices = matrices
         self.num_events = num_events
 
-    def plot(self):
+    def plot(self, condition_list):
         """
         Plots all lines
         Returns
         -------
 
         """
-        Plotter.plot_mxe(self.lines, self.output_filename, self.map_type)
+        Plotter.plot_mxe(self.lines, self.output_filename, self.map_type, condition_list)
 
 class Alt3PSpliceSite(WithInput):
     def __init__(self, ip, inp, output_filename,
@@ -853,8 +858,8 @@ class Alt3PSpliceSite(WithInput):
         self.raw_matrices = matrices
         self.num_events = num_events
 
-    def plot(self):
-        Plotter.plot_a3ss(self.lines, self.output_filename, self.map_type)
+    def plot(self, condition_list):
+        Plotter.plot_a3ss(self.lines, self.output_filename, self.map_type, condition_list)
 
 
 class Alt5PSpliceSite(WithInput):
@@ -920,8 +925,8 @@ class Alt5PSpliceSite(WithInput):
         self.raw_matrices = matrices
         self.num_events = num_events
 
-    def plot(self):
-        Plotter.plot_a5ss(self.lines, self.output_filename, self.map_type)
+    def plot(self, condition_list):
+        Plotter.plot_a5ss(self.lines, self.output_filename, self.map_type, condition_list)
 
 class RetainedIntron(WithInput):
     def __init__(self, ip, inp, output_filename,
@@ -984,8 +989,8 @@ class RetainedIntron(WithInput):
         self.raw_matrices = matrices
         self.num_events = num_events
 
-    def plot(self):
-        Plotter.plot_ri(self.lines, self.output_filename, self.map_type)
+    def plot(self, condition_list):
+        Plotter.plot_ri(self.lines, self.output_filename, self.map_type, condition_list)
 
 ### The maps below are either deprecated or experimental
 
@@ -1018,9 +1023,9 @@ class Metagene(WithInput):
 
 
     def create_matrices(self):
-        three_utr_ratio = 40 # 49 # 44  # TODO: remove hardcoded percentage files
-        five_utr_ratio = 10 # 13 # 17
-        cds_ratio = 50 # 100
+        three_utr_ratio = 49 # 44  # TODO: remove hardcoded percentage files
+        five_utr_ratio = 13 # 17
+        cds_ratio = 100
 
         matrices = defaultdict()
         num_events = defaultdict()
@@ -1033,18 +1038,14 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=three_utr_ratio
                 )
-                # matrices["three_prime_utr_ip"] = matrices[
-                #     "three_prime_utr_ip"].div(
-                #     matrices["three_prime_utr_ip"].shape[0])
+
                 matrices["three_prime_utr_input"] = mtx.meta(
                     annotation=filename, density=self.inp,
                     upstream_offset=self.upstream_offset,
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=three_utr_ratio
                 )
-                # matrices["three_prime_utr_input"] = matrices[
-                #     "three_prime_utr_input"].div(
-                #     matrices["three_prime_utr_input"].shape[0])
+
                 num_events["three_prime_utr_ip"] = [
                     matrices["three_prime_utr_ip"].shape[0]
                 ] * matrices["three_prime_utr_ip"].shape[1]
@@ -1056,8 +1057,6 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=five_utr_ratio
                 )
-                # matrices["five_prime_utr_ip"] = matrices["five_prime_utr_ip"].div(
-                #     matrices["five_prime_utr_ip"].shape[0])
 
                 matrices["five_prime_utr_input"] = mtx.meta(
                     annotation=filename, density=self.inp,
@@ -1065,9 +1064,7 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=five_utr_ratio
                 )
-                # matrices["five_prime_utr_input"] = matrices["five_prime_utr_input"].div(
-                #     matrices["five_prime_utr_input"].shape[0]
-                # )
+
                 num_events["five_prime_utr_ip"] = [
                    matrices["five_prime_utr_ip"].shape[0]
                 ] * matrices["five_prime_utr_ip"].shape[1]
@@ -1079,8 +1076,6 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=cds_ratio
                 )
-                # matrices["cds_ip"] = matrices["cds_ip"].div(
-                #     matrices["cds_ip"].shape[0])
 
                 matrices["cds_input"] = mtx.meta(
                     annotation=filename, density=self.inp,
@@ -1088,9 +1083,7 @@ class Metagene(WithInput):
                     downstream_offset=self.downstream_offset,
                     annotation_type='bed', scale_to=cds_ratio
                 )
-                # matrices["cds_input"] = matrices["cds_input"].div(
-                #     matrices["cds_input"].shape[0]
-                # )
+
                 num_events["cds_ip"] = [
                     matrices["cds_ip"].shape[0]
                 ] * matrices["cds_ip"].shape[1]
@@ -1129,14 +1122,14 @@ class Metagene(WithInput):
                                         num_events['three_prime_utr_ip']
         print("NUM EVENTS", self.num_events)
 
-    def plot(self):
+    def plot(self, condition_list):
         """
         Plots the rbp map and heatmap of z-value scores for the first
         two items in the self.lines list.
         """
 
         ### Set up axes and format of plotter/subplots
-        Plotter.plot_meta(self.lines, self.output_filename, self.map_type)
+        Plotter.plot_meta(self.lines, self.output_filename, self.map_type, condition_list)
 
 class CDS(WithInput):
     def __init__(self, ip, inp, output_filename,
@@ -1192,14 +1185,14 @@ class CDS(WithInput):
             )
         self.raw_matrices = matrices
 
-    def plot(self):
+    def plot(self, condition_list):
         """
         Plots the rbp map and heatmap of z-value scores for the first 
         two items in the self.lines list.
         """
 
         ### Set up axes and format of plotter/subplots
-        Plotter.plot_bed(self.lines, self.output_filename, self.map_type)
+        Plotter.plot_bed(self.lines, self.output_filename, self.map_type, condition_list)
 
 class ATACIntron(RetainedIntron):
     def __init__(self, ip, inp, output_filename,
@@ -1322,6 +1315,6 @@ class PhastconMap(Map):
                 if not line.label.endswith('*'):  # we probably just want one asterisk
                     line.label = line.label + '*'
 
-    def plot(self):
-        Plotter.plot_phastcon(self.lines, self.output_filename, self.map_type)
+    def plot(self, condition_list):
+        Plotter.plot_phastcon(self.lines, self.output_filename, self.map_type, condition_list)
 

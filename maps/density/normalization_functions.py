@@ -560,6 +560,7 @@ def get_means_and_sems(df, conf=0.95):
         nums = len(single_col)
         droppercent = (1 - conf) / 2.0
         dropnum = int(nums * droppercent)
+        # print('dropping {} events'.format(dropnum))
         if dropnum > 0:
             single_col = single_col[dropnum:-dropnum]
         # merged = pd.merge(
@@ -606,12 +607,11 @@ def median_bottom_top_values_from_dataframe(df, bottom_percent=0.5, top_percent=
         bottom_subset = int(bottom_actual_percent * nums)
         top_subset = int(top_actual_percent * nums)
         # get the bottom/top 0.5%
-        median_bottom = single_col[:bottom_subset]
-        median_top = single_col[-top_subset:]
+        median_bottom = single_col[:bottom_subset].median()
+        median_top = single_col[-top_subset:].median()
         # append to list of bottom/top values
         bottom_values.append(median_bottom)
         top_values.append(median_top)
-
     return bottom_values, top_values
 
 
@@ -650,12 +650,13 @@ def bottom_top_values_from_dataframe(df, bottom_percent=0.5, top_percent=0.5):
         top_subset = int(top_actual_percent * nums)
         # get the bottom/top 0.5%
 
-        bottom = single_col[bottom_subset - 1:bottom_subset]
-        top = single_col[-top_subset:-(top_subset - 1)]
+        bottom = single_col.iloc[bottom_subset-1]
+        top = single_col.iloc[len(single_col)-top_subset]
         # append to list of bottom/top values
         bottom_values.append(bottom)
         top_values.append(top)
     return bottom_values, top_values
+
 
 ### Normalize peak methods ###
 

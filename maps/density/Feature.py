@@ -684,9 +684,11 @@ class Phastcon(Retained_intron):
 def get_random_sample(df, n):
     rand_indices = []
     num_events = df.shape[0] - 1
+    # print('num of total events: {}'.format(num_events))
     for i in range(0, n):
         rand_indices.append(random.randint(0, num_events))
     try:
+        # print('indices to return: {}'.format(rand_indices))
         return df.iloc[rand_indices,].reset_index(drop=True)
     except IndexError:
         print(sorted(rand_indices))

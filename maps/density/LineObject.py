@@ -131,6 +131,32 @@ class LineObject():
     def calculate_and_set_significance(self, bg_matrix, test='mannwhitneyu'):
         pass
 
+
+    def _set_std_error_boundaries(self, bottom_values=None, top_values=None):
+        """
+        Returns the +/- error boundaries given a list of values (means)
+
+        Parameters
+        ----------
+        means
+        error
+
+        Returns
+        -------
+
+        """
+        for tv in range(0, len(top_values)):
+            if np.isnan(top_values[tv]):
+                top_values[tv] = self.means[tv] # + abs(self.means[tv]*0.1)
+            if np.isnan(bottom_values[tv]):
+                bottom_values[tv] = self.means[tv] # - abs(self.means[tv]*0.1)
+
+        self.error_pos = top_values
+        self.error_neg = bottom_values
+        self.max = max(self.error_pos)
+        self.min = min(self.error_neg)
+        return 0
+
     def _get_std_error_boundaries(self, values):
         """
         Sets the std error upper/lower boundaries given a mean and standard error
@@ -178,12 +204,9 @@ class PeakLine(LineObject):
         """
         LineObject.__init__(self, event_matrix, annotation_src_file, conf,
             color, min_event_threshold, num_events, label)
-
         self.hist = self._get_hist()
         self.values = norm.divide_by_num_events(self._get_hist(), self.num_events)
-        # self.values = self.hist # if divide hist is not true
-
-        # divide_hist = divide_hist
+        self.means = self.values  # TODO: resolve
         self.error_pos, self.error_neg, self.max, self.min = self._get_std_error_boundaries(
             self.values, divide_hist)  # upper and lower boundaries for error
 
@@ -209,6 +232,7 @@ class PeakLine(LineObject):
             list of all values summed across each position (column).
         """
         return list(self.event_matrix.sum())
+
 
     def _get_std_error_boundaries(self, values, divide):
         """
@@ -337,30 +361,6 @@ class DensityLine(LineObject):
                 std_deviation[i] = 0
         return means, sems, std_deviation, outlier_removed_df
 
-    def _set_std_error_boundaries(self, bottom_values=None, top_values=None):
-        """
-        Returns the +/- error boundaries given a list of values (means)
-
-        Parameters
-        ----------
-        means
-        error
-
-        Returns
-        -------
-
-        """
-        for tv in range(0, len(top_values)):
-            if np.isnan(top_values[tv]):
-                top_values[tv] = self.means[tv] # + abs(self.means[tv]*0.1)
-            if np.isnan(bottom_values[tv]):
-                bottom_values[tv] = self.means[tv] # - abs(self.means[tv]*0.1)
-
-        self.error_pos = top_values
-        self.error_neg = bottom_values
-        self.max = max(self.error_pos)
-        self.min = min(self.error_neg)
-        return 0
 
     def _get_std_error_boundaries(self):
         """
