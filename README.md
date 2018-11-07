@@ -61,13 +61,18 @@ plot_map --peak peak.bb \  # peaks file as a bigbed
  --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
 ```
 
+##### Other examples
+You can refer to the 'examples' for usage. These examples refer to BAM and BigWig files that can be downloaded from [encodeproject.org](https://encodeproject.org)
+
+Direct link to [RBFOX2](https://www.encodeproject.org/experiments/ENCSR987FTF/) datasets.
+Direct link to [background control](https://s3-us-west-1.amazonaws.com/external-collaborator-data/reference-data/se-background-controls.tar.gz) datasets (based on ENCODE gene expression data for all RBPs)
 ##### Other Options
 
 ```--bgnum```: For z-score heatmap plotting: 0-based 'index' of the annotation you want to use as the background distribution.
 For example, if you want the third annotation to be your background, you would provide the parameter ```--bgnum 2```
 
-```--to_test```: Specify one or two annotation files to plot against a background.
-For example, if you would like to plot the z-score for included and excluded events against a background list of events,
+```--testnums```: Specify one or two annotation files to plot against a background.
+For example, if you would like to plot the z-score/ks/fisher for included and excluded events against a background list of events,
 your command would look something like:
 
 ```
@@ -119,7 +124,7 @@ The program will try and create as many intermediate files so you can do more do
 
 
 # Other Notes
-- The script will automatically create intermediate raw and normalized matrix files for every condition you provide... the files can get big!! but they can be loaded into pandas if you wanted to look at a few events. They're comma separated
+- The script will automatically create intermediate raw and normalized matrix files for every condition you provide... the files can get big!! but they can be loaded into pandas if you wanted to look at a few events. They're comma separated.
 
 - At least for ENCODE, we set a cutoff of a minimum 100 events (rmats annotation file should have at least 100 lines), otherwise the signal will look messy
 
