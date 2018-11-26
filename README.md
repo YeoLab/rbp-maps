@@ -61,11 +61,21 @@ plot_map --peak peak.bb \  # peaks file as a bigbed
  --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
 ```
 
-##### Other examples
-You can refer to the 'examples' for usage. These examples refer to BAM and BigWig files that can be downloaded from [encodeproject.org](https://encodeproject.org)
+##### Links to files
+You can refer to the 'examples/' directory for usage. These examples refer to BAM and BigWig files that can be downloaded from [encodeproject.org](https://encodeproject.org)
 
-Direct link to [RBFOX2](https://www.encodeproject.org/experiments/ENCSR987FTF/) datasets.
-Direct link to [background control](https://s3-us-west-1.amazonaws.com/external-collaborator-data/reference-data/se-background-controls.tar.gz) datasets (based on ENCODE gene expression data for all RBPs)
+- [Direct link to RBFOX2 (eCLIP)](https://www.encodeproject.org/experiments/ENCSR987FTF/) datasets.
+- [Direct link to RBFOX2 (shRNA-seq)](https://www.encodeproject.org/experiments/ENCSR767LLP/) datasets (you might look for ENCFF869HET as the accession for rMATS differential splicing files). 
+- [Direct link to background control](https://s3-us-west-1.amazonaws.com/external-collaborator-data/reference-data/se-background-controls.tar.gz) datasets (based on ENCODE gene expression data for all RBPs)
+
+We also provide the script used to raw rMATS outputs (based on inclusion junction count as described in paper). Here is an example commandline for filtering SE events from a file "SE.MATS.JunctionCountOnly.txt":
+```
+subset_jxc -i SE.MATS.JunctionCountOnly.txt \
+-o SE.MATS.JunctionCountOnly.nr.txt \
+-e se
+```
+- [Direct link to these rMATS files](https://s3-us-west-1.amazonaws.com/external-collaborator-data/rbp-maps-PMID30413564/rMATS_jxc_files.tar.gz), the "significant.nr" files are filtered for significance (PValue and IncLevelDifference <= 0.05, FDR <= 0.1) and overlapping event removal. "Positive" and "negative" files refer to files split by IncLevelDifference.
+
 ##### Other Options
 
 ```--bgnum```: For z-score heatmap plotting: 0-based 'index' of the annotation you want to use as the background distribution.

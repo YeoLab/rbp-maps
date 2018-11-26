@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.3] - 2018-11-26
+
+### Added
+- Added link to the readme containing splicing files used in paper
+
+### Changed
+
+## Fixed
+- fixed entrypoint for subset_jxc command
+
+## [0.1.2] - 2018-11-01
+
+### Added
+- added some examples and scripts for maps with various options
+
+### Changed
+
+## Fixed
+- moved check_for_index() in plot_map.py so it doesn't check peak files for indexes
+
 ## [0.1.1] - 2018-10-07
 
 ### Added
