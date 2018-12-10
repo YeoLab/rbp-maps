@@ -42,6 +42,34 @@ def run_make_peak(
             intron_offset=intron_or_downstream_offset, min_density_threshold=0,
             conf=confidence
         )
+    elif event == 'a3ss':
+        map_obj = Map.Alt3PSpliceSite(
+            rbp, rbp, outfile, norm_func,
+            annotation_dict, exon_offset=exon_or_upstream_offset,
+            intron_offset=intron_or_downstream_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'a5ss':
+        map_obj = Map.Alt5PSpliceSite(
+            rbp, rbp, outfile, norm_func,
+            annotation_dict, exon_offset=exon_or_upstream_offset,
+            intron_offset=intron_or_downstream_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'ri':
+        map_obj = Map.RetainedIntron(
+            rbp, rbp, outfile, norm_func,
+            annotation_dict, exon_offset=exon_or_upstream_offset,
+            intron_offset=intron_or_downstream_offset, min_density_threshold=0,
+            conf=confidence
+        )
+    elif event == 'mxe':
+        map_obj = Map.MutuallyExclusiveExon(
+            rbp, rbp, outfile, norm_func,
+            annotation_dict, exon_offset=exon_or_upstream_offset,
+            intron_offset=intron_or_downstream_offset, min_density_threshold=0,
+            conf=confidence
+        )
     elif event == 'cds':
         map_obj = Map.CDS(
             rbp, rbp, outfile, norm_func,
@@ -76,13 +104,17 @@ def run_make_peak(
     map_obj.normalize_matrix()
     map_obj.create_lines()
 
+    num_heatmap = 0
+
     # for any condition we want to calculate pvalues for
     if ((len(condition_list) > 0) and (bg_filename is not None)):
         map_obj.set_background_and_calculate_significance(
             condition_list, bg_filename, test_method
         )
+        num_heatmap += 1
+
     map_obj.write_intermediates_to_csv()
-    map_obj.plot()
+    map_obj.plot(condition_list)
 
 
 def run_make_density(
@@ -212,13 +244,14 @@ def run_make_density(
     map_obj.normalize_matrix()
     map_obj.create_lines()
 
-    # for condition in condition_list:  # for any condition we want to calculate pvalues for
+    # for any condition we want to calculate pvalues for
     if ((len(condition_list) > 0) and (bg_filename is not None)):
         map_obj.set_background_and_calculate_significance(
             condition_list, bg_filename, test_method
         )
+
     map_obj.write_intermediates_to_csv()
-    map_obj.plot()
+    map_obj.plot(condition_list)
 
 
 def run_phastcons(outfile, phastcons, peak_file, masked_file, annotation):
@@ -243,6 +276,32 @@ def run_phastcons(outfile, phastcons, peak_file, masked_file, annotation):
     map_obj.write_intermediates_to_csv()
 
     map_obj.plot()
+
+
+def check_for_index(bamfile):
+    """
+    Shamelessly copied from Gabe's (gpratt) code.
+    Checks to make sure a BAM file has an index, if the index does not exist it is created.
+
+    Usage undefined if file does not exist (check is made earlier in program)
+    bamfile - a path to a bam file
+
+    """
+
+    if not os.path.exists(bamfile):
+        raise NameError("file %s does not exist" % (bamfile))
+
+    if os.path.exists(bamfile + ".bai"):
+        return
+    if not bamfile.endswith(".bam"):
+        raise NameError("file %s not of correct type" % (bamfile))
+    else:
+        logging.info("Index for %s does not exist, indexing bamfile" % (bamfile))
+
+        process = call(["samtools", "index", str(bamfile)])
+
+        if process == -11:
+            raise NameError("file %s not of correct type" % (bamfile))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -507,6 +566,12 @@ def main():
         else:
             input_pos_bw = args.input_pos_bw
             input_neg_bw = args.input_neg_bw
+
+        """
+        Check for index
+        """
+        check_for_index(ip_bam)
+        check_for_index(input_bam)
 
         """
         Check if bigwigs exist, otherwise make (deprecated)
