@@ -55,10 +55,11 @@ BG2_COLOR = COLOR_PALETTE[6]
 BG3_COLOR = COLOR_PALETTE[7]
 BG4_COLOR = COLOR_PALETTE[4]
 BG5_COLOR = COLOR_PALETTE[2]
+BG6_COLOR = COLOR_PALETTE[1]
 POS_COLOR = COLOR_PALETTE[0]
 NEG_COLOR = COLOR_PALETTE[5]
 
-COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR, BG5_COLOR]
+COLORS = [POS_COLOR, NEG_COLOR, BG1_COLOR, BG2_COLOR, BG3_COLOR, BG4_COLOR, BG5_COLOR, BG6_COLOR]
 
 RED = COLOR_PALETTE[0]
 ORANGE = COLOR_PALETTE[1]
@@ -348,7 +349,6 @@ class WithInput(Map):
                     mean_event_num = int(
                         sum(self.num_events['ip'][condition]) / float(len(self.num_events['ip'][condition]))
                     )
-                    print("number of events to sample: {}".format(mean_event_num))
                     # get n random events where n is the number of events in incl/excl
                     rand_subset = Feature.get_random_sample(self.norm_matrices[bg_file_name], mean_event_num)
                     ## print("random subset: {}".format(rand_subset[:5]))
@@ -496,7 +496,6 @@ class WithInput(Map):
                 self.min_density_threshold
             )
         self.norm_matrices = matrices
-
 
     def create_lines(self):
         """
@@ -719,6 +718,7 @@ class SkippedExon(WithInput):
         """
 
         ### Set up axes and format of plotter/subplots
+
         Plotter.plot_se(self.lines, self.output_filename, self.map_type, condition_list)
 
 class MutuallyExclusiveExon(WithInput):
@@ -891,7 +891,6 @@ class Alt5PSpliceSite(WithInput):
         self.intron_offset = intron_offset
 
     def create_matrices(self):
-        print("making 5p matrices")
         """
         Creates a stacked density matrix for each event in each annotation_src_file file
         and sets self.raw_matrices variable.
@@ -1023,8 +1022,8 @@ class Metagene(WithInput):
 
 
     def create_matrices(self):
-        three_utr_ratio = 49 # 44  # TODO: remove hardcoded percentage files
-        five_utr_ratio = 13 # 17
+        three_utr_ratio = 62 # 44  # TODO: remove hardcoded percentage files
+        five_utr_ratio = 16 # 17
         cds_ratio = 100
 
         matrices = defaultdict()
@@ -1102,11 +1101,11 @@ class Metagene(WithInput):
         )
 
         self.raw_matrices['input']['meta'] = pd.merge(
-            matrices['five_prime_utr_ip'],
-            matrices['cds_ip'],
+            matrices['five_prime_utr_input'],
+            matrices['cds_input'],
             how='outer', left_index=True, right_index=True
         ).merge(
-            matrices['three_prime_utr_ip'],
+            matrices['three_prime_utr_input'],
             how='outer', left_index=True, right_index=True
         )
 
@@ -1120,7 +1119,10 @@ class Metagene(WithInput):
         self.num_events['ip']['meta'] = num_events['five_prime_utr_ip'] + \
                                         num_events['cds_ip'] + \
                                         num_events['three_prime_utr_ip']
-        print("NUM EVENTS", self.num_events)
+
+        # self.num_events['input']['meta'] = num_events['five_prime_utr_input'] + \
+        #                                 num_events['cds_input'] + \
+        #                                 num_events['three_prime_utr_input']
 
     def plot(self, condition_list):
         """
@@ -1258,7 +1260,6 @@ class PhastconMap(Map):
 
         for filename, filetype in self.annotation.iteritems():
             if filename == self.masked_file:
-                print("Masking: {}".format(filename))
                 matrices['phastcon'][filename] = mtx.phastcon_region(
                     annotation=filename, density=self.ip,
                     exon_offset=self.upstream_offset,

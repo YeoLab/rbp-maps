@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.4] - 2019-03-xx (unreleased)
+
+### Changed
+- fixed a bug in the metagene code that was causing the IP to normalize over itself rather than Input
+- fixed bug where bam file index not created, subprocess call was not imported therefore couldn't call samtools index
+
+## [0.1.3] - 2019-03-08
+
+### Changed
+- modified the subset_jxc script to handle more than two reps each
+
 ## [0.1.3] - 2018-11-26
 
 ### Added

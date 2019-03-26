@@ -60,7 +60,7 @@ def same_length_region(
         for line in f:
             if not line.startswith('event_name') and not \
                     line.startswith('ID') and not \
-                    line.startswith('annotation'):  #
+                    line.startswith('annotation'):  # assume there is a header
                 event = line.rstrip()
                 interval = Feature.Feature(
                     event, annotation_type
@@ -234,12 +234,15 @@ def mutually_exc_exon(annotation, density, exon_offset, intron_offset,
     pandas.DataFrame
         A dataframe of r events for an MXE feature (see: description).
     """
-
+    # covers 3' end of upstream flanking exon
     three_upstream = {}
-    three_up_mxe = {}
+    # covers 5-3' ends of upstream exclusive exon
     five_up_mxe = {}
-    three_down_mxe = {}
+    three_up_mxe = {}
+    # covers 5-3' ends of downstream exclusive exon
     five_down_mxe = {}
+    three_down_mxe = {}
+    # covers 5' end of downstream flanking exon
     five_downstream = {}
 
     with open(annotation) as f:
