@@ -23,6 +23,7 @@ import density.Peak
 import density.ReadDensity
 import density.normalization_functions as norm
 from density import Map
+from subprocess import call
 
 logger = logging.getLogger('plot_features')
 
