@@ -140,5 +140,8 @@ The program will try and create as many intermediate files so you can do more do
 
 - Interactive nodes are preferred, for annotations with a ton of events TSCC will run out of memory. I think it's fine for a few hundred thousand events or so, but I've tried with 700k and it didn't go over so well...
 
+# Publication
+- [RBP-Maps enables robust generation of splicing regulatory maps](https://www.ncbi.nlm.nih.gov/pubmed/30413564)
+
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
 

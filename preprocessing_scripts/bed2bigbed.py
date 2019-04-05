@@ -20,24 +20,96 @@ import subprocess
 import os
 import pandas as pd
 
+
 def stringify(name):
+    """
+    Returns a string representation of a value, expect float
+
+    Parameters
+    ----------
+    name : float
+        some float number
+
+    Returns
+    -------
+    _name_ : basestring
+        string representation of name, flanked by '_' chars
+
+    """
     try:
         _ = float(name)
         return '_' + name + '_'
     except ValueError:
         return name
 
+
 def filter_bed(in_bed, log10p, log2fc, filtered_bed):
+    """
+    Filters an input-normalized eCLIP bed file
+    see: https://github.com/yeolab/eclip
+
+    Parameters
+    ----------
+    in_bed : string
+        input bed file (4th and 5th columns should indicate
+        -log10p and l2fold, respectively)
+    log10p : float
+        -log10 pvalue threshold cutoff
+    log2fc : float
+        log2 fold change threshold cutoff
+    filtered_bed : basestring
+        output file
+
+    Returns
+    -------
+
+    """
     df = pd.read_table(in_bed, names=[
         'chrom','start','end','log10p','log2fc','strand'
     ])
-    df = df[(df['log10p']>=log10p) & (df['log2fc']>=log2fc)]
+    try:
+        df = df[(df['log10p']>=log10p) & (df['log2fc']>=log2fc)]
+    except Exception as e:
+        print(e)
+
     df.to_csv(filtered_bed, sep='\t', index=False, header=False)
 
 def convert_to_bigbed(
         in_bed, genome, bed_type, out_bb, log10p, log2fc,
         blockSize=256, itemsPerSlot=512
 ):
+    """
+    Converts an eCLIP-normalized bed file into a bigbed file.
+    First, if bed_type is specified as a 'bed6inputnorm', we'll need to
+    convert/modify columns such that they are filtered using log10p and l2fc
+    specified cutoffs.
+    Then, we will make sure
+
+    Parameters
+    ----------
+    in_bed : basestring
+        input bed file
+    genome : basestring
+        genome chrom sizes file
+    bed_type : basestring
+        either 'bed6' for standard bedfiles
+        or 'bed6inputnorm' for eCLIP input-normalized bedfiles, whose
+        pvalue and fold change information is embedded into columns 4 and 5.
+    out_bb : basestring
+        output bigbed file
+    log10p : float
+        -log10 pvalue threshold cutoff for eCLIP normalized bed files.
+    log2fc : float
+        log2 fold change threshold cutoff for eCLIP normalized bed files.
+    blockSize : int
+        see bedToBigBed args (default: 256)
+    itemsPerSlot : int
+        see bedToBigBed args (default: 512)
+
+    Returns
+    -------
+
+    """
     sorted_bed = os.path.join(
         os.path.dirname(out_bb),
         os.path.basename(in_bed) + '.sorted.bed'
@@ -82,6 +154,7 @@ def convert_to_bigbed(
                          % (" ".join(cmds), stderr, stdout))
 
     return 0
+
 
 def main():
     parser = argparse.ArgumentParser()

@@ -36,13 +36,19 @@ def get_avg_inclusion_count(row):
     Returns
     -------
     The average inclusion junction count across all samples
-    (2 reps, 2 conditions)
+    (N reps, 2 conditions)
     """
     if 'IJC_SAMPLE_1' in row.index and 'IJC_SAMPLE_2' in row.index: # from rmats
-        s1a, s1b = row['IJC_SAMPLE_1'].split(',')
+        s1_replicates = row['IJC_SAMPLE_1'].split(',')
+        s2_replicates = row['IJC_SAMPLE_2'].split(',')
+        
+        s1_replicates = [int(rep) for rep in s1_replicates]
+        s2_replicates = [int(rep) for rep in s2_replicates]
+        
+        all_reps_sum = sum(s1_replicates) + sum(s2_replicates)
+        all_reps_num = len(s1_replicates) + len(s2_replicates)
+        return all_reps_sum / float(all_reps_num)
 
-        s2a, s2b = row['IJC_SAMPLE_2'].split(',')
-        return (int(s1a) + int(s1b) + int(s2a) + int(s2b)) / 4.0
     elif 'incl' in row.index: # from eric's bg annotation
         s1a, s2a = row['incl'].split(',')
         return (int(s1a) + int(s2a))/2.0

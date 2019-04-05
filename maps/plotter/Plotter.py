@@ -44,6 +44,20 @@ class _Plotter():
     def set_ylims(self):
         ymin = min(l.min for l in self.lines)
         ymax = max(l.max for l in self.lines)
+
+        # maybe a good idea to add a 10% buffer to the scales
+        if ymin < 0:
+            ymin = ymin + 0.1*ymin
+        else:
+            ymin = ymin - 0.1*ymin
+
+        if ymax < 0:
+            ymax = ymax - 0.1*ymax
+        else:
+            ymax = ymax + 0.1*ymax
+            ymax = ymax + 0.1*ymax
+        # ymax = 0.00001
+        # print("ymin = {}, ymax = {}, line={}, line={}".format(ymin, ymax, self.lines[0].values, self.lines[1].values))
         return ymin, ymax
 
     def plot_figure(self, output_filename, has_heatmap=True):
@@ -132,7 +146,7 @@ class _Plotter():
         fig.savefig(output_filename)
 
     def plot(self, axs, legend_ax, linewidth=0.8):
-        # axs[2].axvline(117)  # hacking for paper purposes
+        # axs[2].axvline(117)  # hacking for paper purposes to show a line at position 117
         c = 0
         for line in self.lines:
             values = line.values
@@ -182,7 +196,18 @@ class _Plotter():
         pass
 
     def set_legend(self, axs, legend_ax):
+        """
+        This function sets the legend as the legend ax differs from the ax with legend info.
 
+        Parameters
+        ----------
+        axs
+        legend_ax
+
+        Returns
+        -------
+
+        """
         leg_handles, leg_labels = axs[0].get_legend_handles_labels()
 
         leg = legend_ax.legend(leg_handles, leg_labels, loc=10,
@@ -519,7 +544,7 @@ def plot_mxe(lines,  output_filename, map_type, condition_list):
 
 
 def plot_a3ss(lines,  output_filename, map_type, condition_list):
-    plotter = _A3SSPlotter(lines=lines, num_regions=3, num_heatmap=condition_list)
+    plotter = _A3SSPlotter(lines=lines, num_regions=3, condition_list=condition_list)
     plotter.plot_figure(output_filename)
     return plotter
 
@@ -535,10 +560,12 @@ def plot_bed(lines, output_filename, map_type, condition_list=[]):
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
 
+
 def plot_phastcon(lines, output_filename, map_type, condition_list=[]):
     plotter = _PhastConPlotter(lines=lines, num_regions=2, condition_list=condition_list)
     plotter.plot_figure(output_filename, has_heatmap=False)
     return plotter
+
 
 def plot_multi_length_bed(lines, output_filename, map_type, condition_list=[]):
     plotter = _Plotter(lines=lines, num_regions=2, condition_list=condition_list, width=10, height=5)

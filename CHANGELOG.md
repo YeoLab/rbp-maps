@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.1.4] - 2019-03-xx (unreleased)
+## [0.1.4] - 2019-04-xx (prerelease)
 
 ### Changed
 - fixed a bug in the metagene code that was causing the IP to normalize over itself rather than Input
 - fixed bug where bam file index not created, subprocess call was not imported therefore couldn't call samtools index
+- modified preprocessing_scripts/bedtobigbed.py so it's more eCLIP specific (designed to handle input-normalized outputs from the eCLIP pipeline, where -log10(p) and log2(fold) are in the 4th and 5th columns in a BED6 file, respectively)
+- fixed an issue where Plotter.plot_a3ss() was still using num_heatmap as a parameter, even though it's been deprecated
+- modified preprocessing_scripts/subset_rmats_junctioncountonly.py so it handles more than two replicates
 
 ## [0.1.3] - 2019-03-08
 
