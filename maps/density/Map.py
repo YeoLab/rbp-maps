@@ -1022,9 +1022,9 @@ class Metagene(WithInput):
 
 
     def create_matrices(self):
-        three_utr_ratio = 62 # 44  # TODO: remove hardcoded percentage files
-        five_utr_ratio = 16 # 17
-        cds_ratio = 100
+        three_utr_ratio = 41 # 44  # TODO: remove hardcoded percentage files
+        five_utr_ratio = 7 # 17
+        cds_ratio = 52
 
         matrices = defaultdict()
         num_events = defaultdict()
