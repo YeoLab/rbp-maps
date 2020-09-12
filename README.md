@@ -19,26 +19,31 @@ RBP splice and feature maps
 | numpy         | 1.12.1
 | scipy         | 0.19.1
 
+# Installation:
+
 ### Create the environment:
 ```python
+git clone https://github.com/yeolab/rbp-maps
+cd rbp-maps;
 conda env create -f conda_env.txt -n rbp-maps
 source activate rbp-maps
 ```
-
-### Install:
+Then, install:
 ```
-git clone https://github.com/yeolab/rbp-maps
-cd rbp-maps
+cd rbp-maps;
 python setup.py build
 python setup.py install
 ```
 
-### Or run this script:
-source create_environment.sh
+### Docker:
 
-### Simple Commandline Usage:
+```
+docker pull brianyee/rbp-maps
+```
 
-##### Plotting density (*.bw files from the eCLIP bioinformatics pipeline)
+# Usage:
+
+### Plotting density (*.bw files from the eCLIP bioinformatics pipeline)
 ```
 plot_map --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .pos.bw and .neg.bw files are in this directory)
  --ip_pos_bw \ # positive bigwig file for CLIp
@@ -49,19 +54,37 @@ plot_map --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .
  --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
  --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works
- --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
+ --event se \ # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
+ --normalization_level 1 \ # numeric "code" used to determine the kind of normalization to output (see below)
+ --testnums 0 1 \
+ --bgnum 2 \
+ --sigtest permutation
 ```
 
-##### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
+### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
 plot_map --peak peak.bb \  # peaks file as a bigbed
  --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
  --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works
  --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
+ --normalization_level 0 \ # numeric "code" used to determine the kind of normalization to output (see below)
+ --testnums 0 1 \
+ --bgnum 2 \
+ --sigtest fisher
 ```
 
-##### Links to files
+### Using a background & calculating significance.
+In our above example, we've set a few optional parameters that you can set to determine significance given an optional background dataset. 
+ - ```--normalization_level 0```: Just plot the IP density. **If using normalized peaks, use this option** to skip any more normalization (just report the peak overlaps). 
+ - ```--normalization_level 1``` **(default)**: Plot the IP density minus its input density
+ - ```--normalization_level 2```: Plot the Entropy-normalized IP over its input density
+ - ```--normalization_level 3```: Just plot the Input density
+ - ```--bgnum 2```: **0-based number** of the background file (in this example, we use 2 to designate our 3rd file (rmats_annotation3.JunctionCountOnly.txt) as our background model.
+ - ```--testnums 0 1```: the **0-based number** of the filenames of the test conditions (ie. rmats_annotation1.JunctionCountOnly.txt and rmats_annotation2.JunctionCountOnly.txt)
+ - ```--sigtest permutation```: By default, that setting is ‘permutation’, in which case we randomly sample from the background sets (typically the ‘native SE’ set, though you can set this to be other things) and then use the confidence interval from that permutation to draw confidence bounds around that native SE curve, and then the significance is calculated based on those permutation values. If this setting is set to "ks", "fisher", "zscore", or "mannwhitneyu" , then the significance between the curves is done using the specified test, and the confidence bounds are instead done as the standard error of the alt included or alt excluded events. Currently, only "fisher" is implemented for peak-based rbp-maps.
+
+# Links to files
 You can refer to the 'examples/' directory for usage. These examples refer to BAM and BigWig files that can be downloaded from [encodeproject.org](https://encodeproject.org)
 
 - [Direct link to RBFOX2 (eCLIP)](https://www.encodeproject.org/experiments/ENCSR987FTF/) datasets.
@@ -80,41 +103,12 @@ subset_jxc -i SE.MATS.JunctionCountOnly.txt \
 
 ##### Other Options
 
-```--bgnum```: For z-score heatmap plotting: 0-based 'index' of the annotation you want to use as the background distribution.
-For example, if you want the third annotation to be your background, you would provide the parameter ```--bgnum 2```
-
-```--testnums```: Specify one or two annotation files to plot against a background.
-For example, if you would like to plot the z-score/ks/fisher for included and excluded events against a background list of events,
-your command would look something like:
-
-```
-plot_map --ip ip.bam \ # IP BAM file from eCLIP output
- --input input.bam \ # input BAM file from eCLIP output
- --annotations INCLUDED.txt EXCLUDED.txt BACKGROUND.txt \ # these are typically all JunctionCountsOnly.txt formatted files from RMATS
- --annotation_type rmats rmats rmats \ # for each annotation file specified, please specify the format (typically rmats)
- --output rbfox2.svg \ # output file name
- --event se \ # event (se/a3ss/a5ss/ri)
- --bgnum 2 \ # 0-based number of the background file (in this example, it is 2 because BACKGROUND.txt is the 3rd file listed)
- --testnums 0 1 # the 0-based number of the filenames of the test conditions whose distributions you want to get p-values from with respect to (--bgnum)
-```
-
 ```--exon_offset```: (untested) controls how many bases into an exon you would like to plot (default 50 bases)
 
 ```--intron_offset```: (untested) controls how many bases into an intron you would like to plot (default 300 bases)
 
-```--normalization_level```: numeric "code" used to determine the kind of normalization to output:
- - ```--normalization_level 0```: Just plot the IP density
- - ```--normalization_level 1``` (default): Plot the IP density minus its input density
- - ```--normalization_level 2```: Plot the Entropy-normalized IP over its input density
- - ```--normalization_level 3```: Just plot the Input density
-
 ```--confidence```: For each position, keep only this fraction of events to reduce noise caused by outliers (default 0.95)
 
-```--chrom_sizes```: If you don't provide the necessary bigwig files, we'll try to make them for you
-(but only if you're in the Yeolab and have access to make_bigwig_files.py in your path)
-
-```--phastcon``` (beta): instead of providing BAM files, you can also map phastcon data to
-determine the level of conservation over a set of events. For example: ```--phastcon hg19_phastcons.bw```
 
 # Example Outputs
 
