@@ -134,8 +134,8 @@ def determine_event_to_keep(df, indices):
     max_avg = 0
     max_idx = -1
     for ix in indices:
-        if df.ix[int(ix)]['avgIJC'] > max_avg:
-            max_avg = df.ix[int(ix)]['avgIJC']
+        if df['avgIJC'][int(ix)] > max_avg:
+            max_avg = df['avgIJC'][int(ix)]
             max_idx = int(ix)
     return max_idx
 
@@ -210,11 +210,11 @@ def run_subset_rmats_junctioncountonly(i, o, e, t='rmats'):
         indices_to_keep.append(
             determine_event_to_keep(
                 starting_df,
-                merged_w_index.ix[x]['name']
+                merged_w_index['name'][x]
             )
         )
 
-    final_subset = starting_df.ix[indices_to_keep]
+    final_subset = starting_df.iloc[indices_to_keep]
     del final_subset['avgIJC']
 
     final_subset.to_csv(o, sep=SEP, index=None)
