@@ -75,6 +75,16 @@ To avoid writing generated files next to BAMs (for read-only BAM locations), use
 --makebigwigfiles_workdir /path/for/bedgraphs     # working dir for makebigwigfiles intermediates (bedGraphs/temp files)
 ```
 
+To auto-filter overlapping rMATS annotation rows before plotting (using `subset_rmats_junctioncountonly.py`), use:
+
+```
+--auto_subset_rmats \
+--subset_rmats_dir /path/for/subset_annotations \  # optional; default is each input annotation directory
+--subset_rmats_force                                # optional; overwrite existing *.nr.txt outputs
+```
+
+`--auto_subset_rmats` only applies to annotation files whose corresponding `--annotation_type` is `rmats`.
+
 ### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
 plot_map --peak peak.bb \  # peaks file as a bigbed

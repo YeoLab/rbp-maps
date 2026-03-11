@@ -455,6 +455,70 @@ def ensure_density_bigwigs(
             "{}".format(', '.join(still_missing))
         )
 
+
+def subset_rmats_annotation_file(
+        annotation_path, event, output_dir=None, force=False, runner=None
+):
+    """
+    Create (or reuse) a non-overlapping rMATS annotation file.
+    """
+    if output_dir is None:
+        output_dir = os.path.dirname(annotation_path) or '.'
+    os.makedirs(output_dir, exist_ok=True)
+
+    base_name = os.path.basename(annotation_path)
+    output_path = os.path.join(output_dir, base_name + '.nr.txt')
+
+    if os.path.exists(output_path) and not force:
+        return output_path
+
+    if runner is None:
+        from preprocessing_scripts.subset_rmats_junctioncountonly import \
+            run_subset_rmats_junctioncountonly
+        runner = run_subset_rmats_junctioncountonly
+
+    runner(annotation_path, output_path, event, 'rmats')
+    return output_path
+
+
+def maybe_subset_rmats_annotations(
+        annotations, annotation_types, event, auto_subset_rmats=False,
+        subset_rmats_dir=None, subset_rmats_force=False, runner=None
+):
+    """
+    Optionally subset rmats annotation inputs and return updated paths.
+    """
+    if not auto_subset_rmats:
+        return annotations
+
+    supported_events = {'se', 'a3ss', 'a5ss', 'ri', 'mxe'}
+    if event not in supported_events:
+        raise ValueError(
+            "Auto-subsetting rmats annotations is only supported for events: {}. "
+            "Received event '{}'.".format(', '.join(sorted(supported_events)), event)
+        )
+
+    updated_annotations = []
+    for annotation, annotation_type in zip(annotations, annotation_types):
+        if annotation_type.lower() == 'rmats':
+            new_annotation = subset_rmats_annotation_file(
+                annotation_path=annotation,
+                event=event,
+                output_dir=subset_rmats_dir,
+                force=subset_rmats_force,
+                runner=runner
+            )
+            print(
+                "Auto-subset rMATS annotation: {} -> {}".format(
+                    annotation, new_annotation
+                )
+            )
+            updated_annotations.append(new_annotation)
+        else:
+            updated_annotations.append(annotation)
+    return updated_annotations
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -633,6 +697,23 @@ def main():
         help="Working directory for makebigwigfiles execution. Use this to control where bedGraph/intermediate files are written.",
         default=None,
     )
+    parser.add_argument(
+        "--auto_subset_rmats",
+        help="Automatically run subset_rmats_junctioncountonly.py on each --annotations file whose --annotation_type is rmats.",
+        default=False,
+        action='store_true'
+    )
+    parser.add_argument(
+        "--subset_rmats_dir",
+        help="Directory where auto-subset rmats annotation files are written (defaults to input annotation directory).",
+        default=None,
+    )
+    parser.add_argument(
+        "--subset_rmats_force",
+        help="Overwrite existing auto-subset rmats files instead of reusing them.",
+        default=False,
+        action='store_true'
+    )
 
     # Process arguments
     args = parser.parse_args()
@@ -677,24 +758,12 @@ def main():
     # process flip
     is_flipped = args.flip
 
-    # process bgcontrol file
-    if args.bgnum is not None:
-        background_file = annotations[int(args.bgnum)]
-    else:
-        background_file = None
-
     # process masking (for phastcon maps)
     args.masknum = None  # TODO: re-implement
     if args.masknum is not None:
         masked_file = annotations[int(args.masknum)]
     else:
         masked_file = None
-
-    # process totest files
-    files_to_test = []
-    if len(args.testnums) > 0:
-        for num in args.testnums:
-            files_to_test.append(annotations[num])
 
     # process significant test method
     test_method = args.sigtest
@@ -710,9 +779,31 @@ def main():
             "We have a different number of annotation_src_file types than annotations."
         )
         exit(1)
+    try:
+        annotations = maybe_subset_rmats_annotations(
+            annotations=annotations,
+            annotation_types=annotation_type,
+            event=event,
+            auto_subset_rmats=args.auto_subset_rmats,
+            subset_rmats_dir=args.subset_rmats_dir,
+            subset_rmats_force=args.subset_rmats_force
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    # process bgcontrol and test files after optional annotation subsetting
+    if args.bgnum is not None:
+        background_file = annotations[int(args.bgnum)]
     else:
-        for i in range(0, len(annotations)):
-            annotation_dict[annotations[i]] = annotation_type[i]
+        background_file = None
+
+    files_to_test = []
+    if len(args.testnums) > 0:
+        for num in args.testnums:
+            files_to_test.append(annotations[num])
+
+    for i in range(0, len(annotations)):
+        annotation_dict[annotations[i]] = annotation_type[i]
 
     """
     Determine norm func

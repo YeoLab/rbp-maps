@@ -169,3 +169,45 @@ def test_resolve_density_input_paths_uses_generated_signal_dir(monkeypatch):
     assert ip_neg_bw == "/tmp/generated-signal/ip.norm.neg.bw"
     assert input_pos_bw == "/tmp/generated-signal/input.norm.pos.bw"
     assert input_neg_bw == "/tmp/generated-signal/input.norm.neg.bw"
+
+
+def test_maybe_subset_rmats_annotations_subsets_only_rmats(monkeypatch):
+    plot_map = _load_plot_map(monkeypatch)
+    calls = []
+
+    def fake_subset(annotation_path, event, output_dir=None, force=False, runner=None):
+        calls.append((annotation_path, event, output_dir, force))
+        return annotation_path + ".nr.txt"
+
+    monkeypatch.setattr(plot_map, "subset_rmats_annotation_file", fake_subset)
+
+    annotations = ["a.rmats.txt", "b.miso.txt", "c.rmats.txt"]
+    annotation_types = ["rmats", "miso", "rmats"]
+    updated = plot_map.maybe_subset_rmats_annotations(
+        annotations=annotations,
+        annotation_types=annotation_types,
+        event="se",
+        auto_subset_rmats=True,
+        subset_rmats_dir="/tmp/subset",
+        subset_rmats_force=True
+    )
+
+    assert updated == ["a.rmats.txt.nr.txt", "b.miso.txt", "c.rmats.txt.nr.txt"]
+    assert calls == [
+        ("a.rmats.txt", "se", "/tmp/subset", True),
+        ("c.rmats.txt", "se", "/tmp/subset", True),
+    ]
+
+
+def test_maybe_subset_rmats_annotations_rejects_unsupported_event(monkeypatch):
+    plot_map = _load_plot_map(monkeypatch)
+    try:
+        plot_map.maybe_subset_rmats_annotations(
+            annotations=["a.rmats.txt"],
+            annotation_types=["rmats"],
+            event="bed",
+            auto_subset_rmats=True
+        )
+        assert False, "Expected ValueError for unsupported event"
+    except ValueError as exc:
+        assert "only supported for events" in str(exc)
