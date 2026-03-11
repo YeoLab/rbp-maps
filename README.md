@@ -35,6 +35,25 @@ python setup.py build
 python setup.py install
 ```
 
+### External Toolchain (required for BAM -> bedGraph/bigWig generation)
+
+`plot_map` now requires the following CLI tools on `PATH` for built-in signal generation:
+- `samtools`
+- `bedtools`
+- `bedGraphToBigWig` (UCSC)
+
+Conda (recommended):
+```bash
+conda install -c bioconda samtools bedtools ucsc-bedgraphtobigwig
+```
+UCSC tool package reference: [bioconda/ucsc-bedgraphtobigwig](https://anaconda.org/bioconda/ucsc-bedgraphtobigwig)
+
+Pip-based Python environments:
+```bash
+pip install pybedtools pysam pyBigWig
+```
+For `bedGraphToBigWig`, install with conda via Bioconda as above and ensure it is on `PATH`.
+
 ### Docker:
 
 ```
@@ -84,6 +103,20 @@ To auto-filter overlapping rMATS annotation rows before plotting (using `subset_
 ```
 
 `--auto_subset_rmats` only applies to annotation files whose corresponding `--annotation_type` is `rmats`.
+
+### Integration tests
+
+Integration tests that use fixture BAM files and external tools are marked with `integration`:
+
+```bash
+pytest -m integration
+```
+
+Run unit tests only:
+
+```bash
+pytest -m "not integration"
+```
 
 ### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
