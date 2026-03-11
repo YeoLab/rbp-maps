@@ -45,12 +45,9 @@ docker pull brianyee/rbp-maps
 
 ### Plotting density (*.bw files from the eCLIP bioinformatics pipeline)
 ```
-plot_map --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .pos.bw and .neg.bw files are in this directory)
- --ip_pos_bw \ # positive bigwig file for CLIp
- --ip_neg_bw \ # negative bigwig file for CLIp
- --input input.bam \ # BAM file containing reads for size matched input (make sure the .pos.bw and .neg.bw files are in this directory)
- --input_pos_bw \ # positive bigwig file for INPUT
- --input_neg_bw \ # negative bigwig file for INPUT
+plot_map --ip ip.bam \ # BAM file containing reads of your CLIP
+ --input input.bam \ # BAM file containing reads for size matched input
+ --genome hg19.chrom.sizes \ # required when strand bigWigs need to be generated from BAM
  --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
  --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works
@@ -60,6 +57,33 @@ plot_map --ip ip.bam \ # BAM file containing reads of your CLIp (make sure the .
  --bgnum 2 \
  --sigtest permutation
 ```
+
+`plot_map` now attempts to auto-generate missing `*.norm.pos.bw` and `*.norm.neg.bw` files from `--ip/--input` BAMs using built-in `make_bigwig_files.py` logic. You can still provide precomputed bigWigs with `--ip_pos_bw`, `--ip_neg_bw`, `--input_pos_bw`, and `--input_neg_bw`.
+
+For strand handling in BAM-to-signal conversion:
+
+```
+--make_bigwig_files_direction r   # reverse-stranded (typical eCLIP)
+# or
+--make_bigwig_files_direction f   # forward-stranded
+```
+
+To avoid writing generated files next to BAMs (for read-only BAM locations), use:
+
+```
+--generated_signal_dir /path/with/write/access \  # default location for generated .bw files
+--make_bigwig_files_workdir /path/for/bedgraphs   # output location for generated .bg files
+```
+
+To auto-filter overlapping rMATS annotation rows before plotting (using `subset_rmats_junctioncountonly.py`), use:
+
+```
+--auto_subset_rmats \
+--subset_rmats_dir /path/for/subset_annotations \  # optional; default is each input annotation directory
+--subset_rmats_force                                # optional; overwrite existing *.nr.txt outputs
+```
+
+`--auto_subset_rmats` only applies to annotation files whose corresponding `--annotation_type` is `rmats`.
 
 ### Plotting peaks (*.compressed.bed files from the eCLIP bioinformatics pipeline)
 ```
@@ -140,4 +164,3 @@ The program will try and create as many intermediate files so you can do more do
 - [RBP-Maps enables robust generation of splicing regulatory maps](https://www.ncbi.nlm.nih.gov/pubmed/30413564)
 
 ![Alt Text](http://cultofthepartyparrot.com/parrots/partyparrot.gif)
-

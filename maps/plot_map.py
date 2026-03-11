@@ -17,6 +17,8 @@
 import logging
 import os
 import argparse
+import subprocess
+import shutil
 from collections import OrderedDict
 
 import density.Peak
@@ -304,11 +306,286 @@ def check_for_index(bamfile):
         if process == -11:
             raise NameError("file %s not of correct type" % (bamfile))
 
+
+def run_makebigwigfiles(
+        bam, pos_bw, neg_bw, genome_file, direction=None,
+        makebigwigfiles_cmd=None, extra_args='', workdir=None
+):
+    """
+    Generate strand-specific normalized bedGraph/bigWig files from a BAM.
+    """
+    if genome_file is None:
+        raise ValueError(
+            "A genome chrom.sizes file is required to generate bigWigs. "
+            "Please set --genome."
+        )
+    if makebigwigfiles_cmd:
+        print(
+            "Warning: --makebigwigfiles_cmd is deprecated and ignored; "
+            "plot_map now generates bigWigs internally."
+        )
+    if extra_args:
+        print(
+            "Warning: --makebigwigfiles_extra_args is deprecated and ignored; "
+            "plot_map now generates bigWigs internally."
+        )
+
+    for required_cmd in ("samtools", "bedtools", "bedGraphToBigWig"):
+        if shutil.which(required_cmd) is None:
+            raise RuntimeError(
+                "Required command '{}' was not found in PATH.".format(
+                    required_cmd
+                )
+            )
+
+    out_dirs = set([
+        os.path.dirname(pos_bw) or '.',
+        os.path.dirname(neg_bw) or '.',
+    ])
+    for out_dir in out_dirs:
+        os.makedirs(out_dir, exist_ok=True)
+
+    if workdir is None:
+        workdir = os.path.dirname(pos_bw) or '.'
+    os.makedirs(workdir, exist_ok=True)
+
+    if direction is None:
+        direction = 'r'
+    direction = direction.lower()
+    if direction not in ('r', 'f'):
+        raise ValueError(
+            "Invalid direction '{}'. Choose 'r' (reverse-stranded) or 'f' "
+            "(forward-stranded).".format(direction)
+        )
+
+    # For reverse-stranded protocols (typical eCLIP), + and - tracks are swapped.
+    if direction == 'r':
+        pos_track_strand = '-'
+        neg_track_strand = '+'
+    else:
+        pos_track_strand = '+'
+        neg_track_strand = '-'
+
+    mapped_reads = int(subprocess.check_output(
+        ["samtools", "view", "-c", "-F", "260", bam]
+    ).decode("utf-8").strip())
+    if mapped_reads <= 0:
+        raise RuntimeError(
+            "BAM '{}' has no mapped reads (samtools view -c -F 260). "
+            "Cannot generate normalized bigWigs.".format(bam)
+        )
+    scale = 1000000.0 / float(mapped_reads)
+
+    bam_base = os.path.basename(bam)
+    if bam_base.endswith('.bam'):
+        bam_base = bam_base[:-4]
+    pos_bg = os.path.join(workdir, bam_base + '.norm.pos.bg')
+    neg_bg = os.path.join(workdir, bam_base + '.norm.neg.bg')
+
+    def write_bedgraph(track_strand, output_bg):
+        genomecov_cmd = [
+            "bedtools", "genomecov",
+            "-ibam", bam,
+            "-strand", track_strand,
+            "-split",
+            "-bg",
+            "-scale", str(scale)
+        ]
+        with open(output_bg, "w") as out_handle:
+            genomecov = subprocess.Popen(
+                genomecov_cmd,
+                stdout=subprocess.PIPE
+            )
+            sorter = subprocess.Popen(
+                ["sort", "-k1,1", "-k2,2n"],
+                stdin=genomecov.stdout,
+                stdout=out_handle
+            )
+            genomecov.stdout.close()
+            sorter_return = sorter.wait()
+            genomecov_return = genomecov.wait()
+            if genomecov_return != 0 or sorter_return != 0:
+                raise RuntimeError(
+                    "Failed generating bedGraph '{}' from BAM '{}'.".format(
+                        output_bg, bam
+                    )
+                )
+
+    write_bedgraph(pos_track_strand, pos_bg)
+    write_bedgraph(neg_track_strand, neg_bg)
+
+    subprocess.check_call(["bedGraphToBigWig", pos_bg, genome_file, pos_bw])
+    subprocess.check_call(["bedGraphToBigWig", neg_bg, genome_file, neg_bw])
+
+
+def resolve_density_input_paths(args):
+    """
+    Resolve BAM and bigWig paths from CLI args.
+    """
+    ip_bam = args.ipbam
+    input_bam = args.inputbam
+
+    if ip_bam is None or input_bam is None:
+        raise ValueError(
+            "Density maps require both --ip/--ipbam and --input/--inputbam."
+        )
+
+    generated_signal_dir = args.generated_signal_dir
+
+    if args.ip_pos_bw is None:
+        if generated_signal_dir:
+            ip_pos_bw = os.path.join(
+                generated_signal_dir,
+                os.path.basename(ip_bam).replace('.bam', '.norm.pos.bw')
+            )
+        else:
+            ip_pos_bw = ip_bam.replace('.bam', '.norm.pos.bw')
+    else:
+        ip_pos_bw = args.ip_pos_bw
+    if args.ip_neg_bw is None:
+        if generated_signal_dir:
+            ip_neg_bw = os.path.join(
+                generated_signal_dir,
+                os.path.basename(ip_bam).replace('.bam', '.norm.neg.bw')
+            )
+        else:
+            ip_neg_bw = ip_bam.replace('.bam', '.norm.neg.bw')
+    else:
+        ip_neg_bw = args.ip_neg_bw
+
+    if args.input_pos_bw is None:
+        if generated_signal_dir:
+            input_pos_bw = os.path.join(
+                generated_signal_dir,
+                os.path.basename(input_bam).replace('.bam', '.norm.pos.bw')
+            )
+        else:
+            input_pos_bw = input_bam.replace('.bam', '.norm.pos.bw')
+    else:
+        input_pos_bw = args.input_pos_bw
+    if args.input_neg_bw is None:
+        if generated_signal_dir:
+            input_neg_bw = os.path.join(
+                generated_signal_dir,
+                os.path.basename(input_bam).replace('.bam', '.norm.neg.bw')
+            )
+        else:
+            input_neg_bw = input_bam.replace('.bam', '.norm.neg.bw')
+    else:
+        input_neg_bw = args.input_neg_bw
+
+    return ip_bam, input_bam, ip_pos_bw, ip_neg_bw, input_pos_bw, input_neg_bw
+
+
+def ensure_density_bigwigs(
+        bam, pos_bw, neg_bw, genome_file, direction, makebigwigfiles_cmd,
+        makebigwigfiles_extra_args, makebigwigfiles_workdir=None
+):
+    """
+    Ensure pos/neg bigWigs exist, generating them from BAM when absent.
+    """
+    missing = [
+        path for path in (pos_bw, neg_bw) if not os.path.isfile(path)
+    ]
+    if not missing:
+        return
+
+    print(
+        "Missing bigWig(s) for {}: {}. Generating with built-in make_bigwig_files...".format(
+            bam, ', '.join(missing)
+        )
+    )
+    run_makebigwigfiles(
+        bam=bam,
+        pos_bw=pos_bw,
+        neg_bw=neg_bw,
+        genome_file=genome_file,
+        direction=direction,
+        makebigwigfiles_cmd=makebigwigfiles_cmd,
+        extra_args=makebigwigfiles_extra_args,
+        workdir=makebigwigfiles_workdir
+    )
+
+    still_missing = [
+        path for path in (pos_bw, neg_bw) if not os.path.isfile(path)
+    ]
+    if still_missing:
+        raise RuntimeError(
+            "BigWig generation completed but expected output(s) are still missing: "
+            "{}".format(', '.join(still_missing))
+        )
+
+
+def subset_rmats_annotation_file(
+        annotation_path, event, output_dir=None, force=False, runner=None
+):
+    """
+    Create (or reuse) a non-overlapping rMATS annotation file.
+    """
+    if output_dir is None:
+        output_dir = os.path.dirname(annotation_path) or '.'
+    os.makedirs(output_dir, exist_ok=True)
+
+    base_name = os.path.basename(annotation_path)
+    output_path = os.path.join(output_dir, base_name + '.nr.txt')
+
+    if os.path.exists(output_path) and not force:
+        return output_path
+
+    if runner is None:
+        from preprocessing_scripts.subset_rmats_junctioncountonly import \
+            run_subset_rmats_junctioncountonly
+        runner = run_subset_rmats_junctioncountonly
+
+    runner(annotation_path, output_path, event, 'rmats')
+    return output_path
+
+
+def maybe_subset_rmats_annotations(
+        annotations, annotation_types, event, auto_subset_rmats=False,
+        subset_rmats_dir=None, subset_rmats_force=False, runner=None
+):
+    """
+    Optionally subset rmats annotation inputs and return updated paths.
+    """
+    if not auto_subset_rmats:
+        return annotations
+
+    supported_events = {'se', 'a3ss', 'a5ss', 'ri', 'mxe'}
+    if event not in supported_events:
+        raise ValueError(
+            "Auto-subsetting rmats annotations is only supported for events: {}. "
+            "Received event '{}'.".format(', '.join(sorted(supported_events)), event)
+        )
+
+    updated_annotations = []
+    for annotation, annotation_type in zip(annotations, annotation_types):
+        if annotation_type.lower() == 'rmats':
+            new_annotation = subset_rmats_annotation_file(
+                annotation_path=annotation,
+                event=event,
+                output_dir=subset_rmats_dir,
+                force=subset_rmats_force,
+                runner=runner
+            )
+            print(
+                "Auto-subset rMATS annotation: {} -> {}".format(
+                    annotation, new_annotation
+                )
+            )
+            updated_annotations.append(new_annotation)
+        else:
+            updated_annotations.append(annotation)
+    return updated_annotations
+
+
 def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
+        "--ip",
         "--ipbam",
+        dest="ipbam",
         required=False
     )
     parser.add_argument(
@@ -324,7 +601,9 @@ def main():
         default=None
     )
     parser.add_argument(
+        "--input",
         "--inputbam",
+        dest="inputbam",
         required=False
     )
     parser.add_argument(
@@ -448,6 +727,55 @@ def main():
         help="Plot peak overlaps instead of read density",
         default=None,
     )
+    parser.add_argument(
+        "--genome",
+        help="Tab-separated chrom.sizes file used by makebigwigfiles when generating bigWigs from BAM.",
+        default=None,
+    )
+    parser.add_argument(
+        "--makebigwigfiles_cmd",
+        help="Optional command prefix for makebigwigfiles (for example: 'makebigwigfiles' or '/path/to/makebigwigfiles').",
+        default=None,
+    )
+    parser.add_argument(
+        "--makebigwigfiles_extra_args",
+        help="Extra args to pass through to makebigwigfiles when bigWigs need to be generated.",
+        default='',
+    )
+    parser.add_argument(
+        "--makebigwigfiles_direction",
+        "--make_bigwig_files_direction",
+        help="Read direction for BAM->signal conversion ('r' for reverse-stranded/eCLIP, 'f' for forward-stranded).",
+        default=None,
+    )
+    parser.add_argument(
+        "--generated_signal_dir",
+        help="Directory to place auto-generated .norm.pos.bw/.norm.neg.bw outputs when --ip_pos_bw/--ip_neg_bw and --input_pos_bw/--input_neg_bw are not provided.",
+        default=None,
+    )
+    parser.add_argument(
+        "--makebigwigfiles_workdir",
+        "--make_bigwig_files_workdir",
+        help="Working directory used while generating bigWigs. Generated bedGraph files are written here.",
+        default=None,
+    )
+    parser.add_argument(
+        "--auto_subset_rmats",
+        help="Automatically run subset_rmats_junctioncountonly.py on each --annotations file whose --annotation_type is rmats.",
+        default=False,
+        action='store_true'
+    )
+    parser.add_argument(
+        "--subset_rmats_dir",
+        help="Directory where auto-subset rmats annotation files are written (defaults to input annotation directory).",
+        default=None,
+    )
+    parser.add_argument(
+        "--subset_rmats_force",
+        help="Overwrite existing auto-subset rmats files instead of reusing them.",
+        default=False,
+        action='store_true'
+    )
 
     # Process arguments
     args = parser.parse_args()
@@ -475,17 +803,22 @@ def main():
     phastcons = None
     peak_file = args.peak
 
+    if peak_file is None and (args.ipbam is None or args.inputbam is None):
+        parser.error(
+            "Density maps require both --ip/--ipbam and --input/--inputbam "
+            "(or use --peak for peak maps)."
+        )
+
     # process scaling
     scale = args.scale
 
+    if args.generated_signal_dir is not None:
+        os.makedirs(args.generated_signal_dir, exist_ok=True)
+    if args.makebigwigfiles_workdir is not None:
+        os.makedirs(args.makebigwigfiles_workdir, exist_ok=True)
+
     # process flip
     is_flipped = args.flip
-
-    # process bgcontrol file
-    if args.bgnum is not None:
-        background_file = annotations[int(args.bgnum)]
-    else:
-        background_file = None
 
     # process masking (for phastcon maps)
     args.masknum = None  # TODO: re-implement
@@ -493,12 +826,6 @@ def main():
         masked_file = annotations[int(args.masknum)]
     else:
         masked_file = None
-
-    # process totest files
-    files_to_test = []
-    if len(args.testnums) > 0:
-        for num in args.testnums:
-            files_to_test.append(annotations[num])
 
     # process significant test method
     test_method = args.sigtest
@@ -514,9 +841,31 @@ def main():
             "We have a different number of annotation_src_file types than annotations."
         )
         exit(1)
+    try:
+        annotations = maybe_subset_rmats_annotations(
+            annotations=annotations,
+            annotation_types=annotation_type,
+            event=event,
+            auto_subset_rmats=args.auto_subset_rmats,
+            subset_rmats_dir=args.subset_rmats_dir,
+            subset_rmats_force=args.subset_rmats_force
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    # process bgcontrol and test files after optional annotation subsetting
+    if args.bgnum is not None:
+        background_file = annotations[int(args.bgnum)]
     else:
-        for i in range(0, len(annotations)):
-            annotation_dict[annotations[i]] = annotation_type[i]
+        background_file = None
+
+    files_to_test = []
+    if len(args.testnums) > 0:
+        for num in args.testnums:
+            files_to_test.append(annotations[num])
+
+    for i in range(0, len(annotations)):
+        annotation_dict[annotations[i]] = annotation_type[i]
 
     """
     Determine norm func
@@ -549,24 +898,8 @@ def main():
         )
     # plot density maps
     else:
-        """
-        Set the pos and neg bigwig files if they're specified, or
-        search for bigwig files in the same directory as the specified bam
-        """
-        # be aware this is NOT flipped by default (we'll handle this below)
-        if args.ip_pos_bw is None or args.ip_neg_bw is None:
-            ip_pos_bw = ip_bam.replace('.bam', '.norm.pos.bw')
-            ip_neg_bw = ip_bam.replace('.bam', '.norm.neg.bw')
-        else:
-            ip_pos_bw = args.ip_pos_bw
-            ip_neg_bw = args.ip_neg_bw
-
-        if args.input_pos_bw is None or args.input_neg_bw is None:
-            input_pos_bw = input_bam.replace('.bam', '.norm.pos.bw')
-            input_neg_bw = input_bam.replace('.bam', '.norm.neg.bw')
-        else:
-            input_pos_bw = args.input_pos_bw
-            input_neg_bw = args.input_neg_bw
+        ip_bam, input_bam, ip_pos_bw, ip_neg_bw, input_pos_bw, input_neg_bw = \
+            resolve_density_input_paths(args)
 
         """
         Check for index
@@ -575,19 +908,38 @@ def main():
         check_for_index(input_bam)
 
         """
-        Check if bigwigs exist, otherwise make (deprecated)
+        Check if bigwigs exist, otherwise generate using makebigwigfiles.
         """
-        make_bigwigs_script = 'make_bigwig_files.py'
-        call_bigwig_script = False
-        required_input_files = [
-            ip_bam, ip_pos_bw, ip_neg_bw,
-            input_bam, input_pos_bw, input_neg_bw
+        missing_bigwigs = [
+            path for path in (ip_pos_bw, ip_neg_bw, input_pos_bw, input_neg_bw)
+            if not os.path.isfile(path)
         ]
-        for i in required_input_files:
-            if not os.path.isfile(i):
-                print("Warning: {} does not exist".format(i))
-                call_bigwig_script = True  # hook the 'make_bigwig_files' script here.
-                exit(1)
+        if missing_bigwigs and args.genome is None:
+            parser.error(
+                "Missing bigWigs detected ({}) and --genome was not provided. "
+                "Set --genome so plot_map can generate bigWigs from BAMs using "
+                "makebigwigfiles.".format(', '.join(missing_bigwigs))
+            )
+        ensure_density_bigwigs(
+            bam=ip_bam,
+            pos_bw=ip_pos_bw,
+            neg_bw=ip_neg_bw,
+            genome_file=args.genome,
+            direction=args.makebigwigfiles_direction,
+            makebigwigfiles_cmd=args.makebigwigfiles_cmd,
+            makebigwigfiles_extra_args=args.makebigwigfiles_extra_args,
+            makebigwigfiles_workdir=args.makebigwigfiles_workdir
+        )
+        ensure_density_bigwigs(
+            bam=input_bam,
+            pos_bw=input_pos_bw,
+            neg_bw=input_neg_bw,
+            genome_file=args.genome,
+            direction=args.makebigwigfiles_direction,
+            makebigwigfiles_cmd=args.makebigwigfiles_cmd,
+            makebigwigfiles_extra_args=args.makebigwigfiles_extra_args,
+            makebigwigfiles_workdir=args.makebigwigfiles_workdir
+        )
 
         """
         Create ReadDensity objects. Note! This will effectively "flip" bigwigs!
