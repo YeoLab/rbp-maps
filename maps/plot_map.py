@@ -1,18 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-'''
-
-
-
-@author:     brian
-
-@copyright:  2016 organization_name. All rights reserved.
-
-@license:    license
-
-@contact:    user_email
-@deffield    updated: Updated
-'''
+"""CLI entrypoint for generating RBP maps from density or peak inputs."""
 
 import logging
 import os
@@ -35,6 +23,7 @@ def run_make_peak(
         intron_or_downstream_offset,
         confidence, annotation_dict, condition_list, bg_filename, test_method, scale
 ):
+    """Build and plot peak-overlap maps for a selected event type."""
     rbp = density.Peak.Peak(
         peaks=peak_file
     )
@@ -97,24 +86,15 @@ def run_make_peak(
             min_density_threshold=0,
             conf=confidence, scale=scale
         )
-    if event == 'metagene':
-        divide_hist = False
-    else:
-        divide_hist = True
-
-
     map_obj.create_matrices()
     map_obj.normalize_matrix()
     map_obj.create_lines()
-
-    num_heatmap = 0
 
     # for any condition we want to calculate pvalues for
     if ((len(condition_list) > 0) and (bg_filename is not None)):
         map_obj.set_background_and_calculate_significance(
             condition_list, bg_filename, test_method
         )
-        num_heatmap += 1
 
     map_obj.write_intermediates_to_csv()
     map_obj.plot(condition_list)
@@ -128,32 +108,26 @@ def run_make_density(
         annotation_dict, condition_list, bg_filename, test_method,
         scale
 ):
-    """
+    """Build and plot read-density maps for a selected event type.
 
-    Parameters
-    ----------
-    outfile
-    ip_pos_bw
-    ip_neg_bw
-    ip_bam
-    input_pos_bw
-    input_neg_bw
-    input_bam
-    norm_func
-    event
-    exon_or_upstream_offset
-    intron_or_downstream_offset
-    is_scaled
-    confidence
-    annotation_dict
-
-    condition_list :
-        list of files
-    bg_filename
-
-    Returns
-    -------
-
+    Args:
+        outfile (str): Output image filename.
+        ip_pos_bw (str): Positive-strand IP bigWig path.
+        ip_neg_bw (str): Negative-strand IP bigWig path.
+        ip_bam (str): IP BAM path.
+        input_pos_bw (str): Positive-strand input bigWig path.
+        input_neg_bw (str): Negative-strand input bigWig path.
+        input_bam (str): Input BAM path.
+        norm_func (callable): Normalization function applied by map classes.
+        event (str): Event key (e.g. ``se``, ``a3ss``, ``a5ss``).
+        exon_or_upstream_offset (int): Exonic or upstream plotting window.
+        intron_or_downstream_offset (int): Intronic or downstream window.
+        confidence (float): Fraction of events retained after outlier removal.
+        annotation_dict (OrderedDict): Mapping of annotation path to type label.
+        condition_list (list[str]): Annotation files to test vs background.
+        bg_filename (str | None): Background annotation filename.
+        test_method (str): Significance testing method.
+        scale (bool): Whether to scale feature lengths for bed-like maps.
     """
     rbp = density.ReadDensity.ReadDensity(
         pos=ip_pos_bw, neg=ip_neg_bw, bam=ip_bam
@@ -257,38 +231,14 @@ def run_make_density(
     map_obj.plot(condition_list)
 
 
-def run_phastcons(outfile, phastcons, peak_file, masked_file, annotation):
-    print("running phastcon maps")
-    phast = density.ReadDensity.Phastcon(
-        phastcon=phastcons
-    )
-    rbp = density.Peak.Peak(
-        peaks=peak_file
-    )
-
-    map_obj = Map.PhastconMap(
-        phast, rbp, outfile,
-        annotation=annotation,
-        upstream_offset=50,
-        downstream_offset=300,
-        min_density_threshold=0,
-        masked_file=masked_file
-    )
-    map_obj.create_matrices()
-    map_obj.create_lines()
-    map_obj.write_intermediates_to_csv()
-
-    map_obj.plot()
-
-
 def check_for_index(bamfile):
-    """
-    Shamelessly copied from Gabe's (gpratt) code.
-    Checks to make sure a BAM file has an index, if the index does not exist it is created.
+    """Ensure a BAM index exists, creating ``.bai`` with ``samtools index``.
 
-    Usage undefined if file does not exist (check is made earlier in program)
-    bamfile - a path to a bam file
+    Args:
+        bamfile (str): Path to a ``.bam`` file.
 
+    Raises:
+        NameError: If the BAM is missing or has an invalid extension/content.
     """
 
     if not os.path.exists(bamfile):
@@ -299,7 +249,7 @@ def check_for_index(bamfile):
     if not bamfile.endswith(".bam"):
         raise NameError("file %s not of correct type" % (bamfile))
     else:
-        logging.info("Index for %s does not exist, indexing bamfile" % (bamfile))
+        logger.info("Index for %s does not exist, indexing bamfile" % (bamfile))
 
         process = call(["samtools", "index", str(bamfile)])
 
@@ -311,8 +261,21 @@ def run_makebigwigfiles(
         bam, pos_bw, neg_bw, genome_file, direction=None,
         makebigwigfiles_cmd=None, extra_args='', workdir=None
 ):
-    """
-    Generate strand-specific normalized bedGraph/bigWig files from a BAM.
+    """Generate normalized strand-specific bedGraph and bigWig files.
+
+    Args:
+        bam (str): Source BAM path.
+        pos_bw (str): Output positive bigWig path.
+        neg_bw (str): Output negative bigWig path.
+        genome_file (str): Chromosome sizes file for ``bedGraphToBigWig``.
+        direction (str | None): ``r`` for reverse-stranded or ``f`` for forward.
+        makebigwigfiles_cmd (str | None): Deprecated and ignored.
+        extra_args (str): Deprecated and ignored.
+        workdir (str | None): Directory to write intermediate bedGraphs.
+
+    Raises:
+        RuntimeError: If required tools are unavailable or generation fails.
+        ValueError: If required args are invalid.
     """
     if genome_file is None:
         raise ValueError(
@@ -419,8 +382,14 @@ def run_makebigwigfiles(
 
 
 def resolve_density_input_paths(args):
-    """
-    Resolve BAM and bigWig paths from CLI args.
+    """Resolve BAM and bigWig paths for density mode.
+
+    Args:
+        args (argparse.Namespace): Parsed CLI arguments.
+
+    Returns:
+        tuple[str, str, str, str, str, str]: IP BAM, input BAM, IP +/- bigWigs,
+        input +/- bigWigs.
     """
     ip_bam = args.ipbam
     input_bam = args.inputbam
@@ -481,8 +450,17 @@ def ensure_density_bigwigs(
         bam, pos_bw, neg_bw, genome_file, direction, makebigwigfiles_cmd,
         makebigwigfiles_extra_args, makebigwigfiles_workdir=None
 ):
-    """
-    Ensure pos/neg bigWigs exist, generating them from BAM when absent.
+    """Ensure density bigWigs exist, generating missing files from BAM.
+
+    Args:
+        bam (str): Source BAM path.
+        pos_bw (str): Positive bigWig path.
+        neg_bw (str): Negative bigWig path.
+        genome_file (str): Chromosome sizes file.
+        direction (str | None): Read-strand convention.
+        makebigwigfiles_cmd (str | None): Deprecated passthrough flag.
+        makebigwigfiles_extra_args (str): Deprecated passthrough flag.
+        makebigwigfiles_workdir (str | None): Intermediate-output directory.
     """
     missing = [
         path for path in (pos_bw, neg_bw) if not os.path.isfile(path)
@@ -519,8 +497,17 @@ def ensure_density_bigwigs(
 def subset_rmats_annotation_file(
         annotation_path, event, output_dir=None, force=False, runner=None
 ):
-    """
-    Create (or reuse) a non-overlapping rMATS annotation file.
+    """Create or reuse a non-overlapping rMATS annotation file.
+
+    Args:
+        annotation_path (str): Input rMATS annotation filename.
+        event (str): Event type used by the subset utility.
+        output_dir (str | None): Directory for subset output.
+        force (bool): Overwrite existing subset output if ``True``.
+        runner (callable | None): Optional injected subset function for testing.
+
+    Returns:
+        str: Path to the subset annotation file.
     """
     if output_dir is None:
         output_dir = os.path.dirname(annotation_path) or '.'
@@ -545,8 +532,19 @@ def maybe_subset_rmats_annotations(
         annotations, annotation_types, event, auto_subset_rmats=False,
         subset_rmats_dir=None, subset_rmats_force=False, runner=None
 ):
-    """
-    Optionally subset rmats annotation inputs and return updated paths.
+    """Optionally subset rMATS annotations and return the updated path list.
+
+    Args:
+        annotations (list[str]): Annotation file paths.
+        annotation_types (list[str]): Types aligned to ``annotations``.
+        event (str): Event type.
+        auto_subset_rmats (bool): Whether to subset ``rmats`` entries.
+        subset_rmats_dir (str | None): Output directory for subset files.
+        subset_rmats_force (bool): Overwrite existing subset outputs.
+        runner (callable | None): Optional injected subset function.
+
+    Returns:
+        list[str]: Annotation paths after optional subsetting.
     """
     if not auto_subset_rmats:
         return annotations
@@ -580,6 +578,7 @@ def maybe_subset_rmats_annotations(
 
 
 def main():
+    """Parse CLI arguments and execute the requested map workflow."""
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -799,8 +798,6 @@ def main():
     # process ip args
     ip_bam = args.ipbam
     input_bam = args.inputbam
-    # phastcons = args.phastcon  # TODO: re-implement
-    phastcons = None
     peak_file = args.peak
 
     if peak_file is None and (args.ipbam is None or args.inputbam is None):
@@ -819,13 +816,6 @@ def main():
 
     # process flip
     is_flipped = args.flip
-
-    # process masking (for phastcon maps)
-    args.masknum = None  # TODO: re-implement
-    if args.masknum is not None:
-        masked_file = annotations[int(args.masknum)]
-    else:
-        masked_file = None
 
     # process significant test method
     test_method = args.sigtest
@@ -883,13 +873,8 @@ def main():
     elif norm_level == 4:
         norm_func = norm.normalize_and_per_region_subtract
 
-    # beta: plot phastcon bigwig overlaps
-    if phastcons is not None and peak_file is not None and event == 'phastcon':
-        run_phastcons(
-            outfile, phastcons, peak_file, masked_file, annotation_dict
-        )
     # plot peaks if the peak file is specified
-    elif peak_file is not None:
+    if peak_file is not None:
 
         run_make_peak(
             outfile, peak_file, norm.get_density, event, exon_offset, intron_offset,
