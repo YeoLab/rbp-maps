@@ -58,21 +58,21 @@ plot_map --ip ip.bam \ # BAM file containing reads of your CLIP
  --sigtest permutation
 ```
 
-`plot_map` now attempts to auto-generate missing `*.norm.pos.bw` and `*.norm.neg.bw` files from `--ip/--input` BAMs using [makebigwigfiles](https://github.com/yeolab/makebigwigfiles). You can still provide precomputed bigWigs with `--ip_pos_bw`, `--ip_neg_bw`, `--input_pos_bw`, and `--input_neg_bw`.
+`plot_map` now attempts to auto-generate missing `*.norm.pos.bw` and `*.norm.neg.bw` files from `--ip/--input` BAMs using built-in `make_bigwig_files.py` logic. You can still provide precomputed bigWigs with `--ip_pos_bw`, `--ip_neg_bw`, `--input_pos_bw`, and `--input_neg_bw`.
 
-If `makebigwigfiles` is not on your `PATH`, you can override how it is invoked:
+For strand handling in BAM-to-signal conversion:
 
 ```
---makebigwigfiles_cmd "/path/to/makebigwigfiles" \
---makebigwigfiles_direction r \
---makebigwigfiles_extra_args "--stranded --threads 8"
+--make_bigwig_files_direction r   # reverse-stranded (typical eCLIP)
+# or
+--make_bigwig_files_direction f   # forward-stranded
 ```
 
 To avoid writing generated files next to BAMs (for read-only BAM locations), use:
 
 ```
 --generated_signal_dir /path/with/write/access \  # default location for generated .bw files
---makebigwigfiles_workdir /path/for/bedgraphs     # working dir for makebigwigfiles intermediates (bedGraphs/temp files)
+--make_bigwig_files_workdir /path/for/bedgraphs   # output location for generated .bg files
 ```
 
 To auto-filter overlapping rMATS annotation rows before plotting (using `subset_rmats_junctioncountonly.py`), use:

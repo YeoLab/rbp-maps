@@ -17,9 +17,8 @@
 import logging
 import os
 import argparse
-import shlex
 import subprocess
-import sys
+import shutil
 from collections import OrderedDict
 
 import density.Peak
@@ -313,49 +312,110 @@ def run_makebigwigfiles(
         makebigwigfiles_cmd=None, extra_args='', workdir=None
 ):
     """
-    Generate strand-specific bigWig files from a BAM using makebigwigfiles.
+    Generate strand-specific normalized bedGraph/bigWig files from a BAM.
     """
     if genome_file is None:
         raise ValueError(
             "A genome chrom.sizes file is required to generate bigWigs. "
             "Please set --genome."
         )
-
-    cli_args = [
-        '--bw_pos', pos_bw,
-        '--bw_neg', neg_bw,
-        '--bam', bam,
-        '--genome', genome_file
-    ]
-    if direction is not None:
-        cli_args.extend(['--direction', direction])
-    if extra_args:
-        cli_args.extend(shlex.split(extra_args))
-
     if makebigwigfiles_cmd:
-        command_prefixes = [shlex.split(makebigwigfiles_cmd)]
+        print(
+            "Warning: --makebigwigfiles_cmd is deprecated and ignored; "
+            "plot_map now generates bigWigs internally."
+        )
+    if extra_args:
+        print(
+            "Warning: --makebigwigfiles_extra_args is deprecated and ignored; "
+            "plot_map now generates bigWigs internally."
+        )
+
+    for required_cmd in ("samtools", "bedtools", "bedGraphToBigWig"):
+        if shutil.which(required_cmd) is None:
+            raise RuntimeError(
+                "Required command '{}' was not found in PATH.".format(
+                    required_cmd
+                )
+            )
+
+    out_dirs = set([
+        os.path.dirname(pos_bw) or '.',
+        os.path.dirname(neg_bw) or '.',
+    ])
+    for out_dir in out_dirs:
+        os.makedirs(out_dir, exist_ok=True)
+
+    if workdir is None:
+        workdir = os.path.dirname(pos_bw) or '.'
+    os.makedirs(workdir, exist_ok=True)
+
+    if direction is None:
+        direction = 'r'
+    direction = direction.lower()
+    if direction not in ('r', 'f'):
+        raise ValueError(
+            "Invalid direction '{}'. Choose 'r' (reverse-stranded) or 'f' "
+            "(forward-stranded).".format(direction)
+        )
+
+    # For reverse-stranded protocols (typical eCLIP), + and - tracks are swapped.
+    if direction == 'r':
+        pos_track_strand = '-'
+        neg_track_strand = '+'
     else:
-        command_prefixes = [
-            ['makebigwigfiles'],
-            [sys.executable, '-m', 'makebigwigfiles']
+        pos_track_strand = '+'
+        neg_track_strand = '-'
+
+    mapped_reads = int(subprocess.check_output(
+        ["samtools", "view", "-c", "-F", "260", bam]
+    ).decode("utf-8").strip())
+    if mapped_reads <= 0:
+        raise RuntimeError(
+            "BAM '{}' has no mapped reads (samtools view -c -F 260). "
+            "Cannot generate normalized bigWigs.".format(bam)
+        )
+    scale = 1000000.0 / float(mapped_reads)
+
+    bam_base = os.path.basename(bam)
+    if bam_base.endswith('.bam'):
+        bam_base = bam_base[:-4]
+    pos_bg = os.path.join(workdir, bam_base + '.norm.pos.bg')
+    neg_bg = os.path.join(workdir, bam_base + '.norm.neg.bg')
+
+    def write_bedgraph(track_strand, output_bg):
+        genomecov_cmd = [
+            "bedtools", "genomecov",
+            "-ibam", bam,
+            "-strand", track_strand,
+            "-split",
+            "-bg",
+            "-scale", str(scale)
         ]
+        with open(output_bg, "w") as out_handle:
+            genomecov = subprocess.Popen(
+                genomecov_cmd,
+                stdout=subprocess.PIPE
+            )
+            sorter = subprocess.Popen(
+                ["sort", "-k1,1", "-k2,2n"],
+                stdin=genomecov.stdout,
+                stdout=out_handle
+            )
+            genomecov.stdout.close()
+            sorter_return = sorter.wait()
+            genomecov_return = genomecov.wait()
+            if genomecov_return != 0 or sorter_return != 0:
+                raise RuntimeError(
+                    "Failed generating bedGraph '{}' from BAM '{}'.".format(
+                        output_bg, bam
+                    )
+                )
 
-    attempted = []
-    for prefix in command_prefixes:
-        cmd = prefix + cli_args
-        attempted.append(' '.join(cmd))
-        try:
-            subprocess.check_call(cmd, cwd=workdir)
-            return
-        except OSError:
-            continue
-        except subprocess.CalledProcessError:
-            continue
+    write_bedgraph(pos_track_strand, pos_bg)
+    write_bedgraph(neg_track_strand, neg_bg)
 
-    raise RuntimeError(
-        "Failed to generate bigWigs for {} using makebigwigfiles. "
-        "Attempted commands: {}".format(bam, ' | '.join(attempted))
-    )
+    subprocess.check_call(["bedGraphToBigWig", pos_bg, genome_file, pos_bw])
+    subprocess.check_call(["bedGraphToBigWig", neg_bg, genome_file, neg_bw])
 
 
 def resolve_density_input_paths(args):
@@ -431,7 +491,7 @@ def ensure_density_bigwigs(
         return
 
     print(
-        "Missing bigWig(s) for {}: {}. Generating with makebigwigfiles...".format(
+        "Missing bigWig(s) for {}: {}. Generating with built-in make_bigwig_files...".format(
             bam, ', '.join(missing)
         )
     )
@@ -684,7 +744,8 @@ def main():
     )
     parser.add_argument(
         "--makebigwigfiles_direction",
-        help="Read direction passed to makebigwigfiles (typically 'r' for eCLIP and 'f' for some single-end CLIP).",
+        "--make_bigwig_files_direction",
+        help="Read direction for BAM->signal conversion ('r' for reverse-stranded/eCLIP, 'f' for forward-stranded).",
         default=None,
     )
     parser.add_argument(
@@ -694,7 +755,8 @@ def main():
     )
     parser.add_argument(
         "--makebigwigfiles_workdir",
-        help="Working directory for makebigwigfiles execution. Use this to control where bedGraph/intermediate files are written.",
+        "--make_bigwig_files_workdir",
+        help="Working directory used while generating bigWigs. Generated bedGraph files are written here.",
         default=None,
     )
     parser.add_argument(
