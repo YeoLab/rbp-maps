@@ -43,7 +43,7 @@ def split(lst, n):
     """
     newlist = []
     division = len(lst) / float(n)
-    for i in xrange(n):
+    for i in range(n):
         newlist.append(
             lst[int(round(division * i)):int(round(division * (i + 1)))])
     return newlist

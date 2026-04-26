@@ -134,6 +134,11 @@ def multiply_by_x(n, x=100):
     return [n] * x
 
 
+def multiply_by_100(n):
+    """Backward-compatible wrapper kept for the legacy test suite."""
+    return multiply_by_x(n, 100)
+
+
 def rename_index(interval_name):
     """
     Renames the BedTools.Interval.name() into something that can be used as
@@ -271,7 +276,7 @@ def split(lst, n):
     """
     newlist = []
     division = len(lst) / float(n)
-    for i in xrange(n):
+    for i in range(n):
         newlist.append(
             lst[int(round(division * i)):int(round(division * (i + 1)))])
     return newlist
@@ -774,7 +779,7 @@ def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0, fill_pad
             interval.strand
         )
     else:
-        print "Strand not correct", interval.strand
+        print("Strand not correct", interval.strand)
         raise ()
     return _clean_and_add_padding(wiggle, 0, 0, fill_pads_with)
 
@@ -930,5 +935,3 @@ def mask(df, peak, stream):
                 df.loc[i, pos] = df.loc[i, pos] if masked_interval.loc[pos] > 0 else np.nan
         progress.update(1)
     return df
-
-

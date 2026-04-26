@@ -505,7 +505,7 @@ def get_means_and_sems_with_merged(df, conf=0.95):
     std_deviation = []
     
     merged = pd.DataFrame(index=df.index)
-    for key, value in df.iteritems():
+    for key, value in df.items():
         single_col = df[key].dropna()
         single_col = single_col.sort_values()
         nums = len(single_col)
@@ -554,7 +554,7 @@ def get_means_and_sems(df, conf=0.95):
     sems = []
     std_deviation = []
     # merged = pd.DataFrame(index=df.index)
-    for key, value in df.iteritems():
+    for key, value in df.items():
         single_col = df[key].dropna()
         single_col = single_col.sort_values()
         nums = len(single_col)
@@ -595,7 +595,7 @@ def median_bottom_top_values_from_dataframe(df, bottom_percent=0.5, top_percent=
     """
     bottom_values = []
     top_values = []
-    for key, value in df.iteritems():
+    for key, value in df.items():
         # get true percentage
         bottom_actual_percent = bottom_percent * 0.01
         top_actual_percent = top_percent * 0.01
@@ -637,7 +637,7 @@ def bottom_top_values_from_dataframe(df, bottom_percent=0.5, top_percent=0.5):
     """
     bottom_values = []
     top_values = []
-    for key, value in df.iteritems():
+    for key, value in df.items():
         # get true percentage
         bottom_actual_percent = bottom_percent * 0.01
         top_actual_percent = top_percent * 0.01
@@ -792,7 +792,7 @@ def calculate_num_events(df, legacy=True):
         return num_events
     else:
         num_events = []
-        for key, value in df.iteritems():
+        for key, value in df.items():
             # foreach column, drop nans and get the number of starting events.
             single_col = df[key].dropna()
             num_events.append(len(single_col))

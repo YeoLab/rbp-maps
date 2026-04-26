@@ -25,8 +25,8 @@ import sys
 
 import numpy as np
 import pandas as pd
-import Feature
-import intervals
+from . import Feature
+from . import intervals
 from tqdm import trange
 import tqdm
 tqdm.monitor_interval = 0  # workaround for issue 481
@@ -83,7 +83,7 @@ def same_length_region(
     except Exception as e:
         print(e)
         print("found different length features")
-        for key, value in densities.iteritems():
+        for key, value in densities.items():
             densities[key] = intervals.get_scale(value)
         return pd.DataFrame(densities).T
 
@@ -166,7 +166,7 @@ def meta(annotation, density, upstream_offset, downstream_offset, annotation_typ
     df = pd.read_table(annotation, names=['chrom','start','end','name','score','strand'])
     genes = df.groupby('name').apply(intervals.make_linelist_from_dataframe)
     progress = trange(len(genes))
-    for name, gene in genes.iteritems():
+    for name, gene in genes.items():
         feature = Feature.MetaFeature(gene, annotation_type).get_bedtools()
         wiggle = np.array([])  # create wiggle with all CDS values for each gene.
         # check positive strand based on first element encountered

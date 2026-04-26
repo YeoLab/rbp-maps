@@ -213,8 +213,8 @@ def test_too_far_6():
     "current_interval, next_interval, strand_or_5p, stop_at_midpoint, \
     expect_boundary",
     [
-        (pos_chr1_0_10(), pos_chr1_15_20(), '+', False, 15),
-        (pos_chr1_15_20(), pos_chr1_0_10(), '-', False, 20),
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), '+', False, 15),
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), '-', False, 20),
     ]
 )
 def test_get_upper_boundary(
@@ -232,8 +232,8 @@ def test_get_upper_boundary(
     "current_interval, next_interval, strand_or_5p, stop_at_midpoint, \
     expect_boundary",
     [
-        (pos_chr1_0_10(), pos_chr1_15_20(), '+', False, 0),
-        (pos_chr1_15_20(), pos_chr1_0_10(), '-', False, 10),
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), '+', False, 0),
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), '-', False, 10),
     ]
 )
 def test_get_lower_boundary(
@@ -254,27 +254,27 @@ def test_get_lower_boundary(
     expected_upper_offset, expected_lower_offset",
     [
         # downstream + upstream + anchor
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          0, 0,  # upstream (exon) offset, downstream (intron) offset
          15, 0,  # upper genomic boundary, lower genomic boundary
          0, 0),  # upper genomic offset, lower genomic offset
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          0, 0,
          20, 10,
          0, 0),
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          3, 4,
          15, 0,
          4, 3),
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          3, 4,
          20, 10,
          3, 4),
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          11, 0,
          15, 0,
          0, 11),
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          11, 0,
          20, 10,
          11, 0),
@@ -313,27 +313,27 @@ def test_get_boundaries_3p(
     expected_upper_offset, expected_lower_offset",
     [
         # upstream + interval + anchor
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          0, 0,  # exon offset, intron offset
          20, 10,  # upper genomic boundary, lower genomic boundary
          0, 0),  # upper genomic offset, lower genomic offset
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          0, 0,
          15, 0,
          0, 0),
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          3, 4,
          20, 10,
          3, 4),
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          3, 4,
          15, 0,
          4, 3),
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          6, 0,
          20, 10,
          6, 0),
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          11, 0,
          15, 0,
          0, 11),

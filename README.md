@@ -1,38 +1,57 @@
 # RBP Maps
 RBP splice and feature maps
 
-## This has been tested on (requirements):
+## Supported environment
+
+Plain English: this project used to target Python 2.7. It now targets Python
+3.12, which is the newest stable version that currently solves cleanly with the
+required bioinformatics dependencies such as `pybedtools`.
+
+## Core requirements
 
 | Module        | Version
 | ------------- |:-------------:
-| pandas        | 0.20.1
-| pybedtools    | 0.7.8
-| bedtools      | 2.26.0
-| pysam         | 0.8.4
-| samtools      | 1.3.1
-| pyBigWig      | 0.3.5
-| matplotlib    | 2.0.2
-| seaborn       | 0.8
-| jupyter       | 4.2.0 (if you want to import)
-| cwltool       | 1.0.20170828135420 (if you want to use as a CWL tool)
-| tqdm          | 4.19.5
-| numpy         | 1.12.1
-| scipy         | 0.19.1
+| Python        | 3.12.x
+| pandas        | >=2.2
+| pybedtools    | >=0.12
+| bedtools      | >=2.31
+| pysam         | >=0.23.3
+| samtools      | >=1.22
+| pyBigWig      | >=0.3.25
+| matplotlib    | >=3.10
+| seaborn       | >=0.13.2
+| tqdm          | >=4.67
+| numpy         | >=2.2
+| scipy         | >=1.17
 
 # Installation:
 
-### Create the environment:
-```python
+### Create the conda environment
+
+Plain English: the easiest way to get a working install is to let conda solve
+the compiled bioinformatics dependencies for you.
+
+```bash
 git clone https://github.com/yeolab/rbp-maps
-cd rbp-maps;
-conda env create -f conda_env.txt -n rbp-maps
-source activate rbp-maps
+cd rbp-maps
+conda env create -f environment.yml -n rbp-maps
+conda activate rbp-maps
 ```
-Then, install:
+
+Then install the package:
+
+```bash
+python -m pip install .
 ```
-cd rbp-maps;
-python setup.py build
-python setup.py install
+
+### Install with pip into an existing Python 3.14 environment
+
+Plain English: use this only if your machine already has the required compiled
+toolchain for `pybedtools`, `pysam`, and `pyBigWig`.
+
+```bash
+python -m pip install -r requirements.txt
+python -m pip install .
 ```
 
 ### External Toolchain (required for BAM -> bedGraph/bigWig generation)
@@ -104,7 +123,11 @@ To auto-filter overlapping rMATS annotation rows before plotting (using `subset_
 
 `--auto_subset_rmats` only applies to annotation files whose corresponding `--annotation_type` is `rmats`.
 
-### Integration tests
+### Tests
+
+Plain English: start with the unit tests if you only want to validate the
+Python code. Run integration tests when you also want to exercise the external
+bioinformatics toolchain.
 
 Integration tests that use fixture BAM files and external tools are marked with `integration`:
 

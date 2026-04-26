@@ -43,6 +43,8 @@ def diverge_map(high=('blue'), low=('green')):
     
     '''
     c = mcolors.ColorConverter().to_rgb
-    if isinstance(low, basestring): low = c(low)
-    if isinstance(high, basestring): high = c(high)
+    if isinstance(low, str):
+        low = c(low)
+    if isinstance(high, str):
+        high = c(high)
     return make_colormap([low, c('white'), 0.5, c('white'), high])
