@@ -105,3 +105,11 @@ ENV/
 # datadir to ignore
 api_examples/
 /site
+
+# Every local copy of the real .env, not just the file itself. A bare `.env`
+# rule does not match `.env.bak-20260830`, `.env.local` or `.env.save`. On
+# 2026-08-30 such a backup was swept up by `git add -A` in a sibling repo and
+# pushed with 19 settings in it; rotation was the only remedy.
+.env.*
+!.env.example
+!.env.sample
