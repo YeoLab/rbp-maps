@@ -113,3 +113,5 @@ api_examples/
 .env.*
 !.env.example
 !.env.sample
+
+/.codebase-memory/
