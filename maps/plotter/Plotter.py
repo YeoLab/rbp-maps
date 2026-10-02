@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import defaultdict
 import numpy as np
-from plotter import colors
+
+from . import colors
 
 sns.set_style("ticks")
 sns.set_context("talk", font_scale=1.4)
@@ -29,7 +30,7 @@ BG5_COLOR = COLOR_PALETTE[2]
 POS_COLOR = COLOR_PALETTE[0]
 NEG_COLOR = COLOR_PALETTE[5]
 
-import intervals
+from . import intervals
 
 
 class _Plotter():
@@ -214,7 +215,7 @@ class _Plotter():
                                mode="expand", ncol=2,
                                borderaxespad=0., borderpad=-3)
 
-        for legobj in leg.legendHandles:
+        for legobj in leg.legend_handles:
             legobj.set_linewidth(4.0)
 
 
@@ -442,7 +443,7 @@ class _PhastConPlotter(_Plotter):
             borderpad=-3
         )
 
-        for legobj in leg.legendHandles:
+        for legobj in leg.legend_handles:
             legobj.set_linewidth(4.0)
 
 
@@ -472,7 +473,7 @@ class _MultiLengthBedPlotter(_Plotter):
 
         """
         if i % 2 == 1:
-            axs[i].set_xticklabels(xrange(-300, 1, 50))
+            axs[i].set_xticklabels(range(-300, 1, 50))
 
 
 class _HeatmapPlotter():

@@ -31,89 +31,12 @@ from tqdm import trange
 MAX = sys.maxsize
 
 
-def collapse(df):
-    """
-    Takes a list of regions and merges them
-    """
-    unmerged = pybedtools.BedTool.from_dataframe(df)
-    merged = unmerged.merge(s=True) # , c=[4,4], o='collapse,count')
-    merged = merged.to_dataframe()
-    merged.columns = ['chrom','start','end','strand']
-    merged['score'] = 0
-    merged.reset_index()
-    return merged[['chrom','start','end','score','strand']]
-
-def merge2(fn):
-    """
-    Reads in a filename, and for each gene (in name column), 
-    collapse regions such that each gene has non-overlapping intervals.
-    This might be functionally the same as merge() but it's really slow.
-    
-    Parameters
-    ----------
-    fn : basestring
-
-    Returns
-    -------
-    bed_as_df : pandas.DataFrame
-        bed file collapsed intervals per gene.
-    """
-    df = pd.read_table(fn, names=['chrom','start','end','name','score','strand'])
-    df.sort_values(['chrom','start','end'], inplace=True)
-    df = df.groupby('name').apply(collapse)
-    df.reset_index(inplace=True)
-    return df[['chrom','start','end','name','score','strand']]
-
-def merge(fn):
-    """
-    Reads in a filename, and for each gene (in name column), 
-    collapse regions such that each gene has non-overlapping intervals.
-    
-    Parameters
-    ----------
-    fn : basestring
-
-    Returns
-    -------
-    bed_as_df : pandas.DataFrame
-        bed file collapsed intervals per gene.
-    """
-    unmerged = pybedtools.BedTool(fn).sort()
-    merged = unmerged.merge(s=True, c=[4,4], o='distinct,count')
-    merged = merged.to_dataframe()
-    merged.columns = ['chrom','start','end','strand','name','score']
-    merged['score'] = merged['score'].map('{:d}'.format)
-    return merged[['chrom','start','end','name','score','strand']]
-
-def explode(X):
-    """
-    explodes a merged dataframe. ie:
-
-    chr1    100 200 gene1,gene2 0   +
-    chr1    200 300 gene1   0   +
-
-    -->
-
-    chr1    100 200 gene1   0   +
-    chr1    100 200 gene2   0   +
-    chr1    200 300 gene1   0   +
-
-    """
-    delim = ','
-    Y = pd.DataFrame(X.name.str.split(delim).tolist(), index=[
-        X['chrom'], X['start'], X['end'], X['score'], X['strand']
-    ]).stack()
-    Y = Y.reset_index()[['chrom', 'start', 'end', 0, 'score', 'strand']]
-    Y.columns = ['chrom', 'start', 'end', 'name', 'score', 'strand']
-    return Y
-
-
 def make_linelist_from_dataframe(df):
     """
     given a pandas dataframe, return a list of strings that represent a bedfile (tabbed)
     """
     lst = []
-    for values in df.head().values:
+    for values in df.values:
         lst.append('\t'.join([str(v) for v in values]))
     return lst
 
@@ -132,6 +55,11 @@ def multiply_by_x(n, x=100):
     """
 
     return [n] * x
+
+
+def multiply_by_100(n):
+    """Backward-compatible wrapper kept for the legacy test suite."""
+    return multiply_by_x(n, 100)
 
 
 def rename_index(interval_name):
@@ -271,7 +199,7 @@ def split(lst, n):
     """
     newlist = []
     division = len(lst) / float(n)
-    for i in xrange(n):
+    for i in range(n):
         newlist.append(
             lst[int(round(division * i)):int(round(division * (i + 1)))])
     return newlist
@@ -542,7 +470,7 @@ def _get_lower_boundary(current_interval, next_interval, strand_or_5p,
     """
     if strand_or_5p == '+':
         if stop_at_midpoint:
-            return (current_interval.end + current_interval.start) / 2
+            return (current_interval.end + current_interval.start) // 2
         else:
             return current_interval.start
     else:
@@ -581,7 +509,7 @@ def _get_upper_boundary(current_interval, next_interval, strand_or_5p,
         return next_interval.start if next_interval is not None else MAX
     else:
         if stop_at_midpoint:
-            return (current_interval.end + current_interval.start) / 2
+            return (current_interval.end + current_interval.start) // 2
         else:
             return current_interval.end
 
@@ -774,7 +702,7 @@ def generic_site(rbp, interval, upstream_offset=0, downstream_offset=0, fill_pad
             interval.strand
         )
     else:
-        print "Strand not correct", interval.strand
+        print("Strand not correct", interval.strand)
         raise ()
     return _clean_and_add_padding(wiggle, 0, 0, fill_pads_with)
 
@@ -796,7 +724,9 @@ def get_overlap(peak, region, score_type='simple'):
         series of scores corresponding to peaks overlapping a region.
     """
 
-    series = pd.Series(data=0, index=range(len(region)))
+    # fractional score types need a float series; 'simple' scores stay integers
+    dtype = float if isinstance(score(score_type, peak, region), float) else int
+    series = pd.Series(data=0, index=range(len(region)), dtype=dtype)
 
     overlap_type, overlap = determine_overlap(peak, region)
 
@@ -930,5 +860,3 @@ def mask(df, peak, stream):
                 df.loc[i, pos] = df.loc[i, pos] if masked_interval.loc[pos] > 0 else np.nan
         progress.update(1)
     return df
-
-

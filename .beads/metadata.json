@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "rbp_maps",
+  "project_id": "7e12c464-3124-4bba-bdca-621c6855587a"
+}

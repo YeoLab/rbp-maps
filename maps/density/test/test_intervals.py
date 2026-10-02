@@ -6,8 +6,13 @@ import pybedtools
 import pandas as pd
 from density import intervals
 from density import ReadDensity
+from pandas.testing import assert_series_equal
 
 ### Fixtures ###
+
+
+### These are for testing the interval/boundary regions.
+
 
 @pytest.fixture()
 def pos_chr1_0_10():
@@ -15,64 +20,6 @@ def pos_chr1_0_10():
     return pybedtools.create_interval_from_list(
         ['chr1', '0', '10', 'current', '0', '+']
     )
-
-
-@pytest.fixture()
-def pos_chr1_15_20():
-    """ interval (positive) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '15', '20', 'current', '0', '+']
-    )
-
-
-@pytest.fixture()
-def pos_chr1_25_30():
-    """ downstream interval (positive) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '25', '30', 'current', '0', '+']
-    )
-
-
-@pytest.fixture()
-def pos_chr1_90_95():
-    """ interval (negative) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '90', '95', 'current', '0', '+']
-    )
-
-
-@pytest.fixture()
-def pos_chr1_95_105():
-    """ interval (negative) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '95', '105', 'current', '0', '+']
-    )
-
-
-@pytest.fixture()
-def pos_chr1_105_115():
-    """ interval (negative) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '105', '115', 'current', '0', '+']
-    )
-
-
-@pytest.fixture()
-def neg_chr1_25_30():
-    """ upstream interval (negative) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '25', '30', 'current', '0', '-']
-    )
-
-
-@pytest.fixture()
-def neg_chr1_15_20():
-    """ interval (negative) """
-    return pybedtools.create_interval_from_list(
-        ['chr1', '15', '20', 'current', '0', '-']
-    )
-
-
 @pytest.fixture()
 def neg_chr1_0_10():
     """ downstream interval (negative) """
@@ -80,7 +27,90 @@ def neg_chr1_0_10():
         ['chr1', '0', '10', 'current', '0', '-']
     )
 
+@pytest.fixture()
+def pos_chr1_3_5():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '3', '5', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_3_5():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '3', '5', 'current', '0', '-']
+    )
 
+@pytest.fixture()
+def pos_chr1_5_10():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '5', '10', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_5_10():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '5', '10', 'current', '0', '-']
+    )
+
+@pytest.fixture()
+def pos_chr1_5_15():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '5', '15', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_5_15():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '5', '15', 'current', '0', '-']
+    )
+
+@pytest.fixture()
+def pos_chr1_0_5():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '0', '5', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_0_5():
+    """ upstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '0', '5', 'current', '0', '-']
+    )
+
+@pytest.fixture()
+def pos_chr1_15_20():
+    """ interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '15', '20', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_15_20():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '15', '20', 'current', '0', '-']
+    )
+
+@pytest.fixture()
+def pos_chr1_25_30():
+    """ downstream interval (positive) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '25', '30', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_25_30():
+    """ upstream interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '25', '30', 'current', '0', '-']
+    )
+
+@pytest.fixture()
+def pos_chr1_90_95():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '90', '95', 'current', '0', '+']
+    )
 @pytest.fixture()
 def neg_chr1_90_95():
     """ interval (negative) """
@@ -88,15 +118,12 @@ def neg_chr1_90_95():
         ['chr1', '90', '95', 'current', '0', '-']
     )
 
-
 @pytest.fixture()
-def neg_chr1_95_100():
+def pos_chr1_95_105():
     """ interval (negative) """
     return pybedtools.create_interval_from_list(
-        ['chr1', '95', '100', 'current', '0', '-']
+        ['chr1', '95', '105', 'current', '0', '+']
     )
-
-
 @pytest.fixture()
 def neg_chr1_95_105():
     """ interval (negative) """
@@ -104,7 +131,12 @@ def neg_chr1_95_105():
         ['chr1', '95', '105', 'current', '0', '-']
     )
 
-
+@pytest.fixture()
+def pos_chr1_105_115():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '105', '115', 'current', '0', '+']
+    )
 @pytest.fixture()
 def neg_chr1_105_115():
     """ interval (negative) """
@@ -112,6 +144,35 @@ def neg_chr1_105_115():
         ['chr1', '105', '115', 'current', '0', '-']
     )
 
+@pytest.fixture()
+def pos_chr1_95_100():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '95', '100', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_95_100():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '95', '100', 'current', '0', '-']
+    )
+
+@pytest.fixture()
+def pos_chr1_105_115():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '105', '115', 'current', '0', '+']
+    )
+@pytest.fixture()
+def neg_chr1_105_115():
+    """ interval (negative) """
+    return pybedtools.create_interval_from_list(
+        ['chr1', '105', '115', 'current', '0', '-']
+    )
+
+### These are for metagenes, the 'name' field is important!
+
+### These are for scale tests
 
 @pytest.fixture()
 def n():
@@ -213,8 +274,8 @@ def test_too_far_6():
     "current_interval, next_interval, strand_or_5p, stop_at_midpoint, \
     expect_boundary",
     [
-        (pos_chr1_0_10(), pos_chr1_15_20(), '+', False, 15),
-        (pos_chr1_15_20(), pos_chr1_0_10(), '-', False, 20),
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), '+', False, 15),
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), '-', False, 20),
     ]
 )
 def test_get_upper_boundary(
@@ -232,8 +293,8 @@ def test_get_upper_boundary(
     "current_interval, next_interval, strand_or_5p, stop_at_midpoint, \
     expect_boundary",
     [
-        (pos_chr1_0_10(), pos_chr1_15_20(), '+', False, 0),
-        (pos_chr1_15_20(), pos_chr1_0_10(), '-', False, 10),
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), '+', False, 0),
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), '-', False, 10),
     ]
 )
 def test_get_lower_boundary(
@@ -254,27 +315,27 @@ def test_get_lower_boundary(
     expected_upper_offset, expected_lower_offset",
     [
         # downstream + upstream + anchor
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          0, 0,  # upstream (exon) offset, downstream (intron) offset
          15, 0,  # upper genomic boundary, lower genomic boundary
          0, 0),  # upper genomic offset, lower genomic offset
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          0, 0,
          20, 10,
          0, 0),
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          3, 4,
          15, 0,
          4, 3),
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          3, 4,
          20, 10,
          3, 4),
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          11, 0,
          15, 0,
          0, 11),
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          11, 0,
          20, 10,
          11, 0),
@@ -313,27 +374,27 @@ def test_get_boundaries_3p(
     expected_upper_offset, expected_lower_offset",
     [
         # upstream + interval + anchor
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          0, 0,  # exon offset, intron offset
          20, 10,  # upper genomic boundary, lower genomic boundary
          0, 0),  # upper genomic offset, lower genomic offset
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          0, 0,
          15, 0,
          0, 0),
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          3, 4,
          20, 10,
          3, 4),
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          3, 4,
          15, 0,
          4, 3),
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          6, 0,
          20, 10,
          6, 0),
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          11, 0,
          15, 0,
          0, 11),
@@ -466,3 +527,195 @@ def test_get_scale_3(some_large_series_not_divisible):
 
 def test_get_scale_4(some_large_series_divisible):
     assert len(intervals.get_scale(some_large_series_divisible)) % 100 == 0
+
+
+### test peak overlap intervals:
+
+
+def test_get_overlap_p1():
+    print("tests condition when (+) newPeak partially overlaps region"
+          " but shares end coords")
+    peak = pos_chr1_5_10.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,0,0,1,1,1,1,1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n1():
+    print("tests condition when (-) newPeak partially overlaps region"
+          " but shares end coords")
+    peak = neg_chr1_5_10.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[1,1,1,1,1,0,0,0,0,0],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_p2():
+    print("tests condition when (+) newPeak partially overlaps region")
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,0,0,1,1,1,1,1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n2():
+    print("tests condition when (+) newPeak partially overlaps region")
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[1,1,1,1,1,0,0,0,0,0],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_p3():
+    print("tests condition when (+) newPeak completely overlaps region")
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_5_15.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[1,1,1,1,1,1,1,1,1,1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n3():
+    print("tests condition when (-) newPeak completely overlaps region")
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_5_15.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[1,1,1,1,1,1,1,1,1,1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_p4():
+    print("tests condition when (+) newPeak doesn't overlap region")
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_0_5.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,0,0],
+        index=range(5)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n4():
+    print("tests condition when (+) newPeak doesn't overlap region")
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_0_5.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,0,0],
+        index=range(5)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_p5():
+    print("tests condition when (+) newPeak is completely "
+          "contained within the region")
+    peak = pos_chr1_3_5.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,1,1,0,0,0,0,0],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n5():
+    print("tests condition when (-) newPeak is completely "
+          "contained within the region")
+    peak = neg_chr1_3_5.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,0,0,1,1,0,0,0],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region)
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_p6():
+    print("tests condition when (+) newPeak partially overlaps region"
+          " but shares end coords using the region frac scoring method.")
+    peak = pos_chr1_5_10.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[0,0,0,0,0,.1,.1,.1,.1,.1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region, 'fraction_region')
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n6():
+    print("tests condition when (-) newPeak partially overlaps region"
+          " but shares end coords using the region frac scoring method.")
+    peak = neg_chr1_5_10.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[.1,.1,.1,.1,.1,0,0,0,0,0],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region, 'fraction_region')
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_p7():
+    print("tests condition when (+) newPeak completely overlaps region")
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_5_15.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[.1,.1,.1,.1,.1,.1,.1,.1,.1,.1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region, 'fraction_region')
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
+
+def test_get_overlap_n7():
+    print("tests condition when (-) newPeak completely overlaps region")
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_5_15.__wrapped__()
+    expect_overlap = pd.Series(
+        data=[.1,.1,.1,.1,.1,.1,.1,.1,.1,.1],
+        index=range(10)
+    )
+    test_overlap = intervals.get_overlap(peak, region, 'fraction_region')
+    print('test', test_overlap)
+    print('expect', expect_overlap)
+    assert_series_equal(test_overlap, expect_overlap)
