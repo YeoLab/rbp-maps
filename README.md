@@ -193,6 +193,51 @@ plot_map --peak peak.bb \  # peaks file as a bigbed
  --sigtest fisher
 ```
 
+### Plotting stranded maps around transcription start sites (TSS)
+
+`plot_tss_map` plots IP over input around TSS calls, split into reads on the
+strand of the TSS (sense) and reads on the opposite strand (antisense).
+
+```bash
+plot_tss_map --ip ip.bam \
+ --input input.bam \
+ --genome hg38.chrom.sizes \
+ --make_bigwig_files_direction f \
+ --tss CAGE_rep1.bed.gz CAGE_rep2.bed.gz RAMPAGE_rep1.bed.gz \
+ --slop 1000 \
+ --output ago2_tss.png
+```
+
+- `--tss`: one or more files of TSS calls. ENCODE CAGE/RAMPAGE peak files are
+  reduced to the base with the highest signal (11th column); BED6 files to the
+  5' end of each interval. Calls from all files are pooled.
+- `--slop`: bases plotted on each side of the TSS (default 1000). Windows on
+  the same strand that overlap are reduced to the one with the highest call.
+- `--min_files`, `--min_height`: keep only TSS called in at least this many
+  files, or at least this high.
+- `--exclude_opposite_overlaps`: drop windows that overlap a window on the
+  opposite strand. At a bidirectional promoter the same read is sense in one
+  window and antisense in the other.
+- `--shift`: also plots the same windows moved this far downstream (default
+  10000), as a control without a TSS. Use `0` to skip it.
+- BAM, bigWig and `--make_bigwig_files_direction` options are the same as for
+  `plot_map`. The reads must be on the strand of the RNA once the direction is
+  applied, or sense and antisense are swapped.
+
+For each window, input is subtracted from IP separately for sense and
+antisense, and both are divided by the same number: the summed absolute
+unstranded difference plus one pseudocount per position. Sense and antisense
+are therefore on one scale and add up to the unstranded map
+(`--normalization_level 1` of `plot_map`).
+
+Outputs, next to the figure:
+- `*.windows.tsv`: every window, with the number of files that called it,
+  whether it overlaps an opposite-strand window, and whether it was kept
+- `*.profiles.csv`: mean sense, antisense and total signal per position
+  (and `shifted_*` for the control)
+- `*.summary.csv`: sense and antisense sums in windows centered on the TSS.
+  `sense_frac` is given only when both sums are positive.
+
 ### Using a background & calculating significance.
 In our above example, we've set a few optional parameters that you can set to determine significance given an optional background dataset. 
  - ```--normalization_level 0```: Just plot the IP density. **If using normalized peaks, use this option** to skip any more normalization (just report the peak overlaps). 

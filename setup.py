@@ -38,6 +38,7 @@ setup(
         "console_scripts": [
             "bed2bigbed-eclip = preprocessing_scripts.bed2bigbed:main",
             "plot_map = maps.plot_map:main",
+            "plot_tss_map = maps.plot_tss_map:main",
             "subset_jxc = preprocessing_scripts.subset_rmats_junctioncountonly:main",
         ]
     },

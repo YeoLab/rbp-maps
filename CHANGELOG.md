@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - tests: integration tests that need the large reference BAMs are skipped when those files are absent
 
 ### Added
+- feature: `plot_tss_map` plots stranded (sense/antisense) IP over input around TSS calls from CAGE/RAMPAGE peaks or BED6 files, with a shifted-window control (`density/tss.py`, `plotter/tss.py`)
 - tests: unit tests for `ReadDensity`, `Feature`, `matrix`, `normalization_functions` and `LineObject`, end-to-end tests for every map type and the `plot_map` command line, and tests for `subset_jxc` and `bed2bigbed-eclip`
 
 ### Fixed
