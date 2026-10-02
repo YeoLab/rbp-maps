@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Added
+- documentation: `documentation/reproducing_examples.md`, step-by-step commands that regenerate the README RBFOX2 maps from ENCODE data (including `samtools view -f 128` to make read-2-only BAMs), verified against the original ENCODE maps
+- documentation: `documentation/notebook_walkthrough.ipynb`, a Jupyter walkthrough of the Python API for splicing maps and for normalized read density over BED-defined regions
+
+### Fixed
+- bugfix: density normalization crashed under pandas 2 (`DataFrame.append` and `.ix` were removed)
+- bugfix: `ReadDensity.values` used `np.NaN`, removed in NumPy 2, for chromosomes missing from a bigWig
+- bugfix: plotting crashed under current matplotlib (`Legend.legendHandles` renamed to `legend_handles`)
+
+### Changed
+- README: read-2-only eCLIP BAMs need `--make_bigwig_files_direction f`; the previous wording recommended `r` for eCLIP, which swaps strands for these files
+
 ## [0.1.5] - 2026-04-26
 
 ### Added
