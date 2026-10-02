@@ -106,15 +106,15 @@ class LineObject():
             'K562-', '').replace(
             '-', ' ').replace(
             '_', ' ').replace(
-            '.tpm1','').replace('hg19_v19_','') + " ({} events)".format(
-            (sum(self.num_events) / len(self.num_events))
-        )
+            '.tpm1','').replace('hg19_v19_','')
         firstparsed_string = '{}{}'.format(
             firstparsed_string[0].upper(), firstparsed_string[1:]
         )
         return os.path.splitext(
             firstparsed_string
-        )[0]
+        )[0] + " ({} events)".format(
+            (sum(self.num_events) // len(self.num_events))
+        )
 
     def _parse_filename(self):
         """
@@ -407,8 +407,9 @@ class DensityLine(LineObject):
         _, _, _, bg_matrix = norm.get_means_and_sems_with_merged(bg_matrix, conf=self.conf)
 
         for position in self.event_matrix.columns:
+            # outliers were masked as NaN; scipy returns NaN unless they are dropped
             _, p = stats.ks_2samp(
-                test_matrix[position], bg_matrix[position]
+                test_matrix[position].dropna(), bg_matrix[position].dropna()
             )
             p_values.append(-1 * np.log10(p))
         return p_values
@@ -444,7 +445,7 @@ class DensityLine(LineObject):
         _, _, _, bg_matrix = norm.get_means_and_sems_with_merged(bg_matrix, conf=self.conf)
         for position in test_matrix.columns:
             _, p = stats.mannwhitneyu(
-                test_matrix[position], bg_matrix[position],
+                test_matrix[position].dropna(), bg_matrix[position].dropna(),
                 alternative='greater'
             )
             p_values.append(-1 * np.log10(p))

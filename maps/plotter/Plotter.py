@@ -215,7 +215,7 @@ class _Plotter():
                                mode="expand", ncol=2,
                                borderaxespad=0., borderpad=-3)
 
-        for legobj in leg.legendHandles:
+        for legobj in leg.legend_handles:
             legobj.set_linewidth(4.0)
 
 
@@ -443,7 +443,7 @@ class _PhastConPlotter(_Plotter):
             borderpad=-3
         )
 
-        for legobj in leg.legendHandles:
+        for legobj in leg.legend_handles:
             legobj.set_linewidth(4.0)
 
 

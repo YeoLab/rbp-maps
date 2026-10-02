@@ -76,6 +76,27 @@ def clean(density_df):
     return density_df.replace(-1, np.nan)
 
 
+def add_missing_events(density_df, input_density_df):
+    """
+    Appends to the input dataframe an all-NaN row for every event that is
+    in the ip dataframe but not in the input dataframe, so that both can be
+    compared event by event. NaN is cleaned to zero density (see: clean()).
+
+    Parameters
+    ----------
+    density_df : pandas.DataFrame
+    input_density_df : pandas.DataFrame
+
+    Returns
+    -------
+    input_density_df : pandas.DataFrame
+    """
+    missing = density_df.index.difference(input_density_df.index)
+    if len(missing) == 0:
+        return input_density_df
+    return pd.concat([input_density_df, input_density_df.reindex(missing)])
+
+
 def pdf_entropy(density_df, input_density_df,
                 pseudocount, input_pseudocount,
                 min_density_threshold=0):
@@ -104,11 +125,7 @@ def pdf_entropy(density_df, input_density_df,
     en : pandas.DataFrame
     """
 
-    df_indices = density_df.index
-    dfi_indices = input_density_df.index
-    missing = set(df_indices) - set(dfi_indices)
-
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = add_missing_events(density_df, input_density_df)
 
     density_df = clean(density_df)
     input_density_df = clean(input_density_df)
@@ -160,10 +177,7 @@ def read_entropy(density_df, input_density_df, pseudocount, input_pseudocount,
 
 
     # get equivalent events for input and ip
-    df_indices = density_df.index
-    dfi_indices = input_density_df.index
-    missing = set(df_indices) - set(dfi_indices)
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = add_missing_events(density_df, input_density_df)
 
     rpm = clean(density_df)
     rpmi = clean(input_density_df)
@@ -293,11 +307,7 @@ def normalize_and_per_region_subtract(density_df, input_density_df,
     -------
     subtracted : pandas.DataFrame
     """
-    df_indices = density_df.index
-    dfi_indices = input_density_df.index
-    missing = set(df_indices) - set(dfi_indices)
-
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = add_missing_events(density_df, input_density_df)
 
     density_df = clean(density_df)
     input_density_df = clean(input_density_df)
@@ -335,10 +345,7 @@ def per_region_subtract_and_normalize(density_df, input_density_df,
     -------
     subtracted : pandas.DataFrame
     """
-    df_indices = density_df.index
-    dfi_indices = input_density_df.index
-    missing = set(df_indices) - set(dfi_indices)
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = add_missing_events(density_df, input_density_df)
     subtracted = clean(density_df).sub(clean(input_density_df))
 
     pdf = calculate_abs_pdf(
