@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.5] - 2026-04-26
+
+### Added
+- added `pyproject.toml` and `requirements.txt` so modern Python packaging tools can install the project cleanly
+
+### Changed
+- feature: updated the conda environment definition to target Python 3.12, the newest stable version that currently solves with the required bioinformatics dependencies
+- feature: modernized `setup.py` metadata, install requirements, and Python version targeting for current packaging workflows
+
+### Fixed
+- bugfix: ported legacy Python 2 runtime code paths (`xrange`, old `print`, `iteritems`, and implicit relative imports) so the package can run on modern Python 3
+- bugfix: removed a stray invalid assertion from `maps/density/test/test_Peak.py` so test collection no longer fails immediately
+
 ## [0.1.4] - 2019-04-xx (prerelease)
 
 ### Changed

@@ -286,8 +286,8 @@ def test_too_far_6():
     "current_interval, next_interval, strand_or_5p, stop_at_midpoint, \
     expect_boundary",
     [
-        (pos_chr1_0_10(), pos_chr1_15_20(), '+', False, 15),
-        (pos_chr1_15_20(), pos_chr1_0_10(), '-', False, 20),
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), '+', False, 15),
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), '-', False, 20),
     ]
 )
 def test_get_upper_boundary(
@@ -305,8 +305,8 @@ def test_get_upper_boundary(
     "current_interval, next_interval, strand_or_5p, stop_at_midpoint, \
     expect_boundary",
     [
-        (pos_chr1_0_10(), pos_chr1_15_20(), '+', False, 0),
-        (pos_chr1_15_20(), pos_chr1_0_10(), '-', False, 10),
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), '+', False, 0),
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), '-', False, 10),
     ]
 )
 def test_get_lower_boundary(
@@ -327,27 +327,27 @@ def test_get_lower_boundary(
     expected_upper_offset, expected_lower_offset",
     [
         # downstream + upstream + anchor
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          0, 0,  # upstream (exon) offset, downstream (intron) offset
          15, 0,  # upper genomic boundary, lower genomic boundary
          0, 0),  # upper genomic offset, lower genomic offset
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          0, 0,
          20, 10,
          0, 0),
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          3, 4,
          15, 0,
          4, 3),
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          3, 4,
          20, 10,
          3, 4),
-        (pos_chr1_15_20(), pos_chr1_0_10(), 10,
+        (pos_chr1_15_20.__wrapped__(), pos_chr1_0_10.__wrapped__(), 10,
          11, 0,
          15, 0,
          0, 11),
-        (neg_chr1_0_10(), neg_chr1_15_20(), 15,
+        (neg_chr1_0_10.__wrapped__(), neg_chr1_15_20.__wrapped__(), 15,
          11, 0,
          20, 10,
          11, 0),
@@ -386,27 +386,27 @@ def test_get_boundaries_3p(
     expected_upper_offset, expected_lower_offset",
     [
         # upstream + interval + anchor
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          0, 0,  # exon offset, intron offset
          20, 10,  # upper genomic boundary, lower genomic boundary
          0, 0),  # upper genomic offset, lower genomic offset
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          0, 0,
          15, 0,
          0, 0),
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          3, 4,
          20, 10,
          3, 4),
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          3, 4,
          15, 0,
          4, 3),
-        (pos_chr1_0_10(), pos_chr1_15_20(), 15,
+        (pos_chr1_0_10.__wrapped__(), pos_chr1_15_20.__wrapped__(), 15,
          6, 0,
          20, 10,
          6, 0),
-        (neg_chr1_15_20(), neg_chr1_0_10(), 10,
+        (neg_chr1_15_20.__wrapped__(), neg_chr1_0_10.__wrapped__(), 10,
          11, 0,
          15, 0,
          0, 11),
@@ -547,7 +547,7 @@ def test_merge_1():
     print("Tests merge using a single interval. "
           "Should return the same interval as there "
           "are no others to merge")
-    df = intervals.merge(non_overlapping_gene_1())
+    df = intervals.merge(non_overlapping_gene_1.__wrapped__())
     print(df)
     assert df.shape[0] == 3
 
@@ -555,7 +555,7 @@ def test_merge_2():
     print("Tests three intervals, two of which overlap. "
           "Should return two intervals, with one being "
           "merged result from the two overlapping ones.")
-    df = intervals.merge(overlapping_gene_1())
+    df = intervals.merge(overlapping_gene_1.__wrapped__())
     print(df)
     assert df.shape[0] == 2
 
@@ -563,7 +563,7 @@ def test_merge_3():
     print("Tests three intervals, two of which overlap "
           "but belong to different genes. Should return "
           "three intervals.")
-    df = intervals.merge2(overlapping_gene_1_gene_2())
+    df = intervals.merge2(overlapping_gene_1_gene_2.__wrapped__())
     print(df)
     assert df.shape[0] == 3
 
@@ -573,8 +573,8 @@ def test_merge_3():
 def test_get_overlap_p1():
     print("tests condition when (+) newPeak partially overlaps region"
           " but shares end coords")
-    peak = pos_chr1_5_10()
-    region = pos_chr1_0_10()
+    peak = pos_chr1_5_10.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,0,0,1,1,1,1,1],
         index=range(10)
@@ -587,8 +587,8 @@ def test_get_overlap_p1():
 def test_get_overlap_n1():
     print("tests condition when (-) newPeak partially overlaps region"
           " but shares end coords")
-    peak = neg_chr1_5_10()
-    region = neg_chr1_0_10()
+    peak = neg_chr1_5_10.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[1,1,1,1,1,0,0,0,0,0],
         index=range(10)
@@ -600,8 +600,8 @@ def test_get_overlap_n1():
 
 def test_get_overlap_p2():
     print("tests condition when (+) newPeak partially overlaps region")
-    peak = pos_chr1_5_15()
-    region = pos_chr1_0_10()
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,0,0,1,1,1,1,1],
         index=range(10)
@@ -613,8 +613,8 @@ def test_get_overlap_p2():
 
 def test_get_overlap_n2():
     print("tests condition when (+) newPeak partially overlaps region")
-    peak = neg_chr1_5_15()
-    region = neg_chr1_0_10()
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[1,1,1,1,1,0,0,0,0,0],
         index=range(10)
@@ -626,8 +626,8 @@ def test_get_overlap_n2():
 
 def test_get_overlap_p3():
     print("tests condition when (+) newPeak completely overlaps region")
-    peak = pos_chr1_5_15()
-    region = pos_chr1_5_15()
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_5_15.__wrapped__()
     expect_overlap = pd.Series(
         data=[1,1,1,1,1,1,1,1,1,1],
         index=range(10)
@@ -639,8 +639,8 @@ def test_get_overlap_p3():
 
 def test_get_overlap_n3():
     print("tests condition when (-) newPeak completely overlaps region")
-    peak = neg_chr1_5_15()
-    region = neg_chr1_5_15()
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_5_15.__wrapped__()
     expect_overlap = pd.Series(
         data=[1,1,1,1,1,1,1,1,1,1],
         index=range(10)
@@ -652,8 +652,8 @@ def test_get_overlap_n3():
 
 def test_get_overlap_p4():
     print("tests condition when (+) newPeak doesn't overlap region")
-    peak = pos_chr1_5_15()
-    region = pos_chr1_0_5()
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_0_5.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,0,0],
         index=range(5)
@@ -665,8 +665,8 @@ def test_get_overlap_p4():
 
 def test_get_overlap_n4():
     print("tests condition when (+) newPeak doesn't overlap region")
-    peak = neg_chr1_5_15()
-    region = neg_chr1_0_5()
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_0_5.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,0,0],
         index=range(5)
@@ -679,8 +679,8 @@ def test_get_overlap_n4():
 def test_get_overlap_p5():
     print("tests condition when (+) newPeak is completely "
           "contained within the region")
-    peak = pos_chr1_3_5()
-    region = pos_chr1_0_10()
+    peak = pos_chr1_3_5.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,1,1,0,0,0,0,0],
         index=range(10)
@@ -693,8 +693,8 @@ def test_get_overlap_p5():
 def test_get_overlap_n5():
     print("tests condition when (-) newPeak is completely "
           "contained within the region")
-    peak = neg_chr1_3_5()
-    region = neg_chr1_0_10()
+    peak = neg_chr1_3_5.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,0,0,1,1,0,0,0],
         index=range(10)
@@ -703,12 +703,12 @@ def test_get_overlap_n5():
     print('test', test_overlap)
     print('expect', expect_overlap)
     assert_series_equal(test_overlap, expect_overlap)
-    assert 1==
+
 def test_get_overlap_p6():
     print("tests condition when (+) newPeak partially overlaps region"
           " but shares end coords using the region frac scoring method.")
-    peak = pos_chr1_5_10()
-    region = pos_chr1_0_10()
+    peak = pos_chr1_5_10.__wrapped__()
+    region = pos_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[0,0,0,0,0,.1,.1,.1,.1,.1],
         index=range(10)
@@ -721,8 +721,8 @@ def test_get_overlap_p6():
 def test_get_overlap_n6():
     print("tests condition when (-) newPeak partially overlaps region"
           " but shares end coords using the region frac scoring method.")
-    peak = neg_chr1_5_10()
-    region = neg_chr1_0_10()
+    peak = neg_chr1_5_10.__wrapped__()
+    region = neg_chr1_0_10.__wrapped__()
     expect_overlap = pd.Series(
         data=[.1,.1,.1,.1,.1,0,0,0,0,0],
         index=range(10)
@@ -734,8 +734,8 @@ def test_get_overlap_n6():
 
 def test_get_overlap_p7():
     print("tests condition when (+) newPeak completely overlaps region")
-    peak = pos_chr1_5_15()
-    region = pos_chr1_5_15()
+    peak = pos_chr1_5_15.__wrapped__()
+    region = pos_chr1_5_15.__wrapped__()
     expect_overlap = pd.Series(
         data=[.1,.1,.1,.1,.1,.1,.1,.1,.1,.1],
         index=range(10)
@@ -747,8 +747,8 @@ def test_get_overlap_p7():
 
 def test_get_overlap_n7():
     print("tests condition when (-) newPeak completely overlaps region")
-    peak = neg_chr1_5_15()
-    region = neg_chr1_5_15()
+    peak = neg_chr1_5_15.__wrapped__()
+    region = neg_chr1_5_15.__wrapped__()
     expect_overlap = pd.Series(
         data=[.1,.1,.1,.1,.1,.1,.1,.1,.1,.1],
         index=range(10)

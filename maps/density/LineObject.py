@@ -10,7 +10,7 @@ Created on May 3, 2017
 @author: brianyee
 """
 
-import normalization_functions as norm
+from . import normalization_functions as norm
 from scipy import stats
 import sys
 import os
