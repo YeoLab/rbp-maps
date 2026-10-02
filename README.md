@@ -90,10 +90,32 @@ plot_map --ip ip.bam \ # BAM file containing reads of your CLIP
  --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
  --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works
- --event se \ # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
+ --event se \ # one of: 'se' (skipped exons), 'a3ss', 'a5ss' (alternative 3'/5' splice site), 'ri' (retained intron), 'mxe' (mutually exclusive exons), or 'bed' (fixed windows around BED6 features)
  --normalization_level 1 \ # numeric "code" used to determine the kind of normalization to output (see below)
  --testnums 0 1 \
  --bgnum 2 \
+ --sigtest permutation
+```
+
+The comments above are for reading only: remove them before running, since a
+`#` after a line continuation ends the command.
+
+A small example that runs as written from the repository root (about a minute;
+it writes its outputs to `example_out/`):
+
+```bash
+plot_map --ip examples/data/RBFOX2.downsampled.bam \
+ --input examples/data/INPUT.downsampled.bam \
+ --genome examples/data/hg19.chrom.sizes \
+ --make_bigwig_files_direction f \
+ --generated_signal_dir example_out/signal \
+ --make_bigwig_files_workdir example_out/work \
+ --annotations examples/data/positive.se.txt examples/splicing_data/se_splice_data/HepG2_native_cassette_exons_all \
+ --annotation_type rmats tab \
+ --output example_out/RBFOX2-SE.png \
+ --event se \
+ --testnums 0 \
+ --bgnum 1 \
  --sigtest permutation
 ```
 
@@ -102,10 +124,16 @@ plot_map --ip ip.bam \ # BAM file containing reads of your CLIP
 For strand handling in BAM-to-signal conversion:
 
 ```
---make_bigwig_files_direction r   # reverse-stranded (typical eCLIP)
+--make_bigwig_files_direction r   # default: reads are antisense to the RNA, so strands are swapped
 # or
---make_bigwig_files_direction f   # forward-stranded
+--make_bigwig_files_direction f   # reads are on the same strand as the RNA
 ```
+
+Check which one your BAM needs before trusting a map. `plot_map` reads the
+`*.pos.bw` track for (+) strand features, so the wrong direction gives an
+empty or antisense map without any error. BAMs that hold only read 2 of an
+eCLIP library (`*.r2.bam`, and the BAMs in `examples/data`) have reads on the
+same strand as the RNA and need `f`.
 
 To avoid writing generated files next to BAMs (for read-only BAM locations), use:
 
@@ -130,10 +158,20 @@ Plain English: start with the unit tests if you only want to validate the
 Python code. Run integration tests when you also want to exercise the external
 bioinformatics toolchain.
 
-Integration tests that use fixture BAM files and external tools are marked with `integration`:
+Integration tests that use external tools are marked with `integration`:
 
 ```bash
 pytest -m integration
+```
+
+Four of them compare against reference BAM and bigWig files that are too large
+for the repository. They are skipped unless those files are in a `tests/`
+directory at the repository root.
+
+Test coverage:
+
+```bash
+pytest --cov=maps --cov=preprocessing_scripts --cov-report=term-missing
 ```
 
 Run unit tests only:
@@ -148,7 +186,7 @@ plot_map --peak peak.bb \  # peaks file as a bigbed
  --annotations rmats_annotation1.JunctionCountOnly.txt rmats_annotation2.JunctionCountOnly.txt rmats_annotation3.JunctionCountOnly.txt \ # annotation files
  --annotation_type rmats rmats rmats \ # specifies the type of file for each of the above annotations (either 'rmats' or 'miso' options are supported)
  --output rbfox2.svg \ # either an 'svg' or 'png' file works
- --event se # can be either: 'se' (skipped exons), 'a3ss' (alternative 3' splice site), or 'a5ss' (alternative 5' splice site)
+ --event se \ # same choices as for density maps
  --normalization_level 0 \ # numeric "code" used to determine the kind of normalization to output (see below)
  --testnums 0 1 \
  --bgnum 2 \
@@ -184,9 +222,9 @@ subset_jxc -i SE.MATS.JunctionCountOnly.txt \
 
 ##### Other Options
 
-```--exon_offset```: (untested) controls how many bases into an exon you would like to plot (default 50 bases)
+```--exon_offset```: controls how many bases into an exon you would like to plot (default 50 bases)
 
-```--intron_offset```: (untested) controls how many bases into an intron you would like to plot (default 300 bases)
+```--intron_offset```: controls how many bases into an intron you would like to plot (default 300 bases)
 
 ```--confidence```: For each position, keep only this fraction of events to reduce noise caused by outliers (default 0.95)
 

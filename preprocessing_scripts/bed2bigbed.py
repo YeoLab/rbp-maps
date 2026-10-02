@@ -120,13 +120,15 @@ def convert_to_bigbed(
         filtered_bed = sorted_bed + '.pv{}fc{}.bed'.format(
             log10p, log2fc
         )
-        filter_bed(sorted_bed, log10p, log2fc, filtered_bed)
+        filter_bed(in_bed, log10p, log2fc, filtered_bed)
+        source_bed = filtered_bed
         bed_type = 'bed6'
     else:
         filtered_bed = sorted_bed
+        source_bed = in_bed
 
     # must convert names (could be floats) to strings, otherwise bigbed will complain
-    bedtool = pybedtools.BedTool(filtered_bed)
+    bedtool = pybedtools.BedTool(source_bed)
     out_bedtool = []
     for interval in bedtool:  # need to make sure that the name is a string
         interval.name = stringify(interval.name)

@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - environment: `environment.yml` now targets Python 3.13 and adds `pytest-cov`; `setup.py` accepts Python 3.12 and 3.13
 - docs: the README no longer tells users to install into Python 3.14, which the bioconda dependencies do not support yet
+- docs: the README has an example that runs on the bundled `examples/data`, lists every `--event` choice, and explains how to choose `--make_bigwig_files_direction`
+- tests: integration tests that need the large reference BAMs are skipped when those files are absent
+
+### Added
+- tests: unit tests for `ReadDensity`, `Feature`, `matrix`, `normalization_functions` and `LineObject`, end-to-end tests for every map type and the `plot_map` command line, and tests for `subset_jxc` and `bed2bigbed-eclip`
+
+### Fixed
+- bugfix: runtime errors under numpy 2, pandas 3 and matplotlib 3.10 (`np.NaN`, `DataFrame.append`, `.ix`, `legendHandles`, float midpoints used as coordinates)
+- bugfix: Mann-Whitney and KS p-values were NaN whenever outlier removal was on (`--confidence` below 1), because masked values were passed to scipy
+- bugfix: legend labels lost their event count for annotation file names with an extension, and printed a float count
+- bugfix: `bed2bigbed-eclip` failed on every input because it read a sorted BED file that it never wrote
+- bugfix: metagene maps used only the first five exons of each transcript
+
+### Removed
+- unreferenced `merge`, `merge2`, `collapse` and `explode` helpers in `density/intervals.py`, which no longer ran
 
 ## [0.1.5] - 2026-04-26
 

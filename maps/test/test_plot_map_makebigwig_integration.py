@@ -91,6 +91,12 @@ def _require_bigwig_toolchain():
         pytest.skip("Missing required external tools: {}".format(", ".join(missing)))
 
 
+def _require_fixture(path):
+    """The reference BAMs are too large for the repository and live in an untracked tests/ directory."""
+    if not os.path.exists(path):
+        pytest.skip("Missing fixture: {}".format(path))
+
+
 @pytest.mark.integration
 def test_run_makebigwigfiles_matches_testbam_references(monkeypatch, tmp_path):
     _require_bigwig_toolchain()
@@ -100,6 +106,7 @@ def test_run_makebigwigfiles_matches_testbam_references(monkeypatch, tmp_path):
     fixtures = os.path.join(repo_root, "tests")
 
     bam = os.path.join(fixtures, "test.bam")
+    _require_fixture(bam)
     genome = os.path.join(fixtures, "GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes")
 
     pos_bw = str(tmp_path / "test.pos.bw")
@@ -139,6 +146,7 @@ def test_run_makebigwigfiles_matches_rbfox2_references(monkeypatch, tmp_path):
     fixtures = os.path.join(repo_root, "tests")
 
     bam = os.path.join(fixtures, "204_01_RBFOX2.merged.r2.bam")
+    _require_fixture(bam)
     genome = os.path.join(fixtures, "hg19.chrom.sizes")
 
     pos_bw = str(tmp_path / "rbfox2.norm.pos.bw")
@@ -191,6 +199,7 @@ def test_main_end_to_end_density_generation_testbam(monkeypatch, tmp_path):
 
     ip_bam = os.path.join(fixtures, "test.bam")
     input_bam = os.path.join(fixtures, "test.bam")
+    _require_fixture(input_bam)
     genome = os.path.join(fixtures, "GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes")
     ip_pos_bw = str(tmp_path / "ip.pos.bw")
     ip_neg_bw = str(tmp_path / "ip.neg.bw")
@@ -253,6 +262,7 @@ def test_main_end_to_end_density_generation_rbfox2(monkeypatch, tmp_path):
 
     ip_bam = os.path.join(fixtures, "204_01_RBFOX2.merged.r2.bam")
     input_bam = os.path.join(fixtures, "204_01_RBFOX2.merged.r2.bam")
+    _require_fixture(input_bam)
     genome = os.path.join(fixtures, "hg19.chrom.sizes")
     ip_pos_bw = str(tmp_path / "ip.pos.bw")
     ip_neg_bw = str(tmp_path / "ip.neg.bw")
@@ -303,3 +313,30 @@ def test_main_end_to_end_density_generation_rbfox2(monkeypatch, tmp_path):
     _assert_binary_equal(
         input_neg_bw, os.path.join(fixtures, "204_01_RBFOX2.merged.r2.norm.neg.bw")
     )
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("direction,plus_track,minus_track", [("f", "pos", "neg"), ("r", "neg", "pos")])
+def test_run_makebigwigfiles_on_a_synthetic_bam(make_bam, tmp_path, direction, plus_track, minus_track):
+    """Eight 20-nt reads, 10 nt apart: four (+) from 0 and four (-) from 100, at 1e6 / 8 per read."""
+    _require_bigwig_toolchain()
+    sys.modules.pop("maps.plot_map", None)
+    plot_map = importlib.import_module("maps.plot_map")
+    import pyBigWig
+
+    bam = make_bam("reads.bam", (
+        [("chr1", 10 * i, 20, False) for i in range(4)]
+        + [("chr1", 100 + 10 * i, 20, True) for i in range(4)]
+    ))
+    genome = tmp_path / "chr1.sizes"
+    genome.write_text("chr1\t2000\n")
+    bigwigs = {"pos": str(tmp_path / "reads.pos.bw"), "neg": str(tmp_path / "reads.neg.bw")}
+
+    plot_map.run_makebigwigfiles(
+        bam=bam, pos_bw=bigwigs["pos"], neg_bw=bigwigs["neg"],
+        genome_file=str(genome), direction=direction, workdir=str(tmp_path / "work")
+    )
+
+    coverage = [125000, 250000, 250000, 250000, 125000]
+    assert pyBigWig.open(bigwigs[plus_track]).values("chr1", 0, 50)[::10] == coverage
+    assert pyBigWig.open(bigwigs[minus_track]).values("chr1", 100, 150)[::10] == coverage
