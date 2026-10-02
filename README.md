@@ -4,14 +4,15 @@ RBP splice and feature maps
 ## Supported environment
 
 Plain English: this project used to target Python 2.7. It now targets Python
-3.12, which is the newest stable version that currently solves cleanly with the
-required bioinformatics dependencies such as `pybedtools`.
+3.13 (3.12 also works), which is the newest version that currently solves
+cleanly with the required bioinformatics dependencies such as `pybedtools`.
+Python 3.14 does not solve yet.
 
 ## Core requirements
 
 | Module        | Version
 | ------------- |:-------------:
-| Python        | 3.12.x
+| Python        | 3.12 or 3.13
 | pandas        | >=2.2
 | pybedtools    | >=0.12
 | bedtools      | >=2.31
@@ -34,7 +35,7 @@ the compiled bioinformatics dependencies for you.
 ```bash
 git clone https://github.com/yeolab/rbp-maps
 cd rbp-maps
-conda env create -f environment.yml -n rbp-maps
+mamba env create -f environment.yml -n rbp-maps   # or: conda env create ...
 conda activate rbp-maps
 ```
 
@@ -44,7 +45,7 @@ Then install the package:
 python -m pip install .
 ```
 
-### Install with pip into an existing Python 3.14 environment
+### Install with pip into an existing Python 3.12/3.13 environment
 
 Plain English: use this only if your machine already has the required compiled
 toolchain for `pybedtools`, `pysam`, and `pyBigWig`.

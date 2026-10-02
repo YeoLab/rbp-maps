@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- environment: `environment.yml` now targets Python 3.13 and adds `pytest-cov`; `setup.py` accepts Python 3.12 and 3.13
+- docs: the README no longer tells users to install into Python 3.14, which the bioconda dependencies do not support yet
+
 ## [0.1.5] - 2026-04-26
 
 ### Added

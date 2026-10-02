@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python=3.12
+  - python=3.13
   - bedtools>=2.31
   - matplotlib>=3.10
   - numpy>=2.2
@@ -13,6 +13,7 @@ dependencies:
   - pybigwig>=0.3.25
   - pysam>=0.23.3
   - pytest>=8.3
+  - pytest-cov>=6
   - samtools>=1.22
   - scipy>=1.17
   - seaborn>=0.13.2

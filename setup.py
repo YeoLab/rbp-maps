@@ -16,7 +16,7 @@ setup(
         "RBP Maps generates density-based and peak-based RNA-binding protein "
         "maps from CLIP-seq signal and splicing annotations."
     ),
-    python_requires=">=3.12,<3.13",
+    python_requires=">=3.12,<3.14",
     install_requires=[
         "matplotlib>=3.10",
         "numpy>=2.2",
