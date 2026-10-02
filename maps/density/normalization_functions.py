@@ -108,7 +108,9 @@ def pdf_entropy(density_df, input_density_df,
     dfi_indices = input_density_df.index
     missing = set(df_indices) - set(dfi_indices)
 
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = pd.concat(
+        [input_density_df, input_density_df.reindex(list(missing))]
+    )
 
     density_df = clean(density_df)
     input_density_df = clean(input_density_df)
@@ -163,7 +165,9 @@ def read_entropy(density_df, input_density_df, pseudocount, input_pseudocount,
     df_indices = density_df.index
     dfi_indices = input_density_df.index
     missing = set(df_indices) - set(dfi_indices)
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = pd.concat(
+        [input_density_df, input_density_df.reindex(list(missing))]
+    )
 
     rpm = clean(density_df)
     rpmi = clean(input_density_df)
@@ -297,7 +301,9 @@ def normalize_and_per_region_subtract(density_df, input_density_df,
     dfi_indices = input_density_df.index
     missing = set(df_indices) - set(dfi_indices)
 
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = pd.concat(
+        [input_density_df, input_density_df.reindex(list(missing))]
+    )
 
     density_df = clean(density_df)
     input_density_df = clean(input_density_df)
@@ -338,7 +344,9 @@ def per_region_subtract_and_normalize(density_df, input_density_df,
     df_indices = density_df.index
     dfi_indices = input_density_df.index
     missing = set(df_indices) - set(dfi_indices)
-    input_density_df = input_density_df.append(input_density_df.ix[missing])
+    input_density_df = pd.concat(
+        [input_density_df, input_density_df.reindex(list(missing))]
+    )
     subtracted = clean(density_df).sub(clean(input_density_df))
 
     pdf = calculate_abs_pdf(

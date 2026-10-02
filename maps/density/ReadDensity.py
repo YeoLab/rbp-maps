@@ -109,7 +109,7 @@ class ReadDensity(Density):
                 return 1
         except RuntimeError:
             # usually occurs when no chromosome exists in the bigwig file
-            return [np.NaN] * abs(start - end)
+            return [np.nan] * abs(start - end)
 
 
 class Phastcon(Density):
@@ -152,4 +152,4 @@ class Phastcon(Density):
                 return 1
         except RuntimeError:
             # usually occurs when no chromosome exists in the bigwig file
-            return [np.NaN] * abs(start - end)
+            return [np.nan] * abs(start - end)

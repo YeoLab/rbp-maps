@@ -86,7 +86,7 @@ def last_to_first(df):
     """
     cols = list(df)
     cols.insert(0, cols.pop(cols.index(cols[-1])))
-    return df.ix[:, cols]
+    return df.loc[:, cols]
 
 
 def split_index(row, type='bed'):
