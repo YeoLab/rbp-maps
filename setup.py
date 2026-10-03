@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="rbp-maps",
-    version="0.1.5",
+    version="1.1.0",
     packages=["density", "maps", "plotter", "preprocessing_scripts"],
     url="https://github.com/YeoLab/rbp-maps",
     license="MIT",

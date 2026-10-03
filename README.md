@@ -121,7 +121,7 @@ plot_map --ip examples/data/RBFOX2.downsampled.bam \
 
 `plot_map` now attempts to auto-generate missing `*.norm.pos.bw` and `*.norm.neg.bw` files from `--ip/--input` BAMs using built-in `make_bigwig_files.py` logic. You can still provide precomputed bigWigs with `--ip_pos_bw`, `--ip_neg_bw`, `--input_pos_bw`, and `--input_neg_bw`.
 
-For strand handling in BAM-to-signal conversion:
+BAM files should come from paired-end libraries but contain read 2 only (for ENCODE eCLIP BAMs, run `samtools view -f 128 -b -o out.r2.bam in.bam`). For strand handling in BAM-to-signal conversion:
 
 ```
 --make_bigwig_files_direction r   # default: reads are antisense to the RNA, so strands are swapped
@@ -247,6 +247,10 @@ In our above example, we've set a few optional parameters that you can set to de
  - ```--bgnum 2```: **0-based number** of the background file (in this example, we use 2 to designate our 3rd file (rmats_annotation3.JunctionCountOnly.txt) as our background model.
  - ```--testnums 0 1```: the **0-based number** of the filenames of the test conditions (ie. rmats_annotation1.JunctionCountOnly.txt and rmats_annotation2.JunctionCountOnly.txt)
  - ```--sigtest permutation```: By default, that setting is ‘permutation’, in which case we randomly sample from the background sets (typically the ‘native SE’ set, though you can set this to be other things) and then use the confidence interval from that permutation to draw confidence bounds around that native SE curve, and then the significance is calculated based on those permutation values. If this setting is set to "ks", "fisher", "zscore", or "mannwhitneyu" , then the significance between the curves is done using the specified test, and the confidence bounds are instead done as the standard error of the alt included or alt excluded events. Currently, only "fisher" is implemented for peak-based rbp-maps.
+
+# Reproducing the examples
+- [documentation/reproducing_examples.md](documentation/reproducing_examples.md): step-by-step commands that regenerate the RBFOX2 maps below from ENCODE data, including converting the ENCODE BAMs to read 2 only.
+- [documentation/notebook_walkthrough.ipynb](documentation/notebook_walkthrough.ipynb): the same maps from Python in a Jupyter notebook, plus normalized read density over regions from your own BED files.
 
 # Links to files
 You can refer to the 'examples/' directory for usage. These examples refer to BAM and BigWig files that can be downloaded from [encodeproject.org](https://encodeproject.org)

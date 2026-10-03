@@ -4,20 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-10-02
 
 ### Changed
 - environment: `environment.yml` now targets Python 3.13 and adds `pytest-cov`; `setup.py` accepts Python 3.12 and 3.13
 - docs: the README no longer tells users to install into Python 3.14, which the bioconda dependencies do not support yet
+- docs: the README links the reproduction guide and notebook, and says how to make read-2-only BAMs from ENCODE BAMs
 - docs: the README has an example that runs on the bundled `examples/data`, lists every `--event` choice, and explains how to choose `--make_bigwig_files_direction`
 - tests: integration tests that need the large reference BAMs are skipped when those files are absent
 
 ### Added
+- documentation: `documentation/reproducing_examples.md`, step-by-step commands that regenerate the README RBFOX2 maps from ENCODE data (including `samtools view -f 128` to make read-2-only BAMs), verified against the original ENCODE maps
+- documentation: `documentation/notebook_walkthrough.ipynb`, a Jupyter walkthrough of the Python API for splicing maps and for normalized read density over BED-defined regions
 - feature: `plot_tss_map` plots stranded (sense/antisense) IP over input around TSS calls from CAGE/RAMPAGE peaks or BED6 files, with a shifted-window control (`density/tss.py`, `plotter/tss.py`)
 - tests: unit tests for `ReadDensity`, `Feature`, `matrix`, `normalization_functions` and `LineObject`, end-to-end tests for every map type and the `plot_map` command line, and tests for `subset_jxc` and `bed2bigbed-eclip`
 
 ### Fixed
-- bugfix: runtime errors under numpy 2, pandas 3 and matplotlib 3.10 (`np.NaN`, `DataFrame.append`, `.ix`, `legendHandles`, float midpoints used as coordinates)
+- bugfix: runtime errors under numpy 2, pandas 3 and matplotlib 3.10 (`np.NaN`, `DataFrame.append`, `.ix` (including `density/misc.py`), `legendHandles`, float midpoints used as coordinates)
 - bugfix: Mann-Whitney and KS p-values were NaN whenever outlier removal was on (`--confidence` below 1), because masked values were passed to scipy
 - bugfix: legend labels lost their event count for annotation file names with an extension, and printed a float count
 - bugfix: `bed2bigbed-eclip` failed on every input because it read a sorted BED file that it never wrote
