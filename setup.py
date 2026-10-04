@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="rbp-maps",
-    version="0.1.5",
+    version="1.1.0",
     packages=["density", "maps", "plotter", "preprocessing_scripts"],
     url="https://github.com/YeoLab/rbp-maps",
     license="MIT",
@@ -38,6 +38,7 @@ setup(
         "console_scripts": [
             "bed2bigbed-eclip = preprocessing_scripts.bed2bigbed:main",
             "plot_map = maps.plot_map:main",
+            "plot_tss_map = maps.plot_tss_map:main",
             "subset_jxc = preprocessing_scripts.subset_rmats_junctioncountonly:main",
         ]
     },

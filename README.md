@@ -121,7 +121,7 @@ plot_map --ip examples/data/RBFOX2.downsampled.bam \
 
 `plot_map` now attempts to auto-generate missing `*.norm.pos.bw` and `*.norm.neg.bw` files from `--ip/--input` BAMs using built-in `make_bigwig_files.py` logic. You can still provide precomputed bigWigs with `--ip_pos_bw`, `--ip_neg_bw`, `--input_pos_bw`, and `--input_neg_bw`.
 
-For strand handling in BAM-to-signal conversion:
+BAM files should come from paired-end libraries but contain read 2 only (for ENCODE eCLIP BAMs, run `samtools view -f 128 -b -o out.r2.bam in.bam`). For strand handling in BAM-to-signal conversion:
 
 ```
 --make_bigwig_files_direction r   # default: reads are antisense to the RNA, so strands are swapped
@@ -193,6 +193,51 @@ plot_map --peak peak.bb \  # peaks file as a bigbed
  --sigtest fisher
 ```
 
+### Plotting stranded maps around transcription start sites (TSS)
+
+`plot_tss_map` plots IP over input around TSS calls, split into reads on the
+strand of the TSS (sense) and reads on the opposite strand (antisense).
+
+```bash
+plot_tss_map --ip ip.bam \
+ --input input.bam \
+ --genome hg38.chrom.sizes \
+ --make_bigwig_files_direction f \
+ --tss CAGE_rep1.bed.gz CAGE_rep2.bed.gz RAMPAGE_rep1.bed.gz \
+ --slop 1000 \
+ --output ago2_tss.png
+```
+
+- `--tss`: one or more files of TSS calls. ENCODE CAGE/RAMPAGE peak files are
+  reduced to the base with the highest signal (11th column); BED6 files to the
+  5' end of each interval. Calls from all files are pooled.
+- `--slop`: bases plotted on each side of the TSS (default 1000). Windows on
+  the same strand that overlap are reduced to the one with the highest call.
+- `--min_files`, `--min_height`: keep only TSS called in at least this many
+  files, or at least this high.
+- `--exclude_opposite_overlaps`: drop windows that overlap a window on the
+  opposite strand. At a bidirectional promoter the same read is sense in one
+  window and antisense in the other.
+- `--shift`: also plots the same windows moved this far downstream (default
+  10000), as a control without a TSS. Use `0` to skip it.
+- BAM, bigWig and `--make_bigwig_files_direction` options are the same as for
+  `plot_map`. The reads must be on the strand of the RNA once the direction is
+  applied, or sense and antisense are swapped.
+
+For each window, input is subtracted from IP separately for sense and
+antisense, and both are divided by the same number: the summed absolute
+unstranded difference plus one pseudocount per position. Sense and antisense
+are therefore on one scale and add up to the unstranded map
+(`--normalization_level 1` of `plot_map`).
+
+Outputs, next to the figure:
+- `*.windows.tsv`: every window, with the number of files that called it,
+  whether it overlaps an opposite-strand window, and whether it was kept
+- `*.profiles.csv`: mean sense, antisense and total signal per position
+  (and `shifted_*` for the control)
+- `*.summary.csv`: sense and antisense sums in windows centered on the TSS.
+  `sense_frac` is given only when both sums are positive.
+
 ### Using a background & calculating significance.
 In our above example, we've set a few optional parameters that you can set to determine significance given an optional background dataset. 
  - ```--normalization_level 0```: Just plot the IP density. **If using normalized peaks, use this option** to skip any more normalization (just report the peak overlaps). 
@@ -202,6 +247,10 @@ In our above example, we've set a few optional parameters that you can set to de
  - ```--bgnum 2```: **0-based number** of the background file (in this example, we use 2 to designate our 3rd file (rmats_annotation3.JunctionCountOnly.txt) as our background model.
  - ```--testnums 0 1```: the **0-based number** of the filenames of the test conditions (ie. rmats_annotation1.JunctionCountOnly.txt and rmats_annotation2.JunctionCountOnly.txt)
  - ```--sigtest permutation```: By default, that setting is ‘permutation’, in which case we randomly sample from the background sets (typically the ‘native SE’ set, though you can set this to be other things) and then use the confidence interval from that permutation to draw confidence bounds around that native SE curve, and then the significance is calculated based on those permutation values. If this setting is set to "ks", "fisher", "zscore", or "mannwhitneyu" , then the significance between the curves is done using the specified test, and the confidence bounds are instead done as the standard error of the alt included or alt excluded events. Currently, only "fisher" is implemented for peak-based rbp-maps.
+
+# Reproducing the examples
+- [documentation/reproducing_examples.md](documentation/reproducing_examples.md): step-by-step commands that regenerate the RBFOX2 maps below from ENCODE data, including converting the ENCODE BAMs to read 2 only.
+- [documentation/notebook_walkthrough.ipynb](documentation/notebook_walkthrough.ipynb): the same maps from Python in a Jupyter notebook, plus normalized read density over regions from your own BED files.
 
 # Links to files
 You can refer to the 'examples/' directory for usage. These examples refer to BAM and BigWig files that can be downloaded from [encodeproject.org](https://encodeproject.org)
